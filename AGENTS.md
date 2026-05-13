@@ -183,6 +183,107 @@ When using AI agents such as OpenCode:
    - "Create the admin wiki list page following docs/06-frontend-conventions.md and docs/08-admin-panel.md."
    - "Add Prisma models from docs/04-database-model.md without modifying frontend files."
 
+## Skills and prompts
+
+This repository may include AI-oriented instructions under:
+
+```txt
+.ai/
+  skills/
+  prompts/
+```
+
+### Skills
+
+Skills are task-specific execution guides for AI agents.
+
+Before implementing a task, agents must check `.ai/skills/` and use the most relevant skill.
+
+If a task matches an existing skill, follow that skill step by step.
+
+If no skill matches, follow:
+
+1. `AGENTS.md`
+2. relevant `docs/`
+3. existing project patterns
+
+Agents must not ignore project documentation in favor of generic framework advice.
+
+### Prompts
+
+Prompts in `.ai/prompts/` are reusable instructions for common AI workflows.
+
+Use them for:
+
+- reading project context
+- planning a feature
+- implementing a scoped task
+- reviewing changes
+- fixing errors
+- creating API modules
+- creating Prisma changes
+- creating admin pages
+- implementing Supabase auth flows
+- updating documentation
+- reviewing before commit
+
+### Priority order
+
+When instructions conflict, follow this order:
+
+1. Explicit user request in the current task
+2. `AGENTS.md`
+3. Specific docs file related to the task
+4. Relevant `.ai/skills/` file
+5. Existing code patterns
+6. Generic external best practices
+
+If a generic skill conflicts with this project's architecture, the project architecture wins.
+
+### Scope discipline
+
+Agents must keep tasks small and scoped.
+
+Agents must not:
+
+- implement broad features in one pass
+- change architecture silently
+- add libraries casually
+- move files without need
+- duplicate shared types
+- duplicate shared validation schemas
+- put secrets in code
+- expose Supabase service role keys to the frontend
+
+### Required agent output
+
+After every implementation task, agents must summarize:
+
+1. Files changed
+2. What was implemented
+3. Decisions made
+4. TODOs or limitations
+5. Validation result
+6. Any documentation that should be updated
+
+### Validation preference
+
+Prefer validating with:
+
+```bash
+pnpm lint
+pnpm check-types
+pnpm build
+```
+
+For package-specific tasks, use filters when useful:
+
+```bash
+pnpm --filter web check-types
+pnpm --filter api check-types
+pnpm --filter @repo/ui check-types
+```
+
 ## Current priority
 
 The initial milestone is to build a solid platform foundation:
