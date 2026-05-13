@@ -1,159 +1,95 @@
-# Turborepo starter
+# Fallout Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+Spanish-first Fallout web platform.
 
-## Using this example
+This project starts as a classic wiki but is designed to evolve into a full Fallout platform with guides, mods, Fallout 76 builds, S.P.E.C.I.A.L. tools, user accounts, saved builds, favorites, and admin-managed content.
 
-Run the following command:
+## Stack
 
-```sh
-npx create-turbo@latest
+- Monorepo: pnpm workspaces + Turborepo
+- Frontend: Next.js + React + TypeScript
+- Backend: NestJS + TypeScript
+- UI: TailwindCSS + shadcn/ui
+- Database: PostgreSQL on Supabase
+- Auth: Supabase Auth
+- Storage: Supabase Storage
+- ORM: Prisma
+- API: REST first
+
+## Apps
+
+```txt
+apps/web    Next.js public website, auth pages and admin panel
+apps/api    NestJS REST API
 ```
 
-## What's inside?
+## Packages
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```txt
+packages/db                  Prisma schema and database client
+packages/ui                  shared UI components when needed
+packages/types               shared TypeScript types
+packages/validation          shared validation schemas
+packages/eslint-config       shared ESLint config
+packages/typescript-config   shared TypeScript config
 ```
 
-Without global `turbo`, use your package manager:
+## Documentation
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+Read these files before making architectural changes:
+
+```txt
+AGENTS.md
+docs/00-product-vision.md
+docs/01-architecture.md
+docs/11-ai-workflow.md
+docs/12-roadmap.md
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Development
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Install dependencies:
 
-```sh
-turbo build --filter=docs
+```bash
+pnpm install
 ```
 
-Without global `turbo`:
+Run all apps:
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm dev
 ```
 
-### Develop
+Run only frontend:
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+pnpm dev:web
 ```
 
-Without global `turbo`, use your package manager:
+Run only API:
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
+```bash
+pnpm dev:api
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Type check:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
+```bash
+pnpm check-types
 ```
 
-Without global `turbo`:
+Lint:
 
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+```bash
+pnpm lint
 ```
 
-### Remote Caching
+Build:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
+```bash
+pnpm build
 ```
 
-Without global `turbo`, use your package manager:
+## Product direction
 
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+The project is not intended to copy existing Fallout wikis. Content should be original, curated, sourced, and structured for search, SEO, relationships, guides, and future user features.
