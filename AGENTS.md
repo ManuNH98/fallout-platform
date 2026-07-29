@@ -61,6 +61,7 @@ docs/
   12-roadmap.md
   13-task-template.md
   14-environment-and-supabase.md
+  15-current-status.md
 ```
 
 ## Architectural rules
@@ -287,15 +288,16 @@ pnpm --filter @repo/ui check-types
 
 ## Current priority
 
-The initial milestone is to build a solid platform foundation:
+Phase 0 is complete and the local part of Phase 1 is prepared. Real Supabase integration is intentionally deferred while the first public experience is developed with mock data.
 
-1. Monorepo structure
-2. Shared documentation
-3. Supabase configuration
-4. Prisma setup
-5. NestJS API foundation
-6. Next.js public shell
-7. Admin shell
-8. Wiki content model
-9. First CRUD for games/categories/wiki pages
-10. Authentication flow with Supabase Auth
+Current implementation order:
+
+1. Public design and shell with typed mock data.
+2. Mock wiki and games browsing routes.
+3. Real Supabase infrastructure and connection verification.
+4. Authentication flow and application roles.
+5. Core Prisma content models and REST API.
+6. Replace public mocks with API data.
+7. Protected admin panel and content CRUD.
+
+The complete phase definitions are maintained in `docs/12-roadmap.md`.

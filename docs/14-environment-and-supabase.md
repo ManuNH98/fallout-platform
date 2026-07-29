@@ -75,11 +75,11 @@ Pasos que debe realizar el propietario en Supabase Dashboard:
 
 1. Crear el proyecto y guardar de forma segura la contrasena de PostgreSQL.
 2. Copiar Project URL y anon key desde Project Settings > API.
-3. Copiar el JWT secret para uso exclusivo de la API durante Phase 2.
+3. Copiar el JWT secret para uso exclusivo de la API durante Phase 5.
 4. Copiar las connection strings de transaction pooler y session pooler desde Database Settings.
 5. Mantener habilitado Email en Authentication > Providers para el flujo inicial.
 6. Configurar Site URL como `http://localhost:3000` durante desarrollo.
-7. Anadir las URLs de redireccion necesarias para login y recuperacion cuando se implementen en Phase 2.
+7. Anadir las URLs de redireccion necesarias para login y recuperacion cuando se implementen en Phase 5.
 8. Crear un bucket llamado `media` en Storage.
 9. Permitir lectura publica del bucket solo si los assets publicados deben servirse directamente.
 10. No permitir escrituras anonimas; las subidas se autorizaran mediante el flujo de la API.
@@ -89,7 +89,7 @@ Pasos que debe realizar el propietario en Supabase Dashboard:
 - No commitear archivos `.env` ni secretos.
 - No exponer `SUPABASE_JWT_SECRET` ni service role keys al frontend.
 - No confiar en roles enviados por el frontend.
-- NestJS validara los JWT y aplicara autorizacion en Phase 2.
+- NestJS validara los JWT y aplicara autorizacion en Phase 5.
 - Los cambios del schema de aplicacion se realizaran mediante Prisma.
 - Las reglas de Storage se mantendran simples y se documentaran cuando se implemente el modulo de media.
 

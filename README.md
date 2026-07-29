@@ -135,9 +135,11 @@ El monorepo, las dos aplicaciones, la documentacion y los seis packages previsto
 
 La configuracion local de **Phase 1: Infrastructure and configuration** esta preparada: Prisma 7, validacion de entorno, CORS, frontend env y `GET /health`. La conexion real con Supabase se ha aplazado mientras el desarrollo inicial utiliza datos mock.
 
+La fase activa es **Phase 2: Public design with mocks**.
+
 Antes de implementar autenticacion o persistencia real sera necesario crear el proyecto Supabase, configurar Auth y Storage, rellenar los archivos `.env` y ejecutar la comprobacion de conexion documentada.
 
-El estado y los criterios de cierre se mantienen en [`docs/12-roadmap.md`](./docs/12-roadmap.md).
+El contexto para retomar el trabajo se mantiene en [`docs/15-current-status.md`](./docs/15-current-status.md). El roadmap y los criterios de cierre se mantienen en [`docs/12-roadmap.md`](./docs/12-roadmap.md).
 
 ## Desarrollo
 
