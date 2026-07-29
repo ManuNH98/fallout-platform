@@ -32,6 +32,7 @@ fallout-platform/
     12-roadmap.md
     13-task-template.md
     14-environment-and-supabase.md
+    15-current-status.md
 
   AGENTS.md
   README.md

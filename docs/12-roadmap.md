@@ -81,7 +81,69 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 
 Estos pendientes deben completarse antes de implementar autenticacion real, migraciones o persistencia. No bloquean un prototipo visual con datos mock, pero las fases dependientes no se consideraran terminadas hasta integrar la infraestructura real.
 
-## Phase 2: Auth foundation
+## Phase 2: Public design with mocks
+
+**Objetivo:** definir la primera experiencia visual publica sin depender de infraestructura externa.
+
+**Tareas:**
+
+- Crear el route group publico y su layout.
+- Definir la direccion visual Fallout/Pip-Boy/wasteland sin perjudicar la legibilidad.
+- Crear homepage, navegacion y footer.
+- Preparar datos mock tipados para juegos, categorias y contenido wiki destacado.
+- Crear componentes base para cards, secciones y estados de contenido.
+- Anadir metadata SEO inicial.
+- Garantizar comportamiento responsive y accesibilidad basica.
+
+**Definicion de completado:**
+
+- La home y el shell publico funcionan en desktop y movil.
+- La interfaz utiliza copy en espanol y datos mock claramente aislados.
+- Los componentes base pueden reutilizarse en los listados publicos.
+- La pagina tiene metadata, jerarquia semantica y navegacion accesible.
+
+## Phase 3: Mock content browsing
+
+**Objetivo:** construir la navegacion publica principal sobre datos mock.
+
+**Tareas:**
+
+- Crear `/wiki` y `/wiki/[slug]`.
+- Crear `/juegos` y `/juegos/[slug]`.
+- Crear filtros y busqueda simulados donde aporten valor al prototipo.
+- Crear estados de carga, vacio, error y no encontrado.
+- Anadir breadcrumbs, slugs limpios e internal links.
+- Mantener los mocks desacoplados de los componentes de presentacion.
+
+**Definicion de completado:**
+
+- Los usuarios pueden navegar por wiki y juegos con contenido mock.
+- Las rutas de detalle funcionan con slugs.
+- Los listados y detalles son responsive, accesibles y SEO-friendly.
+- Sustituir los mocks por la API no requiere redisenar las pantallas.
+
+## Phase 4: Supabase real infrastructure
+
+**Objetivo:** activar la infraestructura externa preparada en Phase 1.
+
+**Tareas:**
+
+- Crear el proyecto remoto de Supabase.
+- Configurar los archivos `.env` locales y entornos de despliegue.
+- Configurar Email en Supabase Auth y las URLs permitidas.
+- Crear el bucket `media` en Supabase Storage.
+- Configurar las connection strings de runtime y Prisma CLI.
+- Ejecutar `pnpm --filter @repo/db db:check`.
+- Verificar que web y API arrancan con la configuracion real.
+
+**Definicion de completado:**
+
+- Prisma conecta con Supabase PostgreSQL.
+- Web y API disponen de las variables necesarias sin exponer secretos.
+- Supabase Auth esta preparado para los flujos de la siguiente fase.
+- El bucket `media` existe y no permite escrituras anonimas.
+
+## Phase 5: Auth foundation
 
 **Objetivo:** autenticar usuarios y autorizar acciones desde la API.
 
@@ -90,7 +152,7 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - Crear los clientes de Supabase para Next.js.
 - Crear login, registro y logout.
 - Validar Supabase JWT en NestJS.
-- Crear el modelo `UserProfile`.
+- Crear el modelo `UserProfile` y su migracion.
 - Crear o sincronizar el perfil local en el primer flujo autenticado.
 - Implementar los roles `USER`, `ADMIN`, `EDITOR` y `MODERATOR`.
 - Implementar `SupabaseAuthGuard`, `RolesGuard`, `@CurrentUser()` y `@Roles()`.
@@ -103,9 +165,9 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - NestJS identifica al usuario y carga su perfil local.
 - Solo ADMIN puede acceder al endpoint administrativo de prueba.
 
-## Phase 3: Core content models
+## Phase 6: Core content models and API
 
-**Objetivo:** implementar el backend inicial de contenido.
+**Objetivo:** implementar la persistencia y API iniciales de contenido.
 
 **Tareas:**
 
@@ -123,28 +185,27 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - La API permite a ADMIN crear y editar paginas wiki.
 - El contenido no publicado no aparece en endpoints publicos.
 
-## Phase 4: Public website foundation
+## Phase 7: Replace mocks with API
 
-**Objetivo:** construir el shell publico de la plataforma.
+**Objetivo:** conectar las pantallas publicas existentes con datos reales sin cambiar su diseno.
 
 **Tareas:**
 
-- Crear el route group publico y su layout.
-- Crear homepage, navegacion y footer.
-- Crear listado y detalle de wiki.
-- Crear listado y detalle de juegos.
-- Consumir exclusivamente contenido publicado.
-- Anadir metadata SEO basica, slugs limpios e internal links.
-- Incluir estados de carga, vacio, error y no encontrado donde proceda.
+- Crear el cliente API compartido de `apps/web`.
+- Sustituir mocks de juegos, categorias y wiki por endpoints REST.
+- Implementar fetching desde Server Components cuando corresponda.
+- Conectar loading, empty, error y not-found states a respuestas reales.
+- Verificar que solo se muestra contenido publicado.
+- Mantener los mocks disponibles exclusivamente para tests o desarrollo aislado si siguen siendo utiles.
 
 **Definicion de completado:**
 
-- Las paginas publicas son accesibles en desktop y movil.
-- Las paginas wiki publicadas pueden consultarse.
-- Los borradores y contenidos archivados no son publicos.
-- Las paginas principales tienen metadata SEO basica.
+- Home, wiki y juegos consumen la API real.
+- Los mocks ya no son la fuente de datos de produccion.
+- Errores de red y recursos inexistentes tienen estados claros.
+- El contenido no publicado permanece oculto en rutas publicas.
 
-## Phase 5: Admin panel foundation
+## Phase 8: Admin panel foundation
 
 **Objetivo:** construir la interfaz inicial de administracion.
 
@@ -165,18 +226,18 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - ADMIN puede asignar juegos y categorias.
 - Ninguna operacion administrativa depende solo de ocultar elementos en la UI.
 
-## Phase 6: Media
+## Phase 9: Media
 
 **Objetivo:** soportar imagenes y metadatos de archivos.
 
 **Tareas:**
 
-- Configurar el bucket de Supabase Storage.
 - Crear el modulo API de media.
 - Crear la interfaz de subida.
 - Guardar metadatos en `MediaAsset`.
 - Permitir seleccionar una portada para paginas wiki.
 - Validar tipo, tamano y permisos de los archivos.
+- Revisar las politicas del bucket `media` con el flujo real.
 
 **Definicion de completado:**
 
@@ -184,9 +245,9 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - La API registra sus metadatos.
 - La imagen puede utilizarse como portada wiki.
 
-## Phase 7: Search and browsing
+## Phase 10: Search and browsing
 
-**Objetivo:** hacer que el contenido sea facil de encontrar y explorar.
+**Objetivo:** hacer que el contenido real sea facil de encontrar y explorar.
 
 **Tareas:**
 
@@ -202,7 +263,7 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - La busqueda devuelve resultados utiles.
 - Los listados mantienen tiempos de respuesta y UX aceptables.
 
-## Phase 8: Guides and mods
+## Phase 11: Guides and mods
 
 **Objetivo:** ampliar la plataforma mas alla de la wiki.
 
@@ -220,7 +281,7 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - ADMIN puede publicar recomendaciones de mods.
 - El contenido publicado puede consultarse desde rutas publicas.
 
-## Phase 9: Builds foundation
+## Phase 12: Builds foundation
 
 **Objetivo:** iniciar la funcionalidad de builds de Fallout 76.
 
@@ -237,7 +298,7 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - Un usuario autenticado puede crear, guardar y recuperar un build privado.
 - La API valida propiedad y permisos.
 
-## Phase 10: Full Fallout 76 planner
+## Phase 13: Full Fallout 76 planner
 
 **Objetivo:** convertir builds en un planner avanzado.
 
