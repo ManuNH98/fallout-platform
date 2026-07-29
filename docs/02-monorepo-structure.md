@@ -32,7 +32,6 @@ fallout-platform/
     12-roadmap.md
     13-task-template.md
 
-  docker/
   AGENTS.md
   README.md
   package.json

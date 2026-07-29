@@ -8,19 +8,15 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La fase activa es **Phase 0: Repository foundation**.
+La fase activa es **Phase 1: Infrastructure and configuration**.
 
-La base del monorepo ya incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, documentacion, configuraciones compartidas y `packages/ui`. Sin embargo, Phase 0 todavia no esta completa porque:
+**Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
-- `packages/db` no es aun un workspace package funcional.
-- `packages/types` no es aun un workspace package funcional.
-- `packages/validation` no es aun un workspace package funcional.
-- Los scripts y versiones de tooling necesitan una ultima alineacion.
-- Web y API intentan escuchar actualmente en el puerto `3000`, por lo que `pnpm dev` no puede mantener ambas aplicaciones activas a la vez.
-- `pnpm lint` termina, pero actualmente informa una advertencia en `apps/api/src/main.ts`.
-- Falta verificar de nuevo `pnpm install`, `pnpm dev`, `pnpm check-types`, `pnpm lint` y `pnpm build` despues de cerrar la configuracion.
+La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las validaciones de cierre `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm lint`, `pnpm check-types`, `pnpm build` y `pnpm test` funcionan correctamente.
 
 ## Phase 0: Repository foundation
+
+**Estado:** completada.
 
 **Objetivo:** crear una base de monorepo estable y reproducible.
 

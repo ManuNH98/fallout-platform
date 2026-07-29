@@ -129,9 +129,11 @@ docs/                     documentacion de producto y arquitectura
 
 ## Estado Actual
 
-El repositorio esta en **Phase 0: Repository foundation**.
+**Phase 0: Repository foundation esta completada.**
 
-Ya existen el monorepo, las dos aplicaciones, la documentacion y los packages previstos. La fase todavia no esta completa: `packages/db`, `packages/types` y `packages/validation` existen como directorios, pero aun no son workspace packages funcionales reconocidos por pnpm. Ademas, web y API intentan usar actualmente el puerto `3000`, por lo que `pnpm dev` no puede mantener ambas aplicaciones activas a la vez.
+El monorepo, las dos aplicaciones, la documentacion y los seis packages previstos estan configurados como workspaces funcionales. La web utiliza el puerto `3000` y la API el `3001` durante desarrollo.
+
+La siguiente fase es **Phase 1: Infrastructure and configuration**.
 
 El estado y los criterios de cierre se mantienen en [`docs/12-roadmap.md`](./docs/12-roadmap.md).
 
