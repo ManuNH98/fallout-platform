@@ -133,7 +133,9 @@ docs/                     documentacion de producto y arquitectura
 
 El monorepo, las dos aplicaciones, la documentacion y los seis packages previstos estan configurados como workspaces funcionales. La web utiliza el puerto `3000` y la API el `3001` durante desarrollo.
 
-La siguiente fase es **Phase 1: Infrastructure and configuration**.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta preparada: Prisma 7, validacion de entorno, CORS, frontend env y `GET /health`. La conexion real con Supabase se ha aplazado mientras el desarrollo inicial utiliza datos mock.
+
+Antes de implementar autenticacion o persistencia real sera necesario crear el proyecto Supabase, configurar Auth y Storage, rellenar los archivos `.env` y ejecutar la comprobacion de conexion documentada.
 
 El estado y los criterios de cierre se mantienen en [`docs/12-roadmap.md`](./docs/12-roadmap.md).
 
@@ -141,7 +143,7 @@ El estado y los criterios de cierre se mantienen en [`docs/12-roadmap.md`](./doc
 
 Requisitos:
 
-- Node.js 20 o superior
+- Node.js 20.19 o superior
 - pnpm 9
 
 Instalar dependencias:
@@ -181,6 +183,7 @@ Antes de implementar o cambiar arquitectura, leer:
 - [`docs/02-monorepo-structure.md`](./docs/02-monorepo-structure.md)
 - [`docs/03-tech-stack.md`](./docs/03-tech-stack.md)
 - [`docs/11-ai-workflow.md`](./docs/11-ai-workflow.md)
+- [`docs/14-environment-and-supabase.md`](./docs/14-environment-and-supabase.md)
 
 Los agentes deben consultar tambien `.ai/skills/` y usar el skill relevante para cada tarea. Las reglas del proyecto prevalecen sobre recomendaciones genericas que entren en conflicto con la arquitectura documentada.
 

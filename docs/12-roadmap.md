@@ -8,7 +8,7 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La fase activa es **Phase 1: Infrastructure and configuration**.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. La conexion real con Supabase queda aplazada por decision del propietario mientras el desarrollo inicial de interfaz utiliza datos mock.
 
 **Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
@@ -47,6 +47,8 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 
 ## Phase 1: Infrastructure and configuration
 
+**Estado:** configuracion local completada; integracion externa aplazada.
+
 **Objetivo:** conectar la infraestructura principal.
 
 **Tareas:**
@@ -69,6 +71,15 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 - `GET /health` responde con estado correcto.
 - Prisma conecta con PostgreSQL.
 - Las variables necesarias estan documentadas sin incluir secretos.
+
+**Pendientes externos aplazados:**
+
+- Crear el proyecto remoto de Supabase.
+- Configurar Auth y el bucket `media` en Supabase Dashboard.
+- Rellenar los archivos `.env` locales con credenciales reales.
+- Ejecutar `pnpm --filter @repo/db db:check` contra Supabase PostgreSQL.
+
+Estos pendientes deben completarse antes de implementar autenticacion real, migraciones o persistencia. No bloquean un prototipo visual con datos mock, pero las fases dependientes no se consideraran terminadas hasta integrar la infraestructura real.
 
 ## Phase 2: Auth foundation
 

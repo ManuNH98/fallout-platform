@@ -60,6 +60,7 @@ docs/
   11-ai-workflow.md
   12-roadmap.md
   13-task-template.md
+  14-environment-and-supabase.md
 ```
 
 ## Architectural rules
