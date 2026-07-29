@@ -1,241 +1,248 @@
 # 12. Roadmap
 
+## Objetivo
+
+Construir la plataforma de forma incremental, manteniendo tareas pequenas, verificables y alineadas con `AGENTS.md` y el resto de la documentacion.
+
+Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase se considera terminada solo cuando cumple su definicion de completado y las validaciones indicadas.
+
+## Estado actual
+
+La fase activa es **Phase 0: Repository foundation**.
+
+La base del monorepo ya incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, documentacion, configuraciones compartidas y `packages/ui`. Sin embargo, Phase 0 todavia no esta completa porque:
+
+- `packages/db` no es aun un workspace package funcional.
+- `packages/types` no es aun un workspace package funcional.
+- `packages/validation` no es aun un workspace package funcional.
+- Los scripts y versiones de tooling necesitan una ultima alineacion.
+- Web y API intentan escuchar actualmente en el puerto `3000`, por lo que `pnpm dev` no puede mantener ambas aplicaciones activas a la vez.
+- `pnpm lint` termina, pero actualmente informa una advertencia en `apps/api/src/main.ts`.
+- Falta verificar de nuevo `pnpm install`, `pnpm dev`, `pnpm check-types`, `pnpm lint` y `pnpm build` despues de cerrar la configuracion.
+
 ## Phase 0: Repository foundation
 
-Goal: create a stable monorepo foundation.
+**Objetivo:** crear una base de monorepo estable y reproducible.
 
-Tasks:
+**Tareas:**
 
-- Set up pnpm workspaces
-- Set up Turborepo
-- Keep `apps/web`
-- Add `apps/api`
-- Add packages:
-  - `packages/db`
-  - `packages/types`
-  - `packages/validation`
-  - `packages/ui`
-- Add docs
-- Add AGENTS.md
-- Align scripts:
-  - dev
-  - build
-  - lint
-  - check-types
-  - clean
+- Mantener `apps/web` como aplicacion Next.js.
+- Mantener `apps/api` como aplicacion NestJS.
+- Configurar pnpm workspaces y Turborepo.
+- Completar `packages/db` como workspace package.
+- Completar `packages/types` como workspace package.
+- Completar `packages/validation` como workspace package.
+- Mantener `packages/ui`, `packages/eslint-config` y `packages/typescript-config` como packages compartidos.
+- Alinear los scripts `dev`, `build`, `lint`, `check-types`, `test` y `clean` donde corresponda.
+- Asignar puertos de desarrollo distintos y documentados para web y API.
+- Declarar las dependencias entre workspaces mediante `workspace:*`.
+- Alinear las versiones principales de TypeScript y tooling cuando sea necesario.
+- Mantener `AGENTS.md`, `docs/`, `.ai/prompts/` y `.ai/skills/` como contexto de trabajo.
 
-Definition of done:
+**Definicion de completado:**
 
-- `pnpm install` works
-- `pnpm dev` starts apps
-- `pnpm check-types` works or has known documented TODOs
-- docs exist
+- Los seis directorios de `packages/` son workspaces reconocidos por pnpm.
+- `pnpm install --frozen-lockfile` funciona.
+- `pnpm dev` inicia web y API sin errores de configuracion.
+- `pnpm lint` termina sin errores ni advertencias conocidas.
+- `pnpm check-types` funciona en todos los workspaces aplicables.
+- `pnpm build` funciona en las aplicaciones y packages aplicables.
+- La estructura real del repositorio coincide con la documentacion.
 
 ## Phase 1: Infrastructure and configuration
 
-Goal: connect the main stack.
+**Objetivo:** conectar la infraestructura principal.
 
-Tasks:
+**Tareas:**
 
-- Create Supabase project
-- Configure env files
-- Configure Supabase Auth
-- Configure Supabase Storage bucket
-- Set up Prisma in `packages/db`
-- Connect Prisma to Supabase PostgreSQL
-- Create initial Prisma schema
-- Add API config module
-- Add health endpoint
-- Add basic CORS configuration
-- Add frontend env config
+- Crear y configurar el proyecto de Supabase.
+- Documentar variables de entorno por aplicacion o package.
+- Configurar Supabase Auth.
+- Crear el bucket inicial de Supabase Storage.
+- Configurar Prisma en `packages/db`.
+- Conectar Prisma con Supabase PostgreSQL.
+- Crear el schema Prisma inicial.
+- Crear el modulo de configuracion de la API.
+- Crear `GET /health`.
+- Configurar CORS de forma basica.
+- Configurar las variables de entorno del frontend.
 
-Definition of done:
+**Definicion de completado:**
 
-- API can start
-- web can start
-- API health endpoint works
-- Prisma can connect to database
-- environment variables documented
+- Web y API arrancan con configuracion validada.
+- `GET /health` responde con estado correcto.
+- Prisma conecta con PostgreSQL.
+- Las variables necesarias estan documentadas sin incluir secretos.
 
 ## Phase 2: Auth foundation
 
-Goal: allow users to log in and allow API to validate them.
+**Objetivo:** autenticar usuarios y autorizar acciones desde la API.
 
-Tasks:
+**Tareas:**
 
-- Add Supabase client to Next.js
-- Create login page
-- Create registration page
-- Create logout action
-- Create Supabase JWT validation in NestJS
-- Create `UserProfile` model
-- Auto-create profile on first authenticated API call or through explicit endpoint
-- Add roles
-- Add admin-only guard
+- Crear los clientes de Supabase para Next.js.
+- Crear login, registro y logout.
+- Validar Supabase JWT en NestJS.
+- Crear el modelo `UserProfile`.
+- Crear o sincronizar el perfil local en el primer flujo autenticado.
+- Implementar los roles `USER`, `ADMIN`, `EDITOR` y `MODERATOR`.
+- Implementar `SupabaseAuthGuard`, `RolesGuard`, `@CurrentUser()` y `@Roles()`.
+- Proteger un endpoint inicial para ADMIN.
 
-Definition of done:
+**Definicion de completado:**
 
-- user can log in
-- frontend can call protected API endpoint
-- API knows current user
-- ADMIN can access protected admin endpoint
+- Un usuario puede registrarse, iniciar y cerrar sesion.
+- Next.js puede llamar a NestJS con el access token.
+- NestJS identifica al usuario y carga su perfil local.
+- Solo ADMIN puede acceder al endpoint administrativo de prueba.
 
 ## Phase 3: Core content models
 
-Goal: implement the first content backend.
+**Objetivo:** implementar el backend inicial de contenido.
 
-Tasks:
+**Tareas:**
 
-- Add Prisma models:
-  - Game
-  - Category
-  - WikiPage
-  - WikiPageGame
-  - WikiPageCategory
-  - WikiRelation
-  - Source
-  - WikiPageSource
-  - MediaAsset
-- Run migrations
-- Add seed script for initial games/categories
-- Add API modules:
-  - games
-  - categories
-  - wiki
+- Crear los modelos Prisma `Game`, `Category`, `WikiPage`, `WikiPageGame`, `WikiPageCategory`, `WikiRelation`, `Source`, `WikiPageSource` y `MediaAsset`.
+- Crear y aplicar migraciones.
+- Crear seeds iniciales en espanol para juegos y categorias.
+- Crear los modulos API `games`, `categories` y `wiki`.
+- Implementar paginacion, filtros y ordenacion iniciales.
+- Proteger las operaciones de escritura por rol.
 
-Definition of done:
+**Definicion de completado:**
 
-- database has games/categories
-- API can list games
-- API can list categories
-- API can create/edit wiki pages as admin
+- La base de datos contiene juegos y categorias iniciales.
+- La API lista juegos y categorias.
+- La API permite a ADMIN crear y editar paginas wiki.
+- El contenido no publicado no aparece en endpoints publicos.
 
 ## Phase 4: Public website foundation
 
-Goal: build the public platform shell.
+**Objetivo:** construir el shell publico de la plataforma.
 
-Tasks:
+**Tareas:**
 
-- Create public layout
-- Create homepage
-- Create navigation
-- Create footer
-- Create wiki list page
-- Create wiki detail page
-- Create games page
-- Add basic SEO metadata
-- Add basic empty states
+- Crear el route group publico y su layout.
+- Crear homepage, navegacion y footer.
+- Crear listado y detalle de wiki.
+- Crear listado y detalle de juegos.
+- Consumir exclusivamente contenido publicado.
+- Anadir metadata SEO basica, slugs limpios e internal links.
+- Incluir estados de carga, vacio, error y no encontrado donde proceda.
 
-Definition of done:
+**Definicion de completado:**
 
-- public pages are accessible
-- published wiki pages can be viewed
-- unpublished pages are hidden from public routes
+- Las paginas publicas son accesibles en desktop y movil.
+- Las paginas wiki publicadas pueden consultarse.
+- Los borradores y contenidos archivados no son publicos.
+- Las paginas principales tienen metadata SEO basica.
 
 ## Phase 5: Admin panel foundation
 
-Goal: build the admin interface.
+**Objetivo:** construir la interfaz inicial de administracion.
 
-Tasks:
+**Tareas:**
 
-- Create admin layout
-- Create admin dashboard
-- Create admin navigation
-- Create admin wiki list
-- Create admin wiki create page
-- Create admin wiki edit page
-- Create games admin page
-- Create categories admin page
-- Add protected route behavior
+- Crear el route group y layout admin.
+- Crear dashboard y navegacion responsive.
+- Crear listado, alta y edicion de wiki.
+- Crear administracion de juegos y categorias.
+- Permitir publicar, archivar y relacionar contenido.
+- Proteger rutas en Next.js y operaciones en NestJS.
+- Incluir estados de carga, vacio y error.
 
-Definition of done:
+**Definicion de completado:**
 
-- admin can manage initial wiki content
-- admin can publish/unpublish pages
-- admin can assign games/categories to wiki pages
+- ADMIN puede gestionar el contenido wiki inicial.
+- ADMIN puede publicar y archivar paginas.
+- ADMIN puede asignar juegos y categorias.
+- Ninguna operacion administrativa depende solo de ocultar elementos en la UI.
 
 ## Phase 6: Media
 
-Goal: support images and file metadata.
+**Objetivo:** soportar imagenes y metadatos de archivos.
 
-Tasks:
+**Tareas:**
 
-- Create Supabase Storage bucket
-- Add upload UI
-- Add media API module
-- Store media metadata in database
-- Allow selecting cover image for wiki pages
+- Configurar el bucket de Supabase Storage.
+- Crear el modulo API de media.
+- Crear la interfaz de subida.
+- Guardar metadatos en `MediaAsset`.
+- Permitir seleccionar una portada para paginas wiki.
+- Validar tipo, tamano y permisos de los archivos.
 
-Definition of done:
+**Definicion de completado:**
 
-- admin can upload an image
-- uploaded image can be used as wiki cover image
+- ADMIN puede subir una imagen valida.
+- La API registra sus metadatos.
+- La imagen puede utilizarse como portada wiki.
 
 ## Phase 7: Search and browsing
 
-Goal: make the wiki usable.
+**Objetivo:** hacer que el contenido sea facil de encontrar y explorar.
 
-Tasks:
+**Tareas:**
 
-- Add search field
-- Add category filters
-- Add game filters
-- Add type filters
-- Add pagination
-- Improve internal linking
+- Crear busqueda textual inicial.
+- Crear filtros por categoria, juego y tipo.
+- Implementar paginacion y ordenacion.
+- Mejorar internal linking y navegacion relacionada.
+- Mantener URLs indexables y estados de filtros claros.
 
-Definition of done:
+**Definicion de completado:**
 
-- users can browse content by game/category/type
-- search returns useful results
+- Los usuarios pueden explorar contenido por juego, categoria y tipo.
+- La busqueda devuelve resultados utiles.
+- Los listados mantienen tiempos de respuesta y UX aceptables.
 
 ## Phase 8: Guides and mods
 
-Goal: expand beyond wiki.
+**Objetivo:** ampliar la plataforma mas alla de la wiki.
 
-Tasks:
+**Tareas:**
 
-- Add Guide model
-- Add Mod model
-- Add API modules
-- Add public pages
-- Add admin pages
+- Crear los modelos `Guide` y `Mod`.
+- Crear migraciones y modulos API.
+- Crear paginas publicas.
+- Crear paginas administrativas.
+- Aplicar el mismo flujo de estados, permisos y SEO del contenido wiki.
 
-Definition of done:
+**Definicion de completado:**
 
-- admin can publish guides
-- admin can publish mod recommendations
+- ADMIN puede publicar guias originales.
+- ADMIN puede publicar recomendaciones de mods.
+- El contenido publicado puede consultarse desde rutas publicas.
 
 ## Phase 9: Builds foundation
 
-Goal: start Fallout 76 build functionality.
+**Objetivo:** iniciar la funcionalidad de builds de Fallout 76.
 
-Tasks:
+**Tareas:**
 
-- Add Build model
-- Add basic authenticated build creation
-- Add private builds
-- Add S.P.E.C.I.A.L. JSON editor
-- Add own-builds page
+- Crear el modelo inicial `Build`.
+- Permitir crear y editar borradores autenticados.
+- Soportar builds privadas.
+- Crear el editor inicial de valores S.P.E.C.I.A.L.
+- Crear la pagina de builds propias.
 
-Definition of done:
+**Definicion de completado:**
 
-- logged-in user can create and save a private build draft
+- Un usuario autenticado puede crear, guardar y recuperar un build privado.
+- La API valida propiedad y permisos.
 
 ## Phase 10: Full Fallout 76 planner
 
-Goal: advanced build planner.
+**Objetivo:** convertir builds en un planner avanzado.
 
-Tasks:
+**Tareas:**
 
-- Add perk cards
-- Add mutations
-- Add weapons/armor data
-- Add validation rules
-- Add public build pages
-- Add sharing
-- Add favorites
+- Modelar e importar perk cards.
+- Anadir mutaciones, armas y armaduras.
+- Implementar reglas y validaciones de Fallout 76.
+- Crear builds publicos y no listados.
+- Permitir compartir, explorar y guardar favoritos.
 
-Definition of done:
+**Definicion de completado:**
 
-- users can create, save, publish and browse Fallout 76 builds
+- Los usuarios pueden crear, validar, guardar, publicar y explorar builds de Fallout 76.
+- Los builds compartidos respetan visibilidad, propiedad y permisos.
