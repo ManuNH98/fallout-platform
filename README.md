@@ -1,159 +1,192 @@
-# Turborepo starter
+# Fallout Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+Plataforma web Spanish-first dedicada al universo Fallout.
 
-## Using this example
+El primer modulo principal es una wiki clasica, pero el producto esta disenado para crecer hacia guias, recomendaciones de mods, builds de Fallout 76, herramientas S.P.E.C.I.A.L., cuentas de usuario, favoritos, contenido guardado y administracion editorial.
 
-Run the following command:
+## Arquitectura
 
-```sh
-npx create-turbo@latest
+```txt
+Usuario
+  -> Next.js web app
+  -> NestJS REST API con Supabase access token
+  -> Prisma
+  -> Supabase PostgreSQL
+
+Supabase tambien proporciona Auth y Storage.
 ```
 
-## What's inside?
+Supabase se utiliza como infraestructura. NestJS sigue siendo el backend principal de negocio y autorizacion:
 
-This Turborepo includes the following packages/apps:
+- Supabase Auth identifica al usuario y gestiona sesiones.
+- Supabase PostgreSQL almacena los datos de la aplicacion.
+- Supabase Storage almacena imagenes y archivos.
+- NestJS valida tokens, aplica permisos y contiene las reglas de negocio.
+- Next.js renderiza la web publica, las pantallas de autenticacion y el panel admin.
 
-### Apps and Packages
+## Stack Tecnico
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- Monorepo: pnpm workspaces + Turborepo
+- Frontend: Next.js App Router + React + TypeScript
+- Backend: NestJS + TypeScript
+- API: REST first
+- UI: TailwindCSS + shadcn/ui
+- Formularios: react-hook-form + Zod
+- Base de datos: PostgreSQL alojado en Supabase
+- ORM: Prisma
+- Auth: Supabase Auth
+- Storage: Supabase Storage
+- Testing inicial: type checks, linting y unit tests de logica de negocio
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Aplicaciones
 
-### Utilities
+### `apps/web`
 
-This Turborepo has some additional tools already setup for you:
+Aplicacion Next.js responsable de:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+- Web publica y SEO.
+- Wiki, juegos, guias, mods y builds.
+- Login, registro y gestion de sesion.
+- Panel de administracion.
+- Llamadas a la API NestJS.
+- Interactividad cliente cuando sea necesaria.
 
-### Build
+No debe contener reglas complejas de negocio, escrituras directas a la base de datos para datos core ni decisiones finales de autorizacion.
 
-To build all apps and packages, run the following command:
+### `apps/api`
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Aplicacion NestJS responsable de:
 
-```sh
-cd my-turborepo
-turbo build
+- API REST y modulos por dominio.
+- Validacion de entrada.
+- Logica de negocio.
+- Autorizacion y roles.
+- Validacion de Supabase JWT.
+- CRUD de wiki, juegos y categorias.
+- Operaciones administrativas.
+- Integracion con Prisma.
+- Metadatos de media y futura logica de builds.
+
+## Packages
+
+### `packages/db`
+
+Schema, migraciones y cliente Prisma compartido.
+
+### `packages/types`
+
+Contratos TypeScript estables compartidos entre frontend y backend. No debe contener logica de implementacion.
+
+### `packages/validation`
+
+Schemas Zod compartidos para evitar duplicar reglas entre formularios y API.
+
+### `packages/ui`
+
+Componentes UI de proyecto realmente reutilizables. Los primitives de shadcn/ui deben permanecer inicialmente en `apps/web`.
+
+### `packages/eslint-config`
+
+Configuracion ESLint compartida.
+
+### `packages/typescript-config`
+
+Configuracion TypeScript compartida.
+
+## Reglas Del Proyecto
+
+- Todo texto visible, rutas publicas, validaciones y seed content debe estar en espanol por defecto.
+- Frontend y backend deben permanecer separados en `apps/web` y `apps/api`.
+- El codigo compartido debe vivir en `packages/`.
+- No deben duplicarse tipos ni schemas de validacion compartibles.
+- Todo cambio de base de datos debe realizarse mediante Prisma.
+- Las paginas publicas deben ser SEO-friendly.
+- El panel admin y los endpoints protegidos deben validar permisos en NestJS.
+- Supabase Auth identifica usuarios; NestJS autoriza acciones.
+- Los controllers NestJS deben ser delgados y la logica debe residir en services.
+- El contenido wiki debe ser original, estructurado y apoyado por fuentes cuando corresponda.
+- Los cambios deben ser pequenos, acotados y verificables.
+
+La fuente normativa completa es [`AGENTS.md`](./AGENTS.md).
+
+## Estructura
+
+```txt
+apps/
+  web/                    Next.js
+  api/                    NestJS
+packages/
+  db/                     Prisma y acceso a datos
+  types/                  tipos compartidos
+  validation/             schemas compartidos
+  ui/                     UI compartida cuando proceda
+  eslint-config/          ESLint compartido
+  typescript-config/      TypeScript compartido
+docs/                     documentacion de producto y arquitectura
+.ai/prompts/              prompts reutilizables
+.ai/skills/               guias especializadas para agentes
 ```
 
-Without global `turbo`, use your package manager:
+## Estado Actual
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+**Phase 0: Repository foundation esta completada.**
+
+El monorepo, las dos aplicaciones, la documentacion y los seis packages previstos estan configurados como workspaces funcionales. La web utiliza el puerto `3000` y la API el `3001` durante desarrollo.
+
+La configuracion local de **Phase 1: Infrastructure and configuration** esta preparada: Prisma 7, validacion de entorno, CORS, frontend env y `GET /health`. La conexion real con Supabase se ha aplazado mientras el desarrollo inicial utiliza datos mock.
+
+Antes de implementar autenticacion o persistencia real sera necesario crear el proyecto Supabase, configurar Auth y Storage, rellenar los archivos `.env` y ejecutar la comprobacion de conexion documentada.
+
+El estado y los criterios de cierre se mantienen en [`docs/12-roadmap.md`](./docs/12-roadmap.md).
+
+## Desarrollo
+
+Requisitos:
+
+- Node.js 20.19 o superior
+- pnpm 9
+
+Instalar dependencias:
+
+```bash
+pnpm install
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Ejecutar todas las aplicaciones:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+```bash
+pnpm dev
 ```
 
-Without global `turbo`:
+Ejecutar una aplicacion:
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm dev:web
+pnpm dev:api
 ```
 
-### Develop
+Validar el repositorio:
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+pnpm lint
+pnpm check-types
+pnpm build
 ```
 
-Without global `turbo`, use your package manager:
+## Documentacion
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+Antes de implementar o cambiar arquitectura, leer:
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+- [`AGENTS.md`](./AGENTS.md)
+- [`docs/00-product-vision.md`](./docs/00-product-vision.md)
+- [`docs/01-architecture.md`](./docs/01-architecture.md)
+- [`docs/02-monorepo-structure.md`](./docs/02-monorepo-structure.md)
+- [`docs/03-tech-stack.md`](./docs/03-tech-stack.md)
+- [`docs/11-ai-workflow.md`](./docs/11-ai-workflow.md)
+- [`docs/14-environment-and-supabase.md`](./docs/14-environment-and-supabase.md)
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Los agentes deben consultar tambien `.ai/skills/` y usar el skill relevante para cada tarea. Las reglas del proyecto prevalecen sobre recomendaciones genericas que entren en conflicto con la arquitectura documentada.
 
-```sh
-turbo dev --filter=web
-```
+## Principios De Contenido
 
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+La plataforma no pretende copiar otras wikis de Fallout. El contenido debe ser original, curado, estructurado, buscable, conectado mediante relaciones y respaldado por referencias cuando resulte util.
