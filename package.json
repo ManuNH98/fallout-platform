@@ -5,8 +5,13 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "check-types": "turbo run check-types",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:api": "turbo run dev --filter=api"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
@@ -15,6 +20,6 @@
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19"
   }
 }

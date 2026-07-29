@@ -5,17 +5,59 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "build/**",
+        "generated/**"
+      ],
+      "env": [
+        "NODE_ENV",
+        "PORT",
+        "WEB_URL",
+        "DATABASE_URL",
+        "DIRECT_URL",
+        "SUPABASE_URL",
+        "SUPABASE_JWT_SECRET",
+        "SUPABASE_STORAGE_BUCKET",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "lint:fix": {
+      "cache": false
+    },
     "check-types": {
       "dependsOn": ["^check-types"]
     },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": ["NODE_ENV", "DATABASE_URL", "DIRECT_URL"]
+    },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": [
+        "NODE_ENV",
+        "PORT",
+        "WEB_URL",
+        "DATABASE_URL",
+        "DIRECT_URL",
+        "SUPABASE_URL",
+        "SUPABASE_JWT_SECRET",
+        "SUPABASE_STORAGE_BUCKET",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      ]
+    },
+    "clean": {
+      "cache": false
     }
   }
 }
