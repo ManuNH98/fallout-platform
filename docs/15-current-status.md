@@ -12,14 +12,15 @@ Actualizado el 21 de octubre de 2026.
 
 - **Phase 0: Repository foundation** esta completada.
 - La parte local de **Phase 1: Infrastructure and configuration** esta preparada.
-- La integracion externa con Supabase esta aplazada de forma intencionada.
+- La integracion externa con Supabase se retoma en Phase 4; aun no esta verificada.
 - **Phase 2: Public design with mocks** esta completada.
-- La fase activa es **Phase 3: Mock content browsing**.
+- **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
+- La fase activa es **Phase 4: Supabase real infrastructure**, con inicio autorizado por el propietario y primera tarea documental en revision.
 
 ## Base completada
 
 - Monorepo con pnpm workspaces y Turborepo.
-- Frontend Next.js en `apps/web`, con puerto local `3000`.
+- Frontend Next.js en `apps/web`, App Router en `apps/web/app/` (sin `src/`), con puerto local `3000`.
 - API NestJS en `apps/api`, con puerto local `3001`.
 - Packages compartidos para base de datos, UI, tipos, validacion, ESLint y TypeScript.
 - Prisma 7 preparado en `packages/db`, con schema inicial, cliente y scripts de trabajo.
@@ -50,27 +51,36 @@ Actualizado el 21 de octubre de 2026.
 - La primera experiencia publica utilizara datos mock tipados.
 - Los mocks deben quedar aislados para poder sustituirlos por la API sin redisenar las pantallas.
 - Las paginas publicas deben ser responsive, accesibles y SEO-friendly.
-- No se implementaran todavia Supabase Auth, persistencia real ni migraciones de contenido.
+- Phase 4 prepara infraestructura, Email Auth, URLs y Storage; no implementa login, registro, sesiones, roles ni validacion JWT (Phase 5), modelos de contenido, migraciones ni seeds.
+- El frontend sigue usando mocks durante Phase 4, sin cambios de diseno ni llamadas nuevas a la API.
+- Se ejecuta una tarea por revision; el propietario crea/sube los commits y autoriza la siguiente. Cada entrega incluye titulo y descripcion de commit en ingles.
 - No se utilizara Supabase local ni Docker salvo que se planifique expresamente.
 - Next.js, NestJS, Prisma y Supabase mantienen las responsabilidades descritas en `docs/01-architecture.md`.
 
-## Trabajo aplazado
+## Pendientes de Phase 4
 
 Antes de implementar autenticacion o persistencia real se debe:
 
-- Crear el proyecto remoto de Supabase.
+- Actualizar los contratos de entorno y los ejemplos antes de introducir credenciales reales.
+- Crear o verificar el proyecto remoto de Supabase con el propietario.
 - Configurar Supabase Auth y el bucket `media` de Storage.
 - Crear los archivos `.env` locales a partir de los ejemplos, sin commitear secretos.
-- Verificar la conexion PostgreSQL con `pnpm --filter @repo/db db:check`.
+- Verificar Prisma CLI con `pnpm --filter @repo/db db:check` (`DIRECT_URL`) y preparar/ejecutar una comprobacion independiente de runtime (`DATABASE_URL`).
+- Comprobar arranque de web/API, `GET /health` y navegacion mock. Health por si solo no verifica PostgreSQL.
 - Completar las tareas externas de Phase 4 y continuar con Auth en Phase 5.
 
 La guia detallada se mantiene en `docs/14-environment-and-supabase.md`.
 
-## Siguiente tarea
+## Entrega integrada de Phase 3
 
-La integracion de **Phase 3: Mock content browsing** esta implementada y
-validada tecnicamente, pendiente de revision final del propietario. La fase
-permanece abierta y no se inicia Phase 4 automaticamente.
+La integracion se incorporo mediante la PR #6, merge `4cf28bd`, que contiene
+`bca7fc4`. El propietario autorizo iniciar Phase 4 el 21 de octubre de 2026.
+El documento de validacion de Phase 3 conserva el estado historico de su entrega;
+no representa una revision pendiente actual.
+
+La comprobacion se basa en el historial Git disponible. La consulta directa del
+remoto mediante `git ls-remote` fallo por resolucion DNS; no se afirma una
+verificacion adicional del estado actual de GitHub.
 
 Entregado:
 
@@ -83,7 +93,7 @@ Entregado:
   con margen de desplazamiento adaptado a la cabecera movil.
 - Mocks y contratos separados de la presentacion, sin integrar API ni Supabase.
 
-Validacion final: `pnpm --filter web lint`, `pnpm --filter web check-types`,
+Validacion final registrada de Phase 3: `pnpm --filter web lint`, `pnpm --filter web check-types`,
 `pnpm --filter web build` y `git diff --check` correctos. Recorrido de 25 URLs
 sobre el build de produccion sin enlaces internos rotos y metadata propia
 para los doce detalles. Revision visual a 320/375/768/1265 px y comprobacion de
@@ -96,9 +106,26 @@ las respuestas de streaming observadas usan HTTP 200; el 404 general devuelve
 HTTP 404. El alcance, las comprobaciones y los limites estan en
 `docs/16-phase-3-validation.md`.
 
-Tras la revision final y el commit del propietario se puede cerrar Phase 3.
-La siguiente fase del roadmap es la infraestructura real de Supabase, que
-requiere planificacion expresa antes de activar recursos externos.
+## Siguiente tarea
+
+La primera tarea de Phase 4 actualiza exclusivamente `AGENTS.md`, el roadmap,
+esta pagina y `docs/14-environment-and-supabase.md`. No modifica codigo,
+ejemplos `.env`, dependencias, archivos locales con credenciales ni recursos externos.
+
+Tras su revision y el commit del propietario, la siguiente tarea propuesta es
+actualizar el contrato publico de entorno: publishable key y ejecucion efectiva
+de la validacion web. Requiere autorizacion expresa para continuar.
+
+Discrepancias de codigo pendientes, descritas en la guia de entorno:
+
+- El ejemplo y el helper web todavia usan `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- `apps/web/lib/env.ts` no tiene consumidores; Next solo valida actualmente la URL de API desde su configuracion.
+- Los ejemplos de servidor todavia proponen transaction pooling y JWT secret.
+- La API no consume `@repo/db`; su health devuelve disponibilidad del proceso.
+- No existe aun el comando propuesto `db:check:runtime`.
+- Los tres archivos locales previstos no existian al iniciar esta tarea; no se han creado ni leido secretos.
+
+Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.
 
 ## Validacion conocida
 
@@ -122,5 +149,5 @@ La comprobacion `pnpm --filter @repo/db db:check` sigue pendiente porque requier
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 is complete, local Phase 1 is prepared, and Phase 2 public design with typed mocks is complete. Real Supabase integration is intentionally deferred. The active phase is Phase 3: Mock content browsing. Use Spanish-first UI copy and keep mocks isolated from presentation. Do not implement Supabase/Auth or real persistence yet.
+Phase 0 is complete, local Phase 1 is prepared, and Phases 2 and 3 are complete. Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is active: follow docs/14-environment-and-supabase.md, distinguish current code from planned environment updates, and verify remote infrastructure before claiming completion. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Do not implement auth flows, sessions, roles, JWT validation, content models, migrations, or seeds. Execute one owner-authorized task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
 ```

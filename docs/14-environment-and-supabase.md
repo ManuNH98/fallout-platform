@@ -1,111 +1,156 @@
 # 14. Environment and Supabase
 
-## Objetivo
+## Objetivo y alcance
 
-Documentar la configuracion local y externa necesaria para conectar Next.js, NestJS, Prisma y Supabase sin compartir secretos entre aplicaciones.
+Preparar y verificar Supabase remoto en Phase 4, manteniendo las responsabilidades de `docs/01-architecture.md`. El frontend conserva los mocks y el diseno publico. No crear `.env` en la raiz del monorepo: cada aplicacion/package mantiene su entorno.
 
-No se debe crear un archivo `.env` en la raiz del monorepo. Cada aplicacion o package mantiene solo las variables que consume.
+No introducir Docker, Supabase local ni dependencias sin justificar. Login, registro, sesiones, roles y validacion JWT corresponden a Phase 5. No anadir modelos, migraciones, seeds ni sustituir mocks en Phase 4.
 
-## Estado actual
+## Estado comprobado al iniciar Phase 4
 
-La configuracion de codigo, ejemplos de entorno, Prisma, CORS y health endpoint esta preparada. La creacion y conexion del proyecto Supabase real se ha aplazado para permitir que el primer desarrollo visual avance con datos mock.
+Revision del 21 de octubre de 2026. Esta entrega modifica solo documentacion; los recursos remotos y la conectividad real siguen pendientes de verificar.
 
-No se instalara Supabase local ni se introducira Docker mientras esa alternativa no se planifique expresamente. Antes de implementar autenticacion o persistencia real se retomaran los pasos de este documento.
+- Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. `apps/web/lib/env.ts` no tiene consumidores y su validacion Supabase no se ejecuta.
+- API: puerto `3001`, ConfigModule, validacion basica y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
+- `GET /health` devuelve `{"status":"ok"}`: acredita disponibilidad de API, no conectividad con PostgreSQL, Auth o Storage.
+- DB: Prisma/client/adapter-pg `7.9.1`, schema sin modelos y factoria `createPrismaClient(connectionString)` preparada.
+- Prisma CLI carga dotenv en `packages/db` y usa `DIRECT_URL` mediante `datasource.url` en `prisma.config.ts`. Sin ella se permite validar/generar localmente.
+- `db:check` ejecuta `prisma/check-connection.sql`, que contiene solo `SELECT 1;`. Verifica la URL de CLI. Todavia no existe `db:check:runtime`.
+- Los archivos `apps/web/.env.local`, `apps/api/.env` y `packages/db/.env` estan ignorados por Git y no existian al iniciar esta tarea.
 
-## Requisitos
+## Diferencias entre codigo y configuracion objetivo
 
-- Node.js 20.19 o superior.
-- pnpm 9.
-- Un proyecto de Supabase.
-- Acceso al Dashboard de Supabase para obtener credenciales y configurar Auth y Storage.
+Los ejemplos existentes requieren actualizacion antes de introducir credenciales. Estas decisiones son el objetivo de las proximas tareas, no cambios ya implementados.
 
-## Web
+| Area | Contrato actual | Objetivo de Phase 4 |
+| --- | --- | --- |
+| Web | `NEXT_PUBLIC_SUPABASE_ANON_KEY` en ejemplo/helper/Turbo | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` coordinada en los tres sitios y validacion realmente ejecutada |
+| API | Ejemplo/tipo/Turbo incluyen `SUPABASE_JWT_SECRET` | Retirar el requisito anticipado del secreto legacy; registrar sistema de firma para Phase 5 |
+| PostgreSQL | Ejemplos fijan transaction pooler `6543` y `pgbouncer=true` | Elegir por entorno y driver; session pooler como primera opcion para NestJS persistente sobre IPv4 |
+| Verificacion | Solo `db:check` por `DIRECT_URL` | Comprobaciones CLI/runtime independientes, sin escribir datos |
 
-Crear `apps/web/.env.local` a partir de `apps/web/.env.example`:
+Supabase recomienda publishable keys (`sb_publishable_...`) para componentes publicos; `anon` y `service_role` son legacy. No hace falta obtener una secret key para esta fase. Referencia: [API keys](https://supabase.com/docs/guides/getting-started/api-keys).
 
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:3001
-NEXT_PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=replace-with-supabase-anon-key
-```
+Para un proyecto nuevo se recomienda firma asimetrica. Registrar algoritmo y endpoint publico JWKS derivado de la URL del proyecto; no exportar claves privadas ni copiar el JWT secret. NestJS validara los tokens en Phase 5. No rotar claves de un proyecto existente sin revisar su impacto. Referencia: [Signing keys](https://supabase.com/docs/guides/auth/signing-keys).
 
-Estas variables forman parte del bundle publico. Nunca se debe colocar aqui el service role key, el JWT secret ni credenciales de PostgreSQL.
+## Reparto de variables locales
 
-## API
+Requisitos: Node.js 20.19 o superior, pnpm 9 y acceso del propietario al Dashboard. No rellenar los archivos hasta actualizar los contratos de codigo y ejemplos.
 
-Crear `apps/api/.env` a partir de `apps/api/.env.example`:
+| Destino | Variables objetivo | Uso |
+| --- | --- | --- |
+| `apps/web/.env.local` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | API local `http://localhost:3001`, URL del proyecto y clave publica; sin cliente Auth todavia |
+| `apps/api/.env` | `NODE_ENV`, `PORT`, `WEB_URL`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_STORAGE_BUCKET` | Desarrollo, `3001`, `http://localhost:3000`, conexion runtime y bucket `media` |
+| `packages/db/.env` | `DATABASE_URL`, `DIRECT_URL` | Comprobacion runtime y acceso de Prisma CLI respectivamente |
 
-```bash
-NODE_ENV=development
-PORT=3001
-WEB_URL=http://localhost:3000
-DATABASE_URL="postgresql://postgres.PROJECT_REF:PASSWORD@REGION.pooler.supabase.com:6543/postgres?pgbouncer=true"
-SUPABASE_URL=https://PROJECT_REF.supabase.co
-SUPABASE_JWT_SECRET=replace-with-supabase-jwt-secret
-SUPABASE_STORAGE_BUCKET=media
-```
+La presencia de `DATABASE_URL` en la API no implica que NestJS ya use Prisma. Los procesos no cargan automaticamente el entorno de otros workspaces. Next carga `.env.local`, Nest carga su `.env` mediante ConfigModule y Prisma CLI usa dotenv dentro de DB. Turbo declara disponibilidad/hash de variables, pero no carga esos archivos.
 
-`DATABASE_URL` usa el transaction pooler de Supavisor para las conexiones de runtime. Las variables sensibles de la API deben existir solo en entornos de servidor.
+Las variables `NEXT_PUBLIC_*` pueden incorporarse al bundle publico. Nunca incluir credenciales PostgreSQL, JWT secrets, claves privadas ni claves privilegiadas en ellas, en `next.config.js.env` ni en props enviadas al navegador. No pegar secretos en chat ni registrarlos en logs, capturas, comandos compartidos o commits.
 
-## Prisma CLI
+## Conexiones y TLS
 
-Crear `packages/db/.env` a partir de `packages/db/.env.example`:
+Copiar las cadenas reales desde **Connect** en el Dashboard; no construir hosts a partir de ejemplos antiguos ni asumir que basta con cambiar el puerto. Codificar los caracteres reservados de la contrasena como componente de URI, sin codificar toda la cadena.
 
-```bash
-DATABASE_URL="postgresql://postgres.PROJECT_REF:PASSWORD@REGION.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.PROJECT_REF:PASSWORD@REGION.pooler.supabase.com:5432/postgres"
-```
+| Uso | Opcion inicial | Alternativa y condicion |
+| --- | --- | --- |
+| Runtime NestJS persistente | Supavisor session pooler `5432` para IPv4 | Directa si la red alcanza el endpoint ofrecido por el proyecto |
+| Prisma CLI (`DIRECT_URL`) | Session pooler `5432` o directa accesible | No transaction pooler para el camino de migraciones futuro |
+| Futuro runtime serverless/autoescalado | Evaluar transaction pooler `6543` | Verificar prepared statements, limites y adapter antes de adoptarlo |
 
-Prisma Client usa `DATABASE_URL` en runtime. Prisma CLI y las migraciones usan `DIRECT_URL` para evitar ejecutar migraciones mediante el transaction pooler.
+`DIRECT_URL` es el nombre del contrato de CLI; puede contener session pooling. Ambas variables pueden apuntar al mismo endpoint si sirve para los dos usos, pero cada camino se comprueba por separado.
 
-Comandos disponibles:
+No anadir `pgbouncer=true` a session/direct. Supabase lo documenta para Prisma con transaction pooling; Prisma distingue capacidades/versiones de PgBouncer. Este repositorio usa `PrismaPg`: si se elige transaction, verificar el comportamiento del adapter instalado antes de copiar parametros de otro motor.
+
+Exigir transporte cifrado. `sslmode=require` exige cifrado, pero no garantiza por si solo la identidad del servidor. Preparar verificacion de certificado/CA para el endpoint elegido y comprobar las opciones admitidas por CLI y `pg` por separado. Si hace falta la CA del proyecto, el propietario la obtiene en Database Settings y se configura en driver/entorno. No resolver errores desactivando TLS o usando `rejectUnauthorized: false` automaticamente.
+
+Mantener Prisma 7: URL de CLI en `prisma.config.ts`, carga explicita de entorno y adapter en runtime. No reintroducir `directUrl` en el schema ni exigir credenciales para generar el cliente sin conexion.
+
+Referencias: [Supabase con Prisma](https://supabase.com/docs/guides/database/prisma), [conexiones y SSL](https://supabase.com/docs/guides/database/connecting-to-postgres), [Prisma y PgBouncer](https://www.prisma.io/docs/orm/v7/prisma-client/setup-and-configuration/databases-connections/pgbouncer), [configuracion Prisma 7](https://www.prisma.io/docs/orm/v7/reference/prisma-config-reference) y [certificados en Prisma 7](https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7).
+
+## Pasos del propietario en Supabase Dashboard
+
+Estos pasos se ejecutan en tareas posteriores, tras revisar la preparacion local.
+
+1. Seleccionar proyecto existente o crear uno. El propietario decide organizacion, region y plan y guarda la contrasena PostgreSQL en su gestor. Verificar que esta operativo; no crear recursos duplicados.
+2. Obtener Project URL y publishable key desde Connect/API Keys e introducirlas directamente en el archivo local correspondiente. No obtener claves privilegiadas sin consumidor previsto.
+3. Obtener cadenas session/direct para los dos caminos; revisar SSL, certificado y restricciones de red. Introducir credenciales directamente en los archivos locales y registrar solo decisiones no sensibles.
+4. En Authentication, verificar Email habilitado y mantener confirmacion de correo. En URL Configuration, usar Site URL `http://localhost:3000` para desarrollo.
+5. Acordar las rutas de Phase 5 antes de registrar redirecciones exactas. Candidatas: `http://localhost:3000/auth/confirmar` y `http://localhost:3000/restablecer-contrasena`. Son propuestas sin implementar: no usar comodines amplios ni dominios inventados. Revisar plantillas cuando se implementen los flujos.
+6. Registrar si las primeras pruebas de Phase 5 se limitaran a direcciones del equipo. El SMTP incluido restringe destinatarios y tiene limites; no es un servicio de produccion. SMTP propio requiere decision y credenciales del propietario antes de probar con otros destinatarios. No crear usuarios ni enviar correos en Phase 4.
+7. Crear o verificar `media`, inicialmente privado. Revisar todas las politicas aplicables a `storage.objects`, incluidas las generales, para que no permitan escrituras anonimas (`INSERT`, `UPDATE`, `DELETE`). No crear permisos genericos de subida para `authenticated` ni implementar el flujo de media. La futura lectura publica requiere decidir que assets alojara.
+
+Storage deniega subidas sin politicas que las permitan. La lectura publica de un bucket no autoriza escrituras. Ademas de revisar politicas, comprobar de forma controlada que una subida sin sesion es rechazada y no crea objetos; no usar credenciales privilegiadas en esa prueba.
+
+Referencias: [redirecciones](https://supabase.com/docs/guides/auth/redirect-urls), [Email Auth](https://supabase.com/docs/guides/auth/passwords), [SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals) y [acceso a Storage](https://supabase.com/docs/guides/storage/security/access-control).
+
+No hay un destino de despliegue operativo verificado para esta fase. Registrar la limitacion; no crear hosting ni declarar configuradas variables remotas. Si se identifica un despliegue existente, configurarlo requiere una tarea acotada y URLs reales del propietario.
+
+## Secuencia y revisiones
+
+| Tarea | Depende de | Entrega |
+| --- | --- | --- |
+| 1. Documentacion | Plan autorizado | Esta guia, AGENTS, roadmap y estado; sin cambios de codigo ni Dashboard |
+| 2. Entorno publico | 1 revisada | Publishable key en ejemplo/helper/Turbo y validacion web efectiva, sin cambios visuales |
+| 3. Entorno servidor | 1; ejecutar tras 2 | Ejemplos API/DB, contrato API y pruebas; protocolos/TLS documentados; retirar requisito de JWT secret |
+| 4. Prueba runtime | 3 | Comando propuesto `db:check:runtime`, `SELECT 1`, timeout, cierre y salida sin secretos |
+| 5. Proyecto y entorno real | 2, 3, 4 | Dashboard y archivos locales ignorados, con intervencion del propietario |
+| 6. Email y URLs | 5 | Configuracion y limites para Phase 5, sin implementar autenticacion |
+| 7. Storage | 5 | Bucket/politicas revisados; rechazo de escritura anonima comprobado |
+| 8. Verificacion final | 1 a 7 | Conexiones, arranque, health y mocks comprobados; registro antes del cierre |
+
+Antes de cada tarea confirmar sus archivos permitidos/excluidos. En la tarea 1 solo se modifican `AGENTS.md`, `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. No modificar el registro historico `docs/16-phase-3-validation.md`.
+
+Tras cada implementacion ejecutar lint, check-types y build de los workspaces afectados y pruebas de Prisma/conectividad aplicables. Resumir archivos, decisiones, limitaciones y documentacion; proporcionar titulo y descripcion de commit en ingles. Detenerse para revision: el propietario crea/sube el commit y autoriza la siguiente tarea. Para cambios exclusivamente documentales no hay workspaces afectados: validar diff y coherencia con codigo/fuentes, sin presentar pruebas historicas como nuevas.
+
+## Comandos y cierre
+
+Sin credenciales se pueden ejecutar estos comandos existentes:
 
 ```bash
 pnpm --filter @repo/db prisma:validate
 pnpm --filter @repo/db prisma:generate
-pnpm --filter @repo/db db:check
-pnpm --filter @repo/db db:migrate
-pnpm --filter @repo/db db:deploy
-pnpm --filter @repo/db db:studio
 ```
 
-## Supabase Project
-
-Pasos que debe realizar el propietario en Supabase Dashboard:
-
-1. Crear el proyecto y guardar de forma segura la contrasena de PostgreSQL.
-2. Copiar Project URL y anon key desde Project Settings > API.
-3. Copiar el JWT secret para uso exclusivo de la API durante Phase 5.
-4. Copiar las connection strings de transaction pooler y session pooler desde Database Settings.
-5. Mantener habilitado Email en Authentication > Providers para el flujo inicial.
-6. Configurar Site URL como `http://localhost:3000` durante desarrollo.
-7. Anadir las URLs de redireccion necesarias para login y recuperacion cuando se implementen en Phase 5.
-8. Crear un bucket llamado `media` en Storage.
-9. Permitir lectura publica del bucket solo si los assets publicados deben servirse directamente.
-10. No permitir escrituras anonimas; las subidas se autorizaran mediante el flujo de la API.
-
-## Seguridad
-
-- No commitear archivos `.env` ni secretos.
-- No exponer `SUPABASE_JWT_SECRET` ni service role keys al frontend.
-- No confiar en roles enviados por el frontend.
-- NestJS validara los JWT y aplicara autorizacion en Phase 5.
-- Los cambios del schema de aplicacion se realizaran mediante Prisma.
-- Las reglas de Storage se mantendran simples y se documentaran cuando se implemente el modulo de media.
-
-## Verificacion
-
-Sin credenciales externas se puede validar schema y generacion:
-
-```bash
-pnpm --filter @repo/db prisma:validate
-pnpm --filter @repo/db prisma:generate
-```
-
-Con `DIRECT_URL` configurada, el siguiente comando ejecuta `SELECT 1` sin modificar datos y verifica el acceso efectivo a Supabase PostgreSQL:
+Con `DIRECT_URL` configurada, el comando existente siguiente ejecuta exclusivamente `SELECT 1` por Prisma CLI:
 
 ```bash
 pnpm --filter @repo/db db:check
 ```
 
-La primera migracion se creara cuando se anada el primer modelo persistente.
+Preparar y ejecutar por separado `pnpm --filter @repo/db db:check:runtime`, todavia inexistente, con `DATABASE_URL` y preferiblemente la factoria Prisma existente. Debe comprobar el resultado, limitar la espera, cerrar conexiones y fallar sin imprimir credenciales.
+
+Validacion final prevista tras preparar el entorno real:
+
+```bash
+pnpm lint
+pnpm check-types
+pnpm build
+pnpm --filter api test --runInBand
+pnpm --filter api test:e2e
+pnpm dev
+```
+
+Con los servidores activos, desde otra terminal:
+
+```bash
+curl --fail --silent --show-error http://localhost:3001/health
+git check-ignore apps/web/.env.local apps/api/.env packages/db/.env
+git diff --check
+```
+
+No ejecutar `db:migrate`, `db:deploy`, `db:push`, seeds ni DDL como comprobacion de conexion. La primera migracion se planificara con el primer modelo persistente.
+
+Phase 4 solo puede cerrarse tras registrar estas evidencias sin secretos:
+
+- [ ] Proyecto operativo y configuracion por consumidor, sin `.env` raiz ni secretos versionados/publicos.
+- [ ] Contratos de entorno y ejemplos alineados; ausencia de Supabase permitida para desarrollo mock.
+- [ ] CLI y runtime conectan con pruebas de solo lectura independientes y TLS verificado.
+- [ ] Email, confirmacion, URLs exactas y limites de correo preparados para Phase 5.
+- [ ] `media` existe con visibilidad documentada y sin escrituras anonimas; politicas y rechazo comprobados.
+- [ ] Web/API arrancan con configuracion real; `/health` devuelve HTTP 200 y `{"status":"ok"}`.
+- [ ] Home, wiki, juegos y detalles conservan mocks y diseno.
+- [ ] Validaciones, limites y estado de despliegue registrados en la futura `docs/17-phase-4-validation.md`; roadmap/estado actualizados tras revision del propietario.
+
+## Vigencia
+
+Recomendaciones contrastadas con las fuentes oficiales enlazadas el 21 de octubre de 2026. Volver a contrastar opciones concretas si cambia el servicio, la version instalada o el entorno antes de configurar recursos. Los ejemplos genericos no sustituyen las cadenas y opciones del proyecto real.
