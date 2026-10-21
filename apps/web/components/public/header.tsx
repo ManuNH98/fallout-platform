@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const navigation = [
-  { href: "#juegos", label: "Juegos" },
-  { href: "#archivo", label: "Archivo" },
-  { href: "#categorias", label: "Explorar" },
+  { href: "/#juegos", label: "Juegos" },
+  { href: "/wiki", label: "Archivo" },
+  { href: "/#categorias", label: "Explorar" },
 ];
 
 export function PublicHeader() {
@@ -21,9 +21,9 @@ export function PublicHeader() {
         </Link>
         <nav aria-label="Navegación principal" className="flex items-center gap-1 sm:gap-2">
           {navigation.map((item) => (
-            <a className="text-link inline-flex min-h-11 items-center px-3 font-terminal text-xs tracking-wide text-muted sm:px-4" href={item.href} key={item.href}>
+            <Link className="text-link inline-flex min-h-11 items-center px-3 font-terminal text-xs tracking-wide text-muted sm:px-4" href={item.href} key={item.href}>
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
         <span className="hidden items-center gap-2 font-terminal text-[0.65rem] tracking-widest text-muted lg:inline-flex">

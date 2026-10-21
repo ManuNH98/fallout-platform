@@ -16,8 +16,10 @@ export const wikiCategories: WikiCategorySummary[] = [
   { slug: "historia", title: "Historia y mundo", description: "Lo que quedó antes y después de las bombas.", countLabel: "06 / ARCHIVOS", index: "F" },
 ];
 
-export const featuredArticles: WikiArticleSummary[] = [
+export const wikiArticles: WikiArticleSummary[] = [
   { slug: "hermandad-del-acero", title: "Hermandad del Acero", summary: "Una orden militar que protege la tecnología anterior a la guerra y discute quién merece custodiarla.", category: "Facción", game: "Varios juegos", readTime: "8 min", index: "ARCHIVO 001" },
   { slug: "mr-house", title: "Robert House", summary: "El empresario que predijo el fin del mundo y despertó con un plan para gobernar lo que quedaba.", category: "Personaje", game: "New Vegas", readTime: "6 min", index: "ARCHIVO 002" },
   { slug: "vault-111", title: "Refugio 111", summary: "Un experimento criogénico bajo el hielo de Massachusetts, diseñado para observar desde dentro.", category: "Lugar", game: "Fallout 4", readTime: "5 min", index: "ARCHIVO 003" },
 ];
+
+export const featuredArticles: WikiArticleSummary[] = wikiArticles.slice(0, 3);

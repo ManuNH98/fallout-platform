@@ -8,7 +8,7 @@ Este documento resume el estado operativo. Las decisiones normativas siguen pert
 
 ## Estado actual
 
-Actualizado el 19 de octubre de 2026.
+Actualizado el 21 de octubre de 2026.
 
 - **Phase 0: Repository foundation** esta completada.
 - La parte local de **Phase 1: Infrastructure and configuration** esta preparada.
@@ -29,6 +29,9 @@ Actualizado el 19 de octubre de 2026.
 - Roadmap reordenado para desarrollar primero la experiencia publica con mocks.
 - Shell publico responsive y home inicial en espanol, con mocks tipados de juegos, categorias y articulos destacados.
 - Tailwind CSS v4, tokens de tema, configuracion inicial de shadcn/ui y metadata SEO base.
+- Primer listado `/wiki` con tres articulos de muestra, metadata propia, contador y breadcrumbs.
+- Lectura de mocks wiki encapsulada en `apps/web/features/wiki/lib/content.ts`, con coleccion independiente de los destacados de la home.
+- Estados de carga, vacio y error preparados para `/wiki`; cabecera adaptada a la navegacion desde paginas interiores.
 
 ## Decisiones vigentes
 
@@ -62,7 +65,11 @@ Implementar una tarea pequena y acotada de **Phase 3: Mock content browsing**. A
 - `docs/12-roadmap.md`
 - Este documento
 
-La primera tarea recomendada es crear el listado `/wiki` con contenido mock reutilizando el shell, los tipos y los componentes publicos existentes. Despues se pueden implementar los detalles por slug y la navegacion de juegos. Mantener copy en espanol y exigir lint, type checks y build del frontend.
+El listado inicial `/wiki` esta implementado y pendiente de revision del propietario antes de continuar. Reutiliza el shell y las tarjetas existentes; los articulos siguen identificados como muestras y no enlazan a detalles todavia.
+
+La siguiente tarea propuesta es incorporar busqueda y filtros por juego y categoria a `/wiki`, con parametros en URL y relaciones por slug en los mocks. Despues se implementaran los detalles wiki y las rutas de juegos. Phase 3 sigue abierta; no hay busqueda, filtros, detalles ni rutas de juegos implementados.
+
+Validacion del listado inicial: `pnpm --filter web lint`, `pnpm --filter web check-types` y `pnpm --filter web build` completados correctamente. El build prerenderiza `/wiki` como pagina estatica. La carga y el error no se fuerzan en la experiencia publica; su comprobacion controlada queda para la revision de estados.
 
 ## Validacion conocida
 

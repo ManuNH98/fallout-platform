@@ -115,6 +115,8 @@ slug quedan para Phase 3.
 
 ## Phase 3: Mock content browsing
 
+**Estado:** en curso. Primer listado `/wiki` implementado el 21 de octubre de 2026; pendiente de revision antes de continuar con la siguiente tarea.
+
 **Objetivo:** construir la navegacion publica principal sobre datos mock.
 
 **Tareas:**
@@ -132,6 +134,18 @@ slug quedan para Phase 3.
 - Las rutas de detalle funcionan con slugs.
 - Los listados y detalles son responsive, accesibles y SEO-friendly.
 - Sustituir los mocks por la API no requiere redisenar las pantallas.
+
+**Progreso parcial:** `/wiki` muestra los tres articulos mock existentes mediante
+las tarjetas y el shell publicos, con metadata, contador, breadcrumbs y estados
+de carga, vacio y error preparados. La lectura de datos esta encapsulada en la
+feature wiki y los destacados de la home se derivan de la coleccion wiki. La
+cabecera enlaza al listado y mantiene las anclas de juegos y categorias en la
+home. No se han incorporado filtros, busqueda, detalles por slug ni rutas de
+juegos; las tarjetas wiki conservan su indicacion de muestra sin enlaces a
+detalles pendientes.
+
+**Validacion parcial:** `pnpm --filter web lint`, `pnpm --filter web check-types`
+y `pnpm --filter web build` completados correctamente. La fase permanece abierta.
 
 ## Phase 4: Supabase real infrastructure
 
