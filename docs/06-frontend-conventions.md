@@ -4,6 +4,10 @@
 
 Use Next.js App Router.
 
+La aplicacion actual mantiene el App Router en `apps/web/app/`. Para nuevas rutas
+publicas se utiliza el route group `apps/web/app/(public)/`; el grupo no forma
+parte de la URL.
+
 ## Language
 
 All user-facing text should be Spanish by default.
@@ -13,7 +17,7 @@ All user-facing text should be Spanish by default.
 Recommended structure:
 
 ```txt
-apps/web/src/app/
+apps/web/app/
   (public)/
     page.tsx
     wiki/
@@ -87,12 +91,17 @@ Use:
 - sonner
 - TanStack Table for admin tables later
 
+Tailwind CSS v4 se integra mediante `@tailwindcss/postcss` y los tokens de tema
+se definen en `apps/web/app/globals.css`. La configuracion de shadcn/ui vive en
+`apps/web/components.json`; las primitivas se mantienen en
+`apps/web/components/ui/` hasta que sean necesarias.
+
 ## Component organization
 
 Recommended structure:
 
 ```txt
-apps/web/src/
+apps/web/
   components/
     layout/
     navigation/
@@ -144,7 +153,7 @@ Admin pages:
 Create a small API client under:
 
 ```txt
-apps/web/src/lib/api/
+apps/web/lib/api/
 ```
 
 It should handle:
@@ -159,7 +168,7 @@ It should handle:
 Use separate clients for browser/server if needed:
 
 ```txt
-apps/web/src/lib/supabase/
+apps/web/lib/supabase/
   client.ts
   server.ts
 ```
@@ -185,6 +194,19 @@ Visual direction:
 - inspired by terminal/Pip-Boy/wasteland aesthetics without harming usability
 - avoid visual clutter
 - prioritize content readability
+
+La direccion visual inicial de la web es una terminal editorial del Yermo:
+fondos oscuros, texto claro, verde fosforo como acento y detalles industriales
+contenidos. El contraste y la legibilidad prevalecen sobre los efectos.
+
+## Public mock data
+
+Los contratos estables compartidos para resumenes publicos viven en
+`packages/types`. Las muestras de juegos, categorias y articulos destacados se
+aislan en `apps/web/lib/mocks/` y las paginas reciben esos datos mediante
+props/lecturas locales. La home usa Server Components y no depende de API,
+Supabase ni credenciales externas. Al conectar la API, se conserva la forma de
+presentacion y se reemplaza el origen de datos.
 
 ## Forms
 

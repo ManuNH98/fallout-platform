@@ -83,6 +83,8 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 
 ## Phase 2: Public design with mocks
 
+**Estado:** completada el 19 de octubre de 2026.
+
 **Objetivo:** definir la primera experiencia visual publica sin depender de infraestructura externa.
 
 **Tareas:**
@@ -101,6 +103,15 @@ Estos pendientes deben completarse antes de implementar autenticacion real, migr
 - La interfaz utiliza copy en espanol y datos mock claramente aislados.
 - Los componentes base pueden reutilizarse en los listados publicos.
 - La pagina tiene metadata, jerarquia semantica y navegacion accesible.
+
+**Implementacion entregada:** shell publico en `apps/web/app/(public)/`, home
+estatica con datos mock tipados, componentes reutilizables para juegos,
+categorias y articulos, Tailwind CSS v4, configuracion shadcn/ui y metadata
+inicial. La navegacion de la home utiliza anclas; los listados y detalles por
+slug quedan para Phase 3.
+
+**Validacion:** `pnpm --filter web lint`, `pnpm --filter web check-types` y
+`pnpm --filter web build` completados correctamente.
 
 ## Phase 3: Mock content browsing
 

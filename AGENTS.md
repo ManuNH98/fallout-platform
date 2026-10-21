@@ -292,8 +292,8 @@ Phase 0 is complete and the local part of Phase 1 is prepared. Real Supabase int
 
 Current implementation order:
 
-1. Public design and shell with typed mock data.
-2. Mock wiki and games browsing routes.
+1. Public design and shell with typed mock data (Phase 2, completed).
+2. Mock wiki and games browsing routes (Phase 3, active).
 3. Real Supabase infrastructure and connection verification.
 4. Authentication flow and application roles.
 5. Core Prisma content models and REST API.
