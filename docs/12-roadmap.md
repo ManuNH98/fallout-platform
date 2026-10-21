@@ -115,7 +115,7 @@ slug quedan para Phase 3.
 
 ## Phase 3: Mock content browsing
 
-**Estado:** en curso. Listado `/wiki` y detalles por slug implementados el 21 de octubre de 2026; tarea de detalles pendiente de revision antes de continuar.
+**Estado:** en curso. Listado y detalles wiki, y listado `/juegos` implementados el 21 de octubre de 2026; listado de juegos pendiente de revision antes de continuar.
 
 **Objetivo:** construir la navegacion publica principal sobre datos mock.
 
@@ -139,8 +139,8 @@ slug quedan para Phase 3.
 las tarjetas y el shell publicos, con metadata, contador, breadcrumbs y estados
 de carga, vacio y error preparados. La lectura de datos esta encapsulada en la
 feature wiki y los destacados de la home se derivan de la coleccion wiki. La
-cabecera enlaza al listado y mantiene las anclas de juegos y categorias en la
-home. La busqueda en titulo/resumen y los filtros por juego/categoria usan un
+cabecera enlaza a los listados wiki y juegos y mantiene el ancla de categorias
+en la home. La busqueda en titulo/resumen y los filtros por juego/categoria usan un
 formulario GET con seleccion persistida en URL, contador de resultados,
 filtros aplicados y accion de limpiar. El filtrado usa relaciones multiples
 por slug, no etiquetas de presentacion. Los destacados de la home conservan
@@ -148,8 +148,12 @@ los tres articulos iniciales. Los ocho detalles por slug incluyen cuerpo
 Markdown original, fuentes dentro de los juegos, metadata individual y
 articulos relacionados. Las tarjetas enlazan a los detalles y los slugs
 desconocidos muestran un estado espanol de no encontrado. Los juegos y
-categorias del detalle llevan al listado wiki filtrado. No se han incorporado
-rutas de juegos; las fichas wiki siguen identificadas como muestras.
+categorias del detalle llevan al listado wiki filtrado. `/juegos` muestra los
+cuatro juegos actuales con tarjetas reutilizadas, contador, metadata,
+breadcrumbs y estados de carga, vacio y error preparados. La coleccion de
+juegos se separa de sus destacados y se lee desde la feature games. No se han
+incorporado detalles de juegos; las fichas wiki y el listado de juegos siguen
+identificados como muestras.
 
 **Validacion parcial:** `pnpm --filter web lint`, `pnpm --filter web check-types`
 y `pnpm --filter web build`, ademas de lint y tipos de `@repo/types`, completados
@@ -157,7 +161,8 @@ correctamente. `/wiki` se renderiza en servidor por peticion para resolver los
 parametros URL; los ocho detalles wiki se prerenderizan mediante
 `generateStaticParams`. Se han comprobado las relaciones y referencias mock,
 los enlaces del cuerpo y el renderizado Markdown sin HTML embebido. La fase
-permanece abierta.
+permanece abierta. El listado `/juegos` tambien supera lint, tipos y build del
+frontend y se prerenderiza como contenido estatico.
 
 ## Phase 4: Supabase real infrastructure
 

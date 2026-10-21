@@ -1,11 +1,13 @@
 import type { GameSummary, WikiArticleSummary, WikiCategorySummary } from "@repo/types";
 
-export const featuredGames: GameSummary[] = [
+export const games: GameSummary[] = [
   { slug: "fallout-new-vegas", title: "New Vegas", subtitle: "Fallout: New Vegas", era: "2281", setting: "Mojave", number: "01", tone: "amber" },
   { slug: "fallout-4", title: "El Commonwealth", subtitle: "Fallout 4", era: "2287", setting: "Boston", number: "02", tone: "sage" },
   { slug: "fallout-3", title: "La Capital", subtitle: "Fallout 3", era: "2277", setting: "Washington D. C.", number: "03", tone: "blue" },
   { slug: "fallout-76", title: "Appalachia", subtitle: "Fallout 76", era: "2102", setting: "Virginia Occidental", number: "04", tone: "rust" },
 ];
+
+export const featuredGames: GameSummary[] = games.slice(0, 4);
 
 export const wikiCategories: WikiCategorySummary[] = [
   { slug: "personajes", title: "Personajes", description: "Vidas que cambiaron el rumbo del Yermo.", countLabel: "01 / BIOGRAFÍAS", index: "A" },

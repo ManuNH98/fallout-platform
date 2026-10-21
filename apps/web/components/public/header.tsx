@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const navigation = [
-  { href: "/#juegos", label: "Juegos" },
+  { href: "/juegos", label: "Juegos" },
   { href: "/wiki", label: "Archivo" },
   { href: "/#categorias", label: "Explorar" },
 ];

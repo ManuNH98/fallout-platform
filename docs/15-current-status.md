@@ -37,6 +37,9 @@ Actualizado el 21 de octubre de 2026.
 - Ocho detalles `/wiki/[slug]` con cuerpos Markdown originales, fuentes dentro de los juegos, articulos relacionados y metadata individual.
 - Tarjetas de articulos enlazadas desde home, listado y relacionados; enlaces por juego y categoria al listado filtrado.
 - Estado espanol de articulo no encontrado para slugs desconocidos.
+- Listado `/juegos` con cuatro juegos mock, metadata, contador, breadcrumbs y estados de carga, vacio y error preparados.
+- Lectura de juegos encapsulada en `apps/web/features/games/lib/content.ts`; coleccion completa separada de los destacados de la home.
+- La opcion Juegos de la cabecera abre `/juegos` desde cualquier pagina publica.
 
 ## Decisiones vigentes
 
@@ -70,9 +73,9 @@ Implementar una tarea pequena y acotada de **Phase 3: Mock content browsing**. A
 - `docs/12-roadmap.md`
 - Este documento
 
-El listado `/wiki`, su busqueda y filtros, y los ocho detalles por slug estan implementados. La tarea de detalles esta pendiente de revision del propietario antes de continuar. Las tarjetas reutilizadas enlazan a los detalles; el contenido sigue identificado como muestra.
+El listado `/wiki`, su busqueda y filtros, los ocho detalles wiki y el listado `/juegos` estan implementados. La tarea del listado de juegos esta pendiente de revision del propietario antes de continuar. Las tarjetas wiki enlazan a sus detalles; las de juegos todavia no enlazan a fichas pendientes. El contenido sigue identificado como muestra.
 
-La siguiente tarea propuesta es implementar el listado `/juegos`, reutilizando las tarjetas, breadcrumbs y estados existentes. Despues se implementaran los detalles de juegos y la revision de integracion. Phase 3 sigue abierta; no hay rutas de juegos implementadas.
+La siguiente tarea propuesta es implementar `/juegos/[slug]`, con fichas de juego, metadata, articulos wiki asociados y estado de no encontrado. Tambien se enlazaran las tarjetas de juegos y los juegos de las fichas wiki a sus detalles. Despues se realizara la revision de integracion. Phase 3 sigue abierta.
 
 Validacion del listado con filtros: `pnpm --filter web lint`, `pnpm --filter web check-types`, `pnpm --filter web build`, `pnpm --filter @repo/types lint` y `pnpm --filter @repo/types check-types` completados correctamente. Comprobados busqueda normalizada, filtros combinados, relaciones multiples, resultados vacios, parametros desconocidos/repetidos y coherencia de slugs en los mocks. Al leer `searchParams`, `/wiki` se renderiza en servidor por peticion; la home sigue estatica. La carga y el error no se fuerzan en la experiencia publica; su comprobacion controlada queda para la revision de estados.
 
@@ -80,6 +83,14 @@ Los detalles incorporan `react-markdown` como dependencia de web para renderizar
 Markdown en servidor sin HTML embebido ni parser propio. Se han comprobado
 los ocho cuerpos, referencias y enlaces, la separacion entre resumen y detalle,
 el renderizado sin scripts/URLs ejecutables y el estado espanol de no encontrado.
+
+El listado `/juegos` reutiliza `GameCard`, `Breadcrumbs` y `ContentState`, sin
+dependencias nuevas ni cambios en tipos compartidos. La pagina se prerenderiza
+como contenido estatico; solo `error.tsx` es un Client Component. No incorpora
+busqueda ni filtros para una coleccion de cuatro juegos. Lint, tipos y build
+del frontend completados correctamente. Navegacion entre home y listado
+comprobada en navegador; los estados excepcionales quedan preparados para
+la revision controlada de integracion.
 
 ## Validacion conocida
 
