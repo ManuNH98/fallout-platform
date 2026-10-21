@@ -8,7 +8,6 @@ export interface AppEnvironment {
   WEB_URL: string;
   DATABASE_URL?: string;
   SUPABASE_URL?: string;
-  SUPABASE_JWT_SECRET?: string;
   SUPABASE_STORAGE_BUCKET?: string;
 }
 
@@ -22,7 +21,11 @@ function parsePort(value: unknown): number {
   return port;
 }
 
-function parseUrl(name: string, value: unknown): string | undefined {
+function parseUrl(
+  name: string,
+  value: unknown,
+  protocols: readonly string[],
+): string | undefined {
   if (value === undefined || value === '') {
     return undefined;
   }
@@ -31,11 +34,21 @@ function parseUrl(name: string, value: unknown): string | undefined {
     throw new Error(`${name} debe ser una URL valida.`);
   }
 
+  let url: URL;
+
   try {
-    return new URL(value).toString().replace(/\/$/, '');
+    url = new URL(value);
   } catch {
     throw new Error(`${name} debe ser una URL valida.`);
   }
+
+  if (!url.hostname || !protocols.includes(url.protocol)) {
+    throw new Error(
+      `${name} debe ser una URL con host y protocolo ${protocols.join(' o ')}.`,
+    );
+  }
+
+  return url.toString().replace(/\/$/, '');
 }
 
 export function validateEnvironment(
@@ -50,9 +63,15 @@ export function validateEnvironment(
     throw new Error(`NODE_ENV debe ser uno de: ${NODE_ENV_VALUES.join(', ')}.`);
   }
 
-  const webUrl = parseUrl('WEB_URL', environment.WEB_URL);
-  const databaseUrl = parseUrl('DATABASE_URL', environment.DATABASE_URL);
-  const supabaseUrl = parseUrl('SUPABASE_URL', environment.SUPABASE_URL);
+  const webUrl = parseUrl('WEB_URL', environment.WEB_URL, ['http:', 'https:']);
+  const databaseUrl = parseUrl('DATABASE_URL', environment.DATABASE_URL, [
+    'postgresql:',
+    'postgres:',
+  ]);
+  const supabaseUrl = parseUrl('SUPABASE_URL', environment.SUPABASE_URL, [
+    'http:',
+    'https:',
+  ]);
 
   return {
     ...environment,

@@ -8,10 +8,10 @@ No introducir Docker, Supabase local ni dependencias sin justificar. Login, regi
 
 ## Estado comprobado de Phase 4
 
-Revision del 21 de octubre de 2026. La tarea documental inicial esta integrada; la tarea 2 actualiza el contrato publico de entorno. Los recursos remotos y la conectividad real siguen pendientes de verificar.
+Revision del 21 de octubre de 2026. Las tareas 1 y 2 estan integradas; la tarea 3 actualiza el contrato y los ejemplos de servidor. Los recursos remotos y la conectividad real siguen pendientes de verificar.
 
 - Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. El layout raiz importa `apps/web/lib/env.ts`, por lo que la validacion publica tambien se ejecuta al cargar el layout de servidor, incluido el build.
-- API: puerto `3001`, ConfigModule, validacion basica y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
+- API: puerto `3001`, ConfigModule, validacion de protocolos/host y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
 - `GET /health` devuelve `{"status":"ok"}`: acredita disponibilidad de API, no conectividad con PostgreSQL, Auth o Storage.
 - DB: Prisma/client/adapter-pg `7.9.1`, schema sin modelos y factoria `createPrismaClient(connectionString)` preparada.
 - Prisma CLI carga dotenv en `packages/db` y usa `DIRECT_URL` mediante `datasource.url` en `prisma.config.ts`. Sin ella se permite validar/generar localmente.
@@ -20,13 +20,13 @@ Revision del 21 de octubre de 2026. La tarea documental inicial esta integrada; 
 
 ## Diferencias entre codigo y configuracion objetivo
 
-El contrato publico ya esta actualizado; los ejemplos de servidor requieren la tarea 3 antes de introducir credenciales. La tabla distingue lo implementado de lo pendiente.
+Los contratos y ejemplos publicos/de servidor estan actualizados. La tabla distingue la preparacion local de las verificaciones externas pendientes.
 
 | Area | Contrato actual | Objetivo de Phase 4 |
 | --- | --- | --- |
 | Web | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en ejemplo/helper/Turbo; helper importado desde el layout raiz | Implementado en tarea 2; comprobacion con credenciales reales pendiente |
-| API | Ejemplo/tipo/Turbo incluyen `SUPABASE_JWT_SECRET` | Retirar el requisito anticipado del secreto legacy; registrar sistema de firma para Phase 5 |
-| PostgreSQL | Ejemplos fijan transaction pooler `6543` y `pgbouncer=true` | Elegir por entorno y driver; session pooler como primera opcion para NestJS persistente sobre IPv4 |
+| API | Sin `SUPABASE_JWT_SECRET` en ejemplo, tipo ni Turbo; URLs opcionales con protocolos y host validados | Implementado en tarea 3; registrar sistema de firma remoto antes de Phase 5 |
+| PostgreSQL | Ejemplos con session pooler `5432`, TLS explicito y sin `pgbouncer=true` | Preparado en tarea 3; endpoint, CA y conectividad reales pendientes |
 | Verificacion | Solo `db:check` por `DIRECT_URL` | Comprobaciones CLI/runtime independientes, sin escribir datos |
 
 Supabase recomienda publishable keys (`sb_publishable_...`) para componentes publicos; `anon` y `service_role` son legacy. No hace falta obtener una secret key para esta fase. Referencia: [API keys](https://supabase.com/docs/guides/getting-started/api-keys).
@@ -35,7 +35,7 @@ Para un proyecto nuevo se recomienda firma asimetrica. Registrar algoritmo y end
 
 ## Reparto de variables locales
 
-Requisitos: Node.js 20.19 o superior, pnpm 9 y acceso del propietario al Dashboard. No rellenar los archivos hasta actualizar los contratos de codigo y ejemplos.
+Requisitos: Node.js 20.19 o superior, pnpm 9 y acceso del propietario al Dashboard. Rellenar los archivos en la tarea 5, tras preparar la comprobacion de runtime y revisar el proyecto con el propietario.
 
 | Destino | Variables objetivo | Uso |
 | --- | --- | --- |
@@ -46,6 +46,8 @@ Requisitos: Node.js 20.19 o superior, pnpm 9 y acceso del propietario al Dashboa
 El contrato web usa `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y exporta `supabasePublishableKey` desde `webEnvironment`. No admite el nombre legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` como alternativa. URL y clave se configuran juntas: ambas ausentes (o vacias) permiten los mocks; solo una presente produce un error en espanol. La validacion comprueba presencia conjunta y sintaxis de URL, no autenticidad ni permisos de la clave. No realiza llamadas a Supabase ni crea sesiones.
 
 Las referencias `process.env.NEXT_PUBLIC_*` son estaticas para que Next pueda incorporarlas durante el build. Cambiar valores publicos requiere reconstruir el despliegue. Referencia: [variables de entorno de Next.js](https://nextjs.org/docs/app/guides/environment-variables).
+
+La API acepta `http:`/`https:` para `WEB_URL` y `SUPABASE_URL`, y `postgresql:`/`postgres:` para `DATABASE_URL`, siempre con host. Los valores ausentes o vacios permiten trabajar con mocks; `WEB_URL` usa el valor local por defecto. Los errores identifican la variable sin incluir su valor. No se exige JWT secret ni se valida JWT. La validacion comprueba sintaxis y protocolo, no credenciales, certificado ni conectividad.
 
 La presencia de `DATABASE_URL` en la API no implica que NestJS ya use Prisma. Los procesos no cargan automaticamente el entorno de otros workspaces. Next carga `.env.local`, Nest carga su `.env` mediante ConfigModule y Prisma CLI usa dotenv dentro de DB. Turbo declara disponibilidad/hash de variables, pero no carga esos archivos.
 
@@ -66,6 +68,12 @@ Copiar las cadenas reales desde **Connect** en el Dashboard; no construir hosts 
 No anadir `pgbouncer=true` a session/direct. Supabase lo documenta para Prisma con transaction pooling; Prisma distingue capacidades/versiones de PgBouncer. Este repositorio usa `PrismaPg`: si se elige transaction, verificar el comportamiento del adapter instalado antes de copiar parametros de otro motor.
 
 Exigir transporte cifrado. `sslmode=require` exige cifrado, pero no garantiza por si solo la identidad del servidor. Preparar verificacion de certificado/CA para el endpoint elegido y comprobar las opciones admitidas por CLI y `pg` por separado. Si hace falta la CA del proyecto, el propietario la obtiene en Database Settings y se configura en driver/entorno. No resolver errores desactivando TLS o usando `rejectUnauthorized: false` automaticamente.
+
+Los ejemplos de runtime API/DB usan `sslmode=verify-full`, admitido por la version instalada de `pg-connection-string` (2.14.0) y consumido por `PrismaPg`; si la CA no es de confianza, configurar `sslrootcert` con su ruta local real. No introducir una ruta ficticia activa en el ejemplo. No combinar parametros SSL de la URI con un objeto `ssl` sin revisar su precedencia en pg.
+
+El ejemplo de `DIRECT_URL` usa `sslmode=require`, que Prisma CLI documenta para exigir TLS. La documentacion de su conector PostgreSQL enumera `sslcert` para el certificado de servidor, mientras pg utiliza `sslrootcert` para la CA: no copiar opciones entre ambos caminos sin verificarlas. La configuracion de confianza y la comprobacion de identidad del servidor siguen pendientes del endpoint real. `require` por si solo no acredita que se haya verificado esa identidad.
+
+Referencias adicionales: [TLS de node-postgres](https://node-postgres.com/features/ssl) y [conector PostgreSQL de Prisma](https://www.prisma.io/docs/orm/v7/core-concepts/supported-databases/postgresql).
 
 Mantener Prisma 7: URL de CLI en `prisma.config.ts`, carga explicita de entorno y adapter en runtime. No reintroducir `directUrl` en el schema ni exigir credenciales para generar el cliente sin conexion.
 
@@ -94,8 +102,8 @@ No hay un destino de despliegue operativo verificado para esta fase. Registrar l
 | Tarea | Depende de | Entrega |
 | --- | --- | --- |
 | 1. Documentacion | Plan autorizado | Esta guia, AGENTS, roadmap y estado; sin cambios de codigo ni Dashboard |
-| 2. Entorno publico | 1 revisada | Implementado, pendiente de revision: publishable key y validacion desde el layout, sin cambios visuales |
-| 3. Entorno servidor | 1; ejecutar tras 2 | Ejemplos API/DB, contrato API y pruebas; protocolos/TLS documentados; retirar requisito de JWT secret |
+| 2. Entorno publico | 1 revisada | Integrado en `cb7ca8e`: publishable key y validacion desde el layout, sin cambios visuales |
+| 3. Entorno servidor | 1; ejecutar tras 2 | Implementado, pendiente de revision: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
 | 4. Prueba runtime | 3 | Comando propuesto `db:check:runtime`, `SELECT 1`, timeout, cierre y salida sin secretos |
 | 5. Proyecto y entorno real | 2, 3, 4 | Dashboard y archivos locales ignorados, con intervencion del propietario |
 | 6. Email y URLs | 5 | Configuracion y limites para Phase 5, sin implementar autenticacion |
@@ -129,8 +137,8 @@ Validacion final prevista tras preparar el entorno real:
 pnpm lint
 pnpm check-types
 pnpm build
-pnpm --filter api test --runInBand
-pnpm --filter api test:e2e
+pnpm --filter api run test --runInBand
+pnpm --filter api run test:e2e --runInBand
 pnpm dev
 ```
 
