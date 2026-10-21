@@ -29,7 +29,9 @@ Actualizado el 21 de octubre de 2026.
 - Roadmap reordenado para desarrollar primero la experiencia publica con mocks.
 - Shell publico responsive y home inicial en espanol, con mocks tipados de juegos, categorias y articulos destacados.
 - Tailwind CSS v4, tokens de tema, configuracion inicial de shadcn/ui y metadata SEO base.
-- Primer listado `/wiki` con tres articulos de muestra, metadata propia, contador y breadcrumbs.
+- Listado `/wiki` con ocho articulos de muestra, metadata propia, contador y breadcrumbs; la home conserva los tres destacados iniciales.
+- Busqueda en titulo y resumen y filtros combinables por juego y categoria mediante formulario GET y parametros URL.
+- Relaciones mock de varios juegos y categorias por articulo mediante slugs y tipos compartidos.
 - Lectura de mocks wiki encapsulada en `apps/web/features/wiki/lib/content.ts`, con coleccion independiente de los destacados de la home.
 - Estados de carga, vacio y error preparados para `/wiki`; cabecera adaptada a la navegacion desde paginas interiores.
 
@@ -65,11 +67,11 @@ Implementar una tarea pequena y acotada de **Phase 3: Mock content browsing**. A
 - `docs/12-roadmap.md`
 - Este documento
 
-El listado inicial `/wiki` esta implementado y pendiente de revision del propietario antes de continuar. Reutiliza el shell y las tarjetas existentes; los articulos siguen identificados como muestras y no enlazan a detalles todavia.
+El listado `/wiki` y su busqueda y filtros estan implementados. La tarea de busqueda y filtros esta pendiente de revision del propietario antes de continuar. Reutiliza el shell y las tarjetas existentes; los articulos siguen identificados como muestras y no enlazan a detalles todavia.
 
-La siguiente tarea propuesta es incorporar busqueda y filtros por juego y categoria a `/wiki`, con parametros en URL y relaciones por slug en los mocks. Despues se implementaran los detalles wiki y las rutas de juegos. Phase 3 sigue abierta; no hay busqueda, filtros, detalles ni rutas de juegos implementados.
+La siguiente tarea propuesta es implementar `/wiki/[slug]`, con cuerpo Markdown, fuentes, metadata por articulo, enlaces internos y estado de no encontrado. Despues se implementaran las rutas de juegos. Phase 3 sigue abierta; no hay detalles ni rutas de juegos implementados.
 
-Validacion del listado inicial: `pnpm --filter web lint`, `pnpm --filter web check-types` y `pnpm --filter web build` completados correctamente. El build prerenderiza `/wiki` como pagina estatica. La carga y el error no se fuerzan en la experiencia publica; su comprobacion controlada queda para la revision de estados.
+Validacion del listado con filtros: `pnpm --filter web lint`, `pnpm --filter web check-types`, `pnpm --filter web build`, `pnpm --filter @repo/types lint` y `pnpm --filter @repo/types check-types` completados correctamente. Comprobados busqueda normalizada, filtros combinados, relaciones multiples, resultados vacios, parametros desconocidos/repetidos y coherencia de slugs en los mocks. Al leer `searchParams`, `/wiki` se renderiza en servidor por peticion; la home sigue estatica. La carga y el error no se fuerzan en la experiencia publica; su comprobacion controlada queda para la revision de estados.
 
 ## Validacion conocida
 

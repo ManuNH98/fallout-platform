@@ -128,6 +128,20 @@ Examples:
 
 Use many-to-many relation between WikiPage and Category.
 
+## Public mock browsing contract
+
+Durante Phase 3, `WikiArticleSummary` en `packages/types` incluye
+`gameSlugs` y `categorySlugs` como colecciones de slugs. Estas relaciones
+permiten filtrar un articulo asociado a varios juegos o categorias sin
+interpretar etiquetas como "Varios juegos". Los campos `game` y `category`
+se mantienen como etiquetas de presentacion para las tarjetas existentes.
+
+`WikiArticleFilters` comparte la forma normalizada de la consulta:
+`query`, `gameSlug` y `categorySlug`; una cadena vacia significa que ese
+criterio no esta activo. Los parametros URL y su normalizacion pertenecen
+a la feature wiki del frontend. Son contratos de navegacion publica sobre
+mocks, no modelos Prisma ni endpoints de API implementados.
+
 ## Page relationships
 
 Pages should link to other pages through explicit relationships.

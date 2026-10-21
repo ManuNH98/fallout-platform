@@ -22,6 +22,14 @@ export interface WikiArticleSummary {
   summary: string;
   category: string;
   game: string;
+  gameSlugs: readonly string[];
+  categorySlugs: readonly string[];
   readTime: string;
   index: string;
+}
+
+export interface WikiArticleFilters {
+  query: string;
+  gameSlug: string;
+  categorySlug: string;
 }

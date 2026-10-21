@@ -115,7 +115,7 @@ slug quedan para Phase 3.
 
 ## Phase 3: Mock content browsing
 
-**Estado:** en curso. Primer listado `/wiki` implementado el 21 de octubre de 2026; pendiente de revision antes de continuar con la siguiente tarea.
+**Estado:** en curso. Listado `/wiki` con busqueda y filtros implementado el 21 de octubre de 2026; tarea de filtros pendiente de revision antes de continuar.
 
 **Objetivo:** construir la navegacion publica principal sobre datos mock.
 
@@ -135,17 +135,23 @@ slug quedan para Phase 3.
 - Los listados y detalles son responsive, accesibles y SEO-friendly.
 - Sustituir los mocks por la API no requiere redisenar las pantallas.
 
-**Progreso parcial:** `/wiki` muestra los tres articulos mock existentes mediante
+**Progreso parcial:** `/wiki` muestra ocho articulos mock mediante
 las tarjetas y el shell publicos, con metadata, contador, breadcrumbs y estados
 de carga, vacio y error preparados. La lectura de datos esta encapsulada en la
 feature wiki y los destacados de la home se derivan de la coleccion wiki. La
 cabecera enlaza al listado y mantiene las anclas de juegos y categorias en la
-home. No se han incorporado filtros, busqueda, detalles por slug ni rutas de
-juegos; las tarjetas wiki conservan su indicacion de muestra sin enlaces a
-detalles pendientes.
+home. La busqueda en titulo/resumen y los filtros por juego/categoria usan un
+formulario GET con seleccion persistida en URL, contador de resultados,
+filtros aplicados y accion de limpiar. El filtrado usa relaciones multiples
+por slug, no etiquetas de presentacion. Los destacados de la home conservan
+los tres articulos iniciales. No se han incorporado detalles por slug ni rutas
+de juegos; las tarjetas wiki conservan su indicacion de muestra sin enlaces
+a detalles pendientes.
 
 **Validacion parcial:** `pnpm --filter web lint`, `pnpm --filter web check-types`
-y `pnpm --filter web build` completados correctamente. La fase permanece abierta.
+y `pnpm --filter web build`, ademas de lint y tipos de `@repo/types`, completados
+correctamente. `/wiki` se renderiza en servidor por peticion para resolver los
+parametros URL. La fase permanece abierta.
 
 ## Phase 4: Supabase real infrastructure
 

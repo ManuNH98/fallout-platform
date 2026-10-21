@@ -208,6 +208,26 @@ props/lecturas locales. La home usa Server Components y no depende de API,
 Supabase ni credenciales externas. Al conectar la API, se conserva la forma de
 presentacion y se reemplaza el origen de datos.
 
+El listado `/wiki` recibe `searchParams` de forma asincrona y resuelve la
+consulta en el servidor. La feature wiki encapsula las opciones, la
+normalizacion de parametros y el filtrado de mocks; los componentes de
+presentacion no importan los datos de muestra directamente.
+
+La busqueda y los filtros usan un formulario GET con controles HTML nativos,
+sin estado cliente ni dependencias nuevas. Los parametros publicos son `q`,
+`juego` y `categoria`. La seleccion se conserva al recargar o compartir la URL;
+`/wiki` limpia todos los filtros. El boton aplica la consulta completa.
+
+La busqueda compara titulo y resumen sin distinguir mayusculas ni tildes.
+`q` se recorta a 200 caracteres y se eliminan espacios exteriores; al comparar,
+los espacios consecutivos se consideran uno. Los slugs desconocidos se ignoran,
+los parametros repetidos usan su primer valor y los parametros ajenos al
+listado no afectan a los resultados. Los filtros se combinan con AND.
+
+Al consumir parametros de consulta, `/wiki` se renderiza por peticion; la home
+permanece estatica. Una consulta sin coincidencias ofrece un estado vacio y
+la accion de limpiar filtros, no un error ni un 404.
+
 ## Forms
 
 Use:
