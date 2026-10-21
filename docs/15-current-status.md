@@ -68,42 +68,37 @@ La guia detallada se mantiene en `docs/14-environment-and-supabase.md`.
 
 ## Siguiente tarea
 
-Implementar una tarea pequena y acotada de **Phase 3: Mock content browsing**. Antes de modificar codigo frontend se deben leer:
+La integracion de **Phase 3: Mock content browsing** esta implementada y
+validada tecnicamente, pendiente de revision final del propietario. La fase
+permanece abierta y no se inicia Phase 4 automaticamente.
 
-- `AGENTS.md`
-- `docs/06-frontend-conventions.md`
-- `docs/09-wiki-content-model.md`
-- `docs/12-roadmap.md`
-- Este documento
+Entregado:
 
-Los listados y detalles de wiki y juegos estan implementados. La tarea de detalles de juegos esta pendiente de revision del propietario antes de continuar. Las tarjetas enlazan a sus fichas y ambos modulos estan conectados. El contenido sigue identificado como muestra.
+- Home conectada a los listados y seis categorias enlazadas a sus filtros.
+- Listado wiki con busqueda y filtros por juego/categoria, y ocho detalles.
+- Listado de juegos y cuatro fichas con articulos wiki asociados.
+- Tarjetas, breadcrumbs y enlaces entre modulos; mensajes de no encontrado
+  en espanol, incluido el 404 general.
+- Correccion de contraste del boton principal y de los colores de enlaces,
+  con margen de desplazamiento adaptado a la cabecera movil.
+- Mocks y contratos separados de la presentacion, sin integrar API ni Supabase.
 
-La siguiente tarea propuesta es la revision de integracion de Phase 3: conectar las categorias y llamadas de la home donde corresponda, revisar enlaces, responsive, teclado, metadata y estados de carga/vacio/error/no encontrado. Phase 3 sigue abierta hasta completar esa revision y todos los criterios del roadmap.
+Validacion final: `pnpm --filter web lint`, `pnpm --filter web check-types`,
+`pnpm --filter web build` y `git diff --check` correctos. Recorrido de 25 URLs
+sobre el build de produccion sin enlaces internos rotos y metadata propia
+para los doce detalles. Revision visual a 320/375/768/1265 px y comprobacion de
+teclado, salto al contenido, envio del formulario, carga, vacios, error/reintento
+y no encontrado. Los estados excepcionales se renderizan con sustituciones de
+datos en memoria, sin modificar los mocks ni publicar modos de prueba.
 
-Validacion del listado con filtros: `pnpm --filter web lint`, `pnpm --filter web check-types`, `pnpm --filter web build`, `pnpm --filter @repo/types lint` y `pnpm --filter @repo/types check-types` completados correctamente. Comprobados busqueda normalizada, filtros combinados, relaciones multiples, resultados vacios, parametros desconocidos/repetidos y coherencia de slugs en los mocks. Al leer `searchParams`, `/wiki` se renderiza en servidor por peticion; la home sigue estatica. La carga y el error no se fuerzan en la experiencia publica; su comprobacion controlada queda para la revision de estados.
+Los slugs wiki/juegos desconocidos muestran `noindex` y mensajes propios, pero
+las respuestas de streaming observadas usan HTTP 200; el 404 general devuelve
+HTTP 404. El alcance, las comprobaciones y los limites estan en
+`docs/16-phase-3-validation.md`.
 
-Los detalles incorporan `react-markdown` como dependencia de web para renderizar
-Markdown en servidor sin HTML embebido ni parser propio. Se han comprobado
-los ocho cuerpos, referencias y enlaces, la separacion entre resumen y detalle,
-el renderizado sin scripts/URLs ejecutables y el estado espanol de no encontrado.
-
-El listado `/juegos` reutiliza `GameCard`, `Breadcrumbs` y `ContentState`, sin
-dependencias nuevas ni cambios en tipos compartidos. La pagina se prerenderiza
-como contenido estatico; solo `error.tsx` es un Client Component. No incorpora
-busqueda ni filtros para una coleccion de cuatro juegos. Lint, tipos y build
-del frontend completados correctamente. Navegacion entre home y listado
-comprobada en navegador; los estados excepcionales quedan preparados para
-la revision controlada de integracion.
-
-Las cuatro fichas de juegos amplian los tipos compartidos con `GameDetail`,
-mantienen los textos fuera de los componentes y reutilizan el filtro wiki
-por slug para los articulos asociados. No incorporan nuevas dependencias.
-Comprobados detalles, slugs desconocidos, separacion de resumenes y recuentos
-de articulos asociados (5/6/4/5 para New Vegas/Fallout 4/Fallout 3/Fallout 76).
-Lint y tipos de web y `@repo/types`, y build del frontend completados
-correctamente; los cuatro detalles de juegos se prerenderizan. Verificado
-en navegador el recorrido juego/wiki/juego, la wiki filtrada y el estado
-espanol de juego no encontrado. Queda pendiente la revision de integracion.
+Tras la revision final y el commit del propietario se puede cerrar Phase 3.
+La siguiente fase del roadmap es la infraestructura real de Supabase, que
+requiere planificacion expresa antes de activar recursos externos.
 
 ## Validacion conocida
 

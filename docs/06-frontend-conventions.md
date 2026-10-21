@@ -258,6 +258,16 @@ filtrado existente. La ficha muestra esos resumenes y ofrece un enlace a
 a la wiki. Las opciones de filtro usan la coleccion completa de juegos,
 independientemente de los destacados de la home.
 
+Las llamadas principales de la home enlazan a los listados publicos y las
+categorias usan `/wiki?categoria=...`. Las direcciones desconocidas disponen
+de `app/not-found.tsx` en espanol, reutilizando el layout publico.
+
+Los resets de enlaces deben permanecer en la capa base de CSS para no anular
+utilidades de color de Tailwind. La cabecera movil ocupa dos filas; el margen
+de desplazamiento reserva 9 rem por debajo de 640 px y 6 rem a partir de ese
+ancho. Las comprobaciones de integracion estan documentadas en
+`docs/16-phase-3-validation.md`.
+
 ## Forms
 
 Use:

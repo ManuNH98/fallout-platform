@@ -1,5 +1,6 @@
 import { featuredArticles, featuredGames, wikiCategories } from "@/lib/mocks/public-content";
 import { ArticleCard, CategoryRow, GameCard } from "@/components/public/content-cards";
+import Link from "next/link";
 
 const futureModules = [
   { code: "02", title: "Guías", status: "EN PREPARACIÓN" },
@@ -18,8 +19,8 @@ export default function HomePage() {
           </h1>
           <p className="mt-7 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">Un archivo en español para recorrer Fallout: sus mundos, sus habitantes y las decisiones que sobrevivieron a las bombas.</p>
           <div className="mt-9 flex flex-wrap gap-3">
-            <a className="inline-flex min-h-12 items-center gap-4 border border-phosphor bg-phosphor px-5 font-terminal text-xs font-semibold tracking-wide text-void transition-colors hover:bg-transparent hover:text-phosphor" href="#juegos">RECORRER LOS JUEGOS <span aria-hidden="true">↘</span></a>
-            <a className="inline-flex min-h-12 items-center border border-line px-5 font-terminal text-xs tracking-wide text-paper transition-colors hover:border-phosphor/60 hover:text-phosphor" href="#archivo">ABRIR EL ARCHIVO</a>
+            <Link className="inline-flex min-h-12 items-center gap-4 border border-phosphor bg-phosphor px-5 font-terminal text-xs font-semibold tracking-wide text-void transition-colors hover:bg-transparent hover:text-phosphor" href="/juegos">RECORRER LOS JUEGOS <span aria-hidden="true">→</span></Link>
+            <Link className="inline-flex min-h-12 items-center border border-line px-5 font-terminal text-xs tracking-wide text-paper transition-colors hover:border-phosphor/60 hover:text-phosphor" href="/wiki">ABRIR EL ARCHIVO</Link>
           </div>
           <div className="mt-12 flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-5 font-terminal text-[0.65rem] tracking-wide text-muted">
             <span><span className="text-phosphor">06</span> CATEGORÍAS</span><span><span className="text-phosphor">04</span> MUNDOS</span><span>UNA HISTORIA COMPARTIDA</span>
@@ -58,6 +59,7 @@ export default function HomePage() {
             {featuredGames.map((game) => <GameCard game={game} key={game.slug} />)}
           </ul>
           <p className="mt-4 font-terminal text-[0.6rem] tracking-wide text-muted">FICHAS DE JUEGO · RECORRIDO VISUAL DE DEMOSTRACIÓN</p>
+          <Link className="text-link mt-4 inline-flex min-h-11 items-center text-sm text-phosphor" href="/juegos">Ver todos los juegos</Link>
         </div>
       </section>
 
@@ -76,6 +78,7 @@ export default function HomePage() {
           <ul className="grid list-none gap-3 p-0 lg:grid-cols-3">
             {featuredArticles.map((article) => <ArticleCard article={article} key={article.slug} />)}
           </ul>
+          <Link className="text-link mt-4 inline-flex min-h-11 items-center text-sm text-phosphor" href="/wiki">Explorar toda la wiki</Link>
         </div>
       </section>
 

@@ -16,11 +16,11 @@ export function GameCard({ game }: { game: GameSummary }) {
 export function CategoryRow({ category }: { category: WikiCategorySummary }) {
   return (
     <li className="border-b border-line">
-      <div className="flex min-h-[5.25rem] items-center gap-4 py-4 sm:gap-6">
+      <Link className="group flex min-h-[5.25rem] items-center gap-4 py-4 sm:gap-6" href={`/wiki?categoria=${category.slug}`}>
         <span className="font-terminal text-xs text-phosphor/70">{category.index}</span>
         <span className="min-w-0 flex-1"><span className="block text-base font-medium text-paper transition-colors group-hover:text-phosphor">{category.title}</span><span className="mt-1 block text-xs leading-5 text-muted">{category.description}</span></span>
         <span className="hidden font-terminal text-[0.58rem] tracking-wide text-muted sm:block">{category.countLabel}</span>
-      </div>
+      </Link>
     </li>
   );
 }

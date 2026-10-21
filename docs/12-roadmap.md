@@ -115,7 +115,7 @@ slug quedan para Phase 3.
 
 ## Phase 3: Mock content browsing
 
-**Estado:** en curso. Listados y detalles de wiki y juegos implementados el 21 de octubre de 2026; detalles de juegos pendientes de revision antes de la tarea de integracion.
+**Estado:** integracion implementada y validada el 21 de octubre de 2026; pendiente de revision final del propietario. La fase permanece abierta hasta esa revision.
 
 **Objetivo:** construir la navegacion publica principal sobre datos mock.
 
@@ -170,9 +170,22 @@ frontend y se prerenderiza como contenido estatico.
 Los cuatro detalles de juegos superan lint, tipos y build del frontend, mas
 lint y tipos de `@repo/types`, y se prerenderizan mediante `generateStaticParams`.
 Comprobados articulos asociados, navegacion entre wiki y juegos, enlace al
-filtro wiki y estado espanol de juego no encontrado. Quedan pendientes la
-integracion final de la home y la revision responsive, de teclado y de estados
-excepcionales antes de cerrar Phase 3.
+filtro wiki y estado espanol de juego no encontrado. La integracion final
+de la home y la revision responsive, de teclado y de estados excepcionales
+se recogen en el siguiente apartado.
+
+**Integracion final entregada:** llamadas de la home a los listados, seis
+categorias enlazadas a sus filtros y accesos a los archivos completos. Corregido
+el contraste de enlaces afectado por el reset global y el margen de
+desplazamiento de la cabecera movil. Agregado un 404 general en espanol.
+
+**Validacion de integracion:** lint, tipos y build del frontend correctos;
+recorrido de 25 URLs del build sin enlaces internos rotos y metadata propia
+en los doce detalles. Revision visual a 320/375/768/1265 px, teclado y estados
+controlados de carga, vacio, error y no encontrado. Los detalles conservan
+la generacion estatica y los mocks permanecen separados de la presentacion.
+El alcance y los limites observados se recogen en `docs/16-phase-3-validation.md`.
+Pendiente de revision final del propietario; no se inicia Phase 4 automaticamente.
 
 ## Phase 4: Supabase real infrastructure
 
