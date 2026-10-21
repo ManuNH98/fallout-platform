@@ -8,14 +8,14 @@ No introducir Docker, Supabase local ni dependencias sin justificar. Login, regi
 
 ## Estado comprobado de Phase 4
 
-Revision del 21 de octubre de 2026. Las tareas 1 y 2 estan integradas; la tarea 3 actualiza el contrato y los ejemplos de servidor. Los recursos remotos y la conectividad real siguen pendientes de verificar.
+Revision del 21 de octubre de 2026. Las tareas 1 a 3 estan integradas; la tarea 4 prepara la comprobacion independiente de runtime. Los recursos remotos y la conectividad real siguen pendientes de verificar.
 
 - Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. El layout raiz importa `apps/web/lib/env.ts`, por lo que la validacion publica tambien se ejecuta al cargar el layout de servidor, incluido el build.
 - API: puerto `3001`, ConfigModule, validacion de protocolos/host y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
 - `GET /health` devuelve `{"status":"ok"}`: acredita disponibilidad de API, no conectividad con PostgreSQL, Auth o Storage.
 - DB: Prisma/client/adapter-pg `7.9.1`, schema sin modelos y factoria `createPrismaClient(connectionString)` preparada.
 - Prisma CLI carga dotenv en `packages/db` y usa `DIRECT_URL` mediante `datasource.url` en `prisma.config.ts`. Sin ella se permite validar/generar localmente.
-- `db:check` ejecuta `prisma/check-connection.sql`, que contiene solo `SELECT 1;`. Verifica la URL de CLI. Todavia no existe `db:check:runtime`.
+- `db:check` ejecuta `prisma/check-connection.sql`, que contiene solo `SELECT 1;`, por la URL de CLI. `db:check:runtime` comprueba `DATABASE_URL` mediante la factoria Prisma existente y `SELECT 1 AS ok`; ambos caminos siguen pendientes de verificacion remota.
 - Los archivos `apps/web/.env.local`, `apps/api/.env` y `packages/db/.env` estan ignorados por Git y no existian al iniciar esta tarea.
 
 ## Diferencias entre codigo y configuracion objetivo
@@ -27,7 +27,7 @@ Los contratos y ejemplos publicos/de servidor estan actualizados. La tabla disti
 | Web | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en ejemplo/helper/Turbo; helper importado desde el layout raiz | Implementado en tarea 2; comprobacion con credenciales reales pendiente |
 | API | Sin `SUPABASE_JWT_SECRET` en ejemplo, tipo ni Turbo; URLs opcionales con protocolos y host validados | Implementado en tarea 3; registrar sistema de firma remoto antes de Phase 5 |
 | PostgreSQL | Ejemplos con session pooler `5432`, TLS explicito y sin `pgbouncer=true` | Preparado en tarea 3; endpoint, CA y conectividad reales pendientes |
-| Verificacion | Solo `db:check` por `DIRECT_URL` | Comprobaciones CLI/runtime independientes, sin escribir datos |
+| Verificacion | `db:check` por `DIRECT_URL` y `db:check:runtime` por `DATABASE_URL` | Herramientas preparadas; verificaciones remotas pendientes, sin escribir datos |
 
 Supabase recomienda publishable keys (`sb_publishable_...`) para componentes publicos; `anon` y `service_role` son legacy. No hace falta obtener una secret key para esta fase. Referencia: [API keys](https://supabase.com/docs/guides/getting-started/api-keys).
 
@@ -103,8 +103,8 @@ No hay un destino de despliegue operativo verificado para esta fase. Registrar l
 | --- | --- | --- |
 | 1. Documentacion | Plan autorizado | Esta guia, AGENTS, roadmap y estado; sin cambios de codigo ni Dashboard |
 | 2. Entorno publico | 1 revisada | Integrado en `cb7ca8e`: publishable key y validacion desde el layout, sin cambios visuales |
-| 3. Entorno servidor | 1; ejecutar tras 2 | Implementado, pendiente de revision: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
-| 4. Prueba runtime | 3 | Comando propuesto `db:check:runtime`, `SELECT 1`, timeout, cierre y salida sin secretos |
+| 3. Entorno servidor | 1; ejecutar tras 2 | Integrado en `36e0b26`: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
+| 4. Prueba runtime | 3 | Implementado, pendiente de revision: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
 | 5. Proyecto y entorno real | 2, 3, 4 | Dashboard y archivos locales ignorados, con intervencion del propietario |
 | 6. Email y URLs | 5 | Configuracion y limites para Phase 5, sin implementar autenticacion |
 | 7. Storage | 5 | Bucket/politicas revisados; rechazo de escritura anonima comprobado |
@@ -129,7 +129,19 @@ Con `DIRECT_URL` configurada, el comando existente siguiente ejecuta exclusivame
 pnpm --filter @repo/db db:check
 ```
 
-Preparar y ejecutar por separado `pnpm --filter @repo/db db:check:runtime`, todavia inexistente, con `DATABASE_URL` y preferiblemente la factoria Prisma existente. Debe comprobar el resultado, limitar la espera, cerrar conexiones y fallar sin imprimir credenciales.
+El comando independiente de runtime ya esta disponible:
+
+```bash
+pnpm --filter @repo/db db:check:runtime
+```
+
+Genera el cliente y compila `scripts/check-runtime.ts` con el TypeScript existente antes de ejecutar JavaScript en `dist/runtime-check/` (ignorado por Git). No requiere nuevas dependencias ni soporte TypeScript nativo de Node; conserva el minimo Node 20.19. `tsconfig.json` incluye los scripts para que los checks habituales tambien los revisen. No cambia la factoria compartida ni la configuracion de Prisma CLI.
+
+El script carga silenciosamente `packages/db/.env` al ejecutarse desde el package mediante pnpm. Solo usa `DATABASE_URL`, sin fallback a `DIRECT_URL`. Rechaza ausencia, protocolo ajeno a PostgreSQL o falta de host antes de conectar. La factoria `createPrismaClient` ejecuta la consulta fija `SELECT 1 AS ok`, verifica una unica fila con `ok = 1` y llama a `$disconnect()` en `finally` antes de anunciar exito. No necesita modelos ni accede a tablas.
+
+El limite fijo de 10 segundos abarca conexion, consulta y desconexion, despues de generar/compilar. Si se supera, fuerza salida con codigo 1 y el sistema operativo cierra los sockets; no se promete desconexion ordenada en ese caso. Los demas fallos tambien devuelven codigo 1 con mensajes genericos, sin imprimir excepciones del driver, URIs ni credenciales. Exito devuelve codigo 0. El script respeta las opciones TLS de la URL; no valida por si mismo la politica TLS ni acredita la identidad del servidor solo por completar SELECT 1.
+
+Referencia: [consultas raw de Prisma](https://www.prisma.io/docs/orm/v7/prisma-client/using-raw-sql/raw-queries). La prueba local de codigo/control de errores no sustituye la ejecucion contra Supabase con TLS configurado.
 
 Validacion final prevista tras preparar el entorno real:
 

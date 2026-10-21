@@ -15,7 +15,7 @@ Actualizado el 21 de octubre de 2026.
 - La integracion externa con Supabase se retoma en Phase 4; aun no esta verificada.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
-- La fase activa es **Phase 4: Supabase real infrastructure**. Las tareas 1 y 2 estan integradas y la tarea 3 de entorno de servidor esta en revision.
+- La fase activa es **Phase 4: Supabase real infrastructure**. Las tareas 1 a 3 estan integradas y la tarea 4 de comprobacion de runtime esta en revision.
 
 ## Base completada
 
@@ -126,7 +126,7 @@ comprobaciones de build se completaron fuera del sandbox. No se utilizaron
 credenciales reales ni se verifico infraestructura externa. No hay cambios
 en Prisma que requieran pruebas de conectividad en esta tarea.
 
-La tarea 3 elimina `SUPABASE_JWT_SECRET` del tipo de entorno API, su ejemplo
+La tarea 3, integrada en `36e0b26`, elimina `SUPABASE_JWT_SECRET` del tipo de entorno API, su ejemplo
 y Turbo. Los ejemplos de API/DB usan session pooler `5432` sin `pgbouncer=true`;
 runtime usa `sslmode=verify-full` y CLI `sslmode=require`, con las diferencias
 de certificados y los limites pendientes descritos en la guia. No se declara
@@ -145,15 +145,33 @@ abrir el puerto local. Con pnpm 9 se usa `run test` para pasar `--runInBand`
 al script; la forma abreviada `test --runInBand` fue rechazada por pnpm.
 No se ejecuto `db:check` ni se hicieron conexiones a Supabase.
 
+La tarea 4 incorpora `pnpm --filter @repo/db db:check:runtime`. Genera y
+compila con las dependencias existentes, carga el entorno de DB y comprueba
+solo `DATABASE_URL` mediante la factoria Prisma y `SELECT 1 AS ok`. Verifica
+el resultado y desconecta antes de anunciar exito. El limite de 10 segundos
+incluye conexion, consulta y desconexion; si se supera, fuerza la salida y
+el sistema operativo cierra los sockets. Las salidas no imprimen errores del
+driver ni credenciales. La politica TLS real sigue pendiente de verificar.
+
+Validacion de tarea 4: lint, check-types, build, `prisma:validate` y
+`prisma:generate` correctos en `@repo/db`, mas `git diff --check`. El comando
+completo genera/compila y falla como se espera sin `DATABASE_URL`. Nueve
+comprobaciones locales cubren ausencia, ausencia de fallback a `DIRECT_URL`,
+protocolo invalido, fallo local con cliente Prisma real y, con cliente
+simulado en memoria, exito, resultado inesperado, error de consulta,
+desconexion y timeouts reales de 10 segundos durante consulta/desconexion.
+Se comprobo que las salidas no incluyen la contrasena sintetica. Estas
+comprobaciones no verifican Supabase, credenciales reales ni certificados.
+
 Tras la revision y el commit del propietario, la siguiente tarea propuesta es
-preparar `db:check:runtime`, independiente de la comprobacion de Prisma CLI,
-con consulta de solo lectura, timeout y cierre de conexiones. Requiere
-autorizacion expresa para continuar.
+crear o verificar el proyecto de Supabase y configurar el entorno local con
+el propietario. Todavia no se han creado recursos ni introducido secretos;
+la siguiente tarea requiere autorizacion expresa.
 
 Discrepancias de codigo pendientes, descritas en la guia de entorno:
 
 - La API no consume `@repo/db`; su health devuelve disponibilidad del proceso.
-- No existe aun el comando propuesto `db:check:runtime`.
+- Las comprobaciones CLI/runtime contra Supabase y su TLS siguen pendientes.
 - Los tres archivos locales previstos no existian al iniciar esta tarea; no se han creado ni leido secretos.
 
 Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.

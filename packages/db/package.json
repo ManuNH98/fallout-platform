@@ -16,6 +16,7 @@
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "db:check": "prisma db execute --file prisma/check-connection.sql",
+    "db:check:runtime": "prisma generate && tsc --project tsconfig.runtime-check.json && node dist/runtime-check/scripts/check-runtime.js",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
