@@ -1,5 +1,5 @@
 import type { WikiArticleDetail, WikiArticleFilters, WikiArticleSummary } from "@repo/types";
-import { featuredGames, wikiArticles, wikiCategories } from "@/lib/mocks/public-content";
+import { games, wikiArticles, wikiCategories } from "@/lib/mocks/public-content";
 import { wikiArticleContent, wikiSources } from "@/lib/mocks/wiki-content";
 import { normalizeWikiSearch } from "./filters";
 
@@ -15,7 +15,7 @@ export function listWikiArticles(filters: Partial<WikiArticleFilters> = {}): rea
 
 export function getWikiFilterOptions() {
   return {
-    games: featuredGames.map((game) => ({ slug: game.slug, title: game.subtitle })),
+    games: games.map((game) => ({ slug: game.slug, title: game.subtitle })),
     categories: wikiCategories.map((category) => ({ slug: category.slug, title: category.title })),
   };
 }

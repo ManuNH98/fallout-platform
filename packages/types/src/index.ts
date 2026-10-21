@@ -8,6 +8,11 @@ export interface GameSummary {
   tone: "amber" | "sage" | "blue" | "rust";
 }
 
+export interface GameDetail extends GameSummary {
+  summary: string;
+  description: string;
+}
+
 export interface WikiCategorySummary {
   slug: string;
   title: string;

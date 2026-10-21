@@ -241,8 +241,22 @@ el unico `h1` lo proporciona la pagina. Los enlaces internos usan `next/link`.
 El componente conserva la normalizacion segura de URLs de la libreria.
 
 Las tarjetas de articulos enlazan a sus detalles tanto en la home como en
-el listado y los relacionados. Los juegos y categorias del detalle enlazan
-de momento al listado wiki filtrado, hasta disponer de rutas de juegos.
+el listado y los relacionados. Los juegos de las fichas wiki enlazan a
+`/juegos/[slug]`; las categorias mantienen el enlace al listado wiki filtrado.
+
+Las fichas `/juegos/[slug]` son Server Components, con `generateStaticParams`
+para los cuatro juegos mock y metadata por juego. Los slugs desconocidos
+usan `notFound()` y el estado espanol del segmento juegos. Las tarjetas de
+juegos enlazan a esas fichas desde la home y el listado.
+
+`GameDetail` extiende `GameSummary` en `packages/types` con `summary` y
+`description`. Los textos de detalle viven en `lib/mocks/game-content.ts`
+y se resuelven mediante `getGame` en la feature games. Los articulos
+asociados se consultan con `listWikiArticles({ gameSlug })`, reutilizando el
+filtrado existente. La ficha muestra esos resumenes y ofrece un enlace a
+`/wiki?juego=...`; si no hay articulos, presenta un estado vacio con retorno
+a la wiki. Las opciones de filtro usan la coleccion completa de juegos,
+independientemente de los destacados de la home.
 
 ## Forms
 

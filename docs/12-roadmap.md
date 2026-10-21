@@ -115,7 +115,7 @@ slug quedan para Phase 3.
 
 ## Phase 3: Mock content browsing
 
-**Estado:** en curso. Listado y detalles wiki, y listado `/juegos` implementados el 21 de octubre de 2026; listado de juegos pendiente de revision antes de continuar.
+**Estado:** en curso. Listados y detalles de wiki y juegos implementados el 21 de octubre de 2026; detalles de juegos pendientes de revision antes de la tarea de integracion.
 
 **Objetivo:** construir la navegacion publica principal sobre datos mock.
 
@@ -147,13 +147,16 @@ por slug, no etiquetas de presentacion. Los destacados de la home conservan
 los tres articulos iniciales. Los ocho detalles por slug incluyen cuerpo
 Markdown original, fuentes dentro de los juegos, metadata individual y
 articulos relacionados. Las tarjetas enlazan a los detalles y los slugs
-desconocidos muestran un estado espanol de no encontrado. Los juegos y
-categorias del detalle llevan al listado wiki filtrado. `/juegos` muestra los
+desconocidos muestran un estado espanol de no encontrado. Los juegos del
+detalle llevan a sus fichas y las categorias al listado wiki filtrado. `/juegos` muestra los
 cuatro juegos actuales con tarjetas reutilizadas, contador, metadata,
 breadcrumbs y estados de carga, vacio y error preparados. La coleccion de
-juegos se separa de sus destacados y se lee desde la feature games. No se han
-incorporado detalles de juegos; las fichas wiki y el listado de juegos siguen
-identificados como muestras.
+juegos se separa de sus destacados y se lee desde la feature games. Las cuatro
+fichas de juego incluyen metadata, textos de muestra, datos del escenario y
+articulos wiki asociados mediante el filtrado existente por slug. Las tarjetas
+de juegos enlazan a sus fichas desde la home y el listado, y cada ficha ofrece
+el enlace a la wiki filtrada. Los slugs desconocidos usan un estado espanol de
+juego no encontrado. Todo el contenido sigue identificado como muestra.
 
 **Validacion parcial:** `pnpm --filter web lint`, `pnpm --filter web check-types`
 y `pnpm --filter web build`, ademas de lint y tipos de `@repo/types`, completados
@@ -163,6 +166,13 @@ parametros URL; los ocho detalles wiki se prerenderizan mediante
 los enlaces del cuerpo y el renderizado Markdown sin HTML embebido. La fase
 permanece abierta. El listado `/juegos` tambien supera lint, tipos y build del
 frontend y se prerenderiza como contenido estatico.
+
+Los cuatro detalles de juegos superan lint, tipos y build del frontend, mas
+lint y tipos de `@repo/types`, y se prerenderizan mediante `generateStaticParams`.
+Comprobados articulos asociados, navegacion entre wiki y juegos, enlace al
+filtro wiki y estado espanol de juego no encontrado. Quedan pendientes la
+integracion final de la home y la revision responsive, de teclado y de estados
+excepcionales antes de cerrar Phase 3.
 
 ## Phase 4: Supabase real infrastructure
 

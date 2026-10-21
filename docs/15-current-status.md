@@ -35,11 +35,14 @@ Actualizado el 21 de octubre de 2026.
 - Lectura de mocks wiki encapsulada en `apps/web/features/wiki/lib/content.ts`, con coleccion independiente de los destacados de la home.
 - Estados de carga, vacio y error preparados para `/wiki`; cabecera adaptada a la navegacion desde paginas interiores.
 - Ocho detalles `/wiki/[slug]` con cuerpos Markdown originales, fuentes dentro de los juegos, articulos relacionados y metadata individual.
-- Tarjetas de articulos enlazadas desde home, listado y relacionados; enlaces por juego y categoria al listado filtrado.
+- Tarjetas de articulos enlazadas desde home, listado y relacionados; enlaces de juegos a sus fichas y categorias al listado filtrado.
 - Estado espanol de articulo no encontrado para slugs desconocidos.
 - Listado `/juegos` con cuatro juegos mock, metadata, contador, breadcrumbs y estados de carga, vacio y error preparados.
 - Lectura de juegos encapsulada en `apps/web/features/games/lib/content.ts`; coleccion completa separada de los destacados de la home.
 - La opcion Juegos de la cabecera abre `/juegos` desde cualquier pagina publica.
+- Cuatro detalles `/juegos/[slug]` con metadata, escenario, localizacion, ano de referencia y articulos wiki asociados.
+- Tarjetas de juegos enlazadas desde home y listado; recorrido entre fichas wiki, fichas de juegos y wiki filtrada.
+- Estado espanol de juego no encontrado; resumenes y textos de detalle separados en los mocks.
 
 ## Decisiones vigentes
 
@@ -73,9 +76,9 @@ Implementar una tarea pequena y acotada de **Phase 3: Mock content browsing**. A
 - `docs/12-roadmap.md`
 - Este documento
 
-El listado `/wiki`, su busqueda y filtros, los ocho detalles wiki y el listado `/juegos` estan implementados. La tarea del listado de juegos esta pendiente de revision del propietario antes de continuar. Las tarjetas wiki enlazan a sus detalles; las de juegos todavia no enlazan a fichas pendientes. El contenido sigue identificado como muestra.
+Los listados y detalles de wiki y juegos estan implementados. La tarea de detalles de juegos esta pendiente de revision del propietario antes de continuar. Las tarjetas enlazan a sus fichas y ambos modulos estan conectados. El contenido sigue identificado como muestra.
 
-La siguiente tarea propuesta es implementar `/juegos/[slug]`, con fichas de juego, metadata, articulos wiki asociados y estado de no encontrado. Tambien se enlazaran las tarjetas de juegos y los juegos de las fichas wiki a sus detalles. Despues se realizara la revision de integracion. Phase 3 sigue abierta.
+La siguiente tarea propuesta es la revision de integracion de Phase 3: conectar las categorias y llamadas de la home donde corresponda, revisar enlaces, responsive, teclado, metadata y estados de carga/vacio/error/no encontrado. Phase 3 sigue abierta hasta completar esa revision y todos los criterios del roadmap.
 
 Validacion del listado con filtros: `pnpm --filter web lint`, `pnpm --filter web check-types`, `pnpm --filter web build`, `pnpm --filter @repo/types lint` y `pnpm --filter @repo/types check-types` completados correctamente. Comprobados busqueda normalizada, filtros combinados, relaciones multiples, resultados vacios, parametros desconocidos/repetidos y coherencia de slugs en los mocks. Al leer `searchParams`, `/wiki` se renderiza en servidor por peticion; la home sigue estatica. La carga y el error no se fuerzan en la experiencia publica; su comprobacion controlada queda para la revision de estados.
 
@@ -91,6 +94,16 @@ busqueda ni filtros para una coleccion de cuatro juegos. Lint, tipos y build
 del frontend completados correctamente. Navegacion entre home y listado
 comprobada en navegador; los estados excepcionales quedan preparados para
 la revision controlada de integracion.
+
+Las cuatro fichas de juegos amplian los tipos compartidos con `GameDetail`,
+mantienen los textos fuera de los componentes y reutilizan el filtro wiki
+por slug para los articulos asociados. No incorporan nuevas dependencias.
+Comprobados detalles, slugs desconocidos, separacion de resumenes y recuentos
+de articulos asociados (5/6/4/5 para New Vegas/Fallout 4/Fallout 3/Fallout 76).
+Lint y tipos de web y `@repo/types`, y build del frontend completados
+correctamente; los cuatro detalles de juegos se prerenderizan. Verificado
+en navegador el recorrido juego/wiki/juego, la wiki filtrada y el estado
+espanol de juego no encontrado. Queda pendiente la revision de integracion.
 
 ## Validacion conocida
 

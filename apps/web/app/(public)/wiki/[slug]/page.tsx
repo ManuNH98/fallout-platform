@@ -60,7 +60,7 @@ export default async function WikiArticlePage({ params }: ArticlePageProps) {
           <aside aria-label="Explorar el archivo" className="card-surface h-fit p-5 sm:p-6">
             <h2 className="text-lg font-medium text-paper">Explorar por juego</h2>
             <ul className="m-0 mt-3 list-none p-0">
-              {games.map((game) => <li key={game.slug}><Link className="text-link inline-flex min-h-11 items-center py-2 text-sm text-phosphor" href={`/wiki?juego=${game.slug}`}>{game.title}</Link></li>)}
+              {games.map((game) => <li key={game.slug}><Link className="text-link inline-flex min-h-11 items-center py-2 text-sm text-phosphor" href={`/juegos/${game.slug}`}>{game.title}</Link></li>)}
             </ul>
             <h2 className="mt-6 border-t border-line pt-6 text-lg font-medium text-paper">Categorías</h2>
             <ul className="m-0 mt-3 list-none p-0">
