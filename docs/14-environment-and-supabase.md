@@ -8,15 +8,15 @@ No introducir Docker, Supabase local ni dependencias sin justificar. Login, regi
 
 ## Estado comprobado de Phase 4
 
-Revision del 21 de octubre de 2026. Las tareas 1 a 3 estan integradas; la tarea 4 prepara la comprobacion independiente de runtime. Los recursos remotos y la conectividad real siguen pendientes de verificar.
+Revision del 21 de octubre de 2026. Las tareas 1 a 4 estan integradas. El propietario ha creado el proyecto y rellenado el entorno local en la tarea 5, todavia en curso. Runtime conecta con TLS verificado; la validacion estricta de certificados de Prisma CLI en macOS sigue pendiente.
 
 - Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. El layout raiz importa `apps/web/lib/env.ts`, por lo que la validacion publica tambien se ejecuta al cargar el layout de servidor, incluido el build.
 - API: puerto `3001`, ConfigModule, validacion de protocolos/host y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
 - `GET /health` devuelve `{"status":"ok"}`: acredita disponibilidad de API, no conectividad con PostgreSQL, Auth o Storage.
 - DB: Prisma/client/adapter-pg `7.9.1`, schema sin modelos y factoria `createPrismaClient(connectionString)` preparada.
 - Prisma CLI carga dotenv en `packages/db` y usa `DIRECT_URL` mediante `datasource.url` en `prisma.config.ts`. Sin ella se permite validar/generar localmente.
-- `db:check` ejecuta `prisma/check-connection.sql`, que contiene solo `SELECT 1;`, por la URL de CLI. `db:check:runtime` comprueba `DATABASE_URL` mediante la factoria Prisma existente y `SELECT 1 AS ok`; ambos caminos siguen pendientes de verificacion remota.
-- Los archivos `apps/web/.env.local`, `apps/api/.env` y `packages/db/.env` estan ignorados por Git y no existian al iniciar esta tarea.
+- `db:check` ejecuta `prisma/check-connection.sql`, que contiene solo `SELECT 1;`, por la URL de CLI. `db:check:runtime` comprueba `DATABASE_URL` mediante la factoria Prisma existente y `SELECT 1 AS ok`; runtime ya ha pasado contra Supabase; CLI paso con cifrado, pero falla al exigir confianza estricta en macOS.
+- Los archivos `apps/web/.env.local`, `apps/api/.env` y `packages/db/.env` existen localmente y estan ignorados por Git. El certificado CA local en `packages/db/.certs/prod-ca-2021.pem` tambien esta ignorado; no se versionan valores ni credenciales.
 
 ## Diferencias entre codigo y configuracion objetivo
 
@@ -24,10 +24,10 @@ Los contratos y ejemplos publicos/de servidor estan actualizados. La tabla disti
 
 | Area | Contrato actual | Objetivo de Phase 4 |
 | --- | --- | --- |
-| Web | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en ejemplo/helper/Turbo; helper importado desde el layout raiz | Implementado en tarea 2; comprobacion con credenciales reales pendiente |
+| Web | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en ejemplo/helper/Turbo; helper importado desde el layout raiz | Entorno real rellenado; formato y coherencia local comprobados, sin ejecutar Auth |
 | API | Sin `SUPABASE_JWT_SECRET` en ejemplo, tipo ni Turbo; URLs opcionales con protocolos y host validados | Implementado en tarea 3; registrar sistema de firma remoto antes de Phase 5 |
-| PostgreSQL | Ejemplos con session pooler `5432`, TLS explicito y sin `pgbouncer=true` | Preparado en tarea 3; endpoint, CA y conectividad reales pendientes |
-| Verificacion | `db:check` por `DIRECT_URL` y `db:check:runtime` por `DATABASE_URL` | Herramientas preparadas; verificaciones remotas pendientes, sin escribir datos |
+| PostgreSQL | Session pooler `5432`; CA descargada por el propietario y configurada localmente | Runtime verificado; confianza estricta de CLI en macOS pendiente |
+| Verificacion | `db:check` por `DIRECT_URL` y `db:check:runtime` por `DATABASE_URL` | SELECT 1 de runtime correcto; CLI con `sslaccept=strict` falla por confianza TLS |
 
 Supabase recomienda publishable keys (`sb_publishable_...`) para componentes publicos; `anon` y `service_role` son legacy. No hace falta obtener una secret key para esta fase. Referencia: [API keys](https://supabase.com/docs/guides/getting-started/api-keys).
 
@@ -73,6 +73,16 @@ Los ejemplos de runtime API/DB usan `sslmode=verify-full`, admitido por la versi
 
 El ejemplo de `DIRECT_URL` usa `sslmode=require`, que Prisma CLI documenta para exigir TLS. La documentacion de su conector PostgreSQL enumera `sslcert` para el certificado de servidor, mientras pg utiliza `sslrootcert` para la CA: no copiar opciones entre ambos caminos sin verificarlas. La configuracion de confianza y la comprobacion de identidad del servidor siguen pendientes del endpoint real. `require` por si solo no acredita que se haya verificado esa identidad.
 
+### Verificacion real de tarea 5: macOS
+
+El propietario descargo la CA desde Supabase Dashboard. Se verifico que es una CA vigente y se copio como PEM a un archivo local ignorado. Las dos URLs de runtime usan `sslmode=verify-full` y `sslrootcert` con ruta absoluta al PEM. `db:check:runtime` pasa contra Supabase y una comprobacion con el mismo driver pg confirma conexion cifrada y certificado autorizado.
+
+Para CLI se configuro `sslmode=require`, `sslcert` con la CA y `sslaccept=strict`. El primer SELECT 1 con solo `require` habia pasado, pero el modo estricto falla con P1011 (certificado no confiable). Anadir tambien `sslrootcert` o cambiar la codificacion de la ruta en pruebas temporales no lo resolvio. El verificador nativo de macOS, con la CA explicita, devuelve `CSSMERR_TP_NOT_TRUSTED` e informa que Certificate Transparency no esta verificado. Se ha reproducido el rechazo nativo; no se declara resuelta su causa ni se atribuye a credenciales incorrectas.
+
+Las URLs de runtime y CLI apuntan al mismo endpoint, usuario y base; no se publican sus valores. No se ha debilitado TLS ni instalado confianza en llaveros. Una posible siguiente accion es evaluar una regla de confianza de usuario restringida a SSL y al host del pooler; requiere autorizacion explicita porque modifica la confianza del sistema fuera del repositorio. Su eficacia aun no esta comprobada. Hasta resolverlo y repetir CLI, la tarea 5 y Phase 4 permanecen abiertas.
+
+Referencia de los parametros del motor nativo: [parser de conexiones de Prisma](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/url.rs) y [carga de la CA y modo estricto](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/native/mod.rs). Las opciones del driver pg y del motor nativo se comprueban por separado.
+
 Referencias adicionales: [TLS de node-postgres](https://node-postgres.com/features/ssl) y [conector PostgreSQL de Prisma](https://www.prisma.io/docs/orm/v7/core-concepts/supported-databases/postgresql).
 
 Mantener Prisma 7: URL de CLI en `prisma.config.ts`, carga explicita de entorno y adapter en runtime. No reintroducir `directUrl` en el schema ni exigir credenciales para generar el cliente sin conexion.
@@ -104,8 +114,8 @@ No hay un destino de despliegue operativo verificado para esta fase. Registrar l
 | 1. Documentacion | Plan autorizado | Esta guia, AGENTS, roadmap y estado; sin cambios de codigo ni Dashboard |
 | 2. Entorno publico | 1 revisada | Integrado en `cb7ca8e`: publishable key y validacion desde el layout, sin cambios visuales |
 | 3. Entorno servidor | 1; ejecutar tras 2 | Integrado en `36e0b26`: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
-| 4. Prueba runtime | 3 | Implementado, pendiente de revision: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
-| 5. Proyecto y entorno real | 2, 3, 4 | Dashboard y archivos locales ignorados, con intervencion del propietario |
+| 4. Prueba runtime | 3 | Integrado en `d19cb94`: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
+| 5. Proyecto y entorno real | 2, 3, 4 | En curso: proyecto creado por el propietario y entorno rellenado; runtime correcto, CLI estricto pendiente en macOS |
 | 6. Email y URLs | 5 | Configuracion y limites para Phase 5, sin implementar autenticacion |
 | 7. Storage | 5 | Bucket/politicas revisados; rechazo de escritura anonima comprobado |
 | 8. Verificacion final | 1 a 7 | Conexiones, arranque, health y mocks comprobados; registro antes del cierre |

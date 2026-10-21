@@ -15,7 +15,7 @@ Actualizado el 21 de octubre de 2026.
 - La integracion externa con Supabase se retoma en Phase 4; aun no esta verificada.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
-- La fase activa es **Phase 4: Supabase real infrastructure**. Las tareas 1 a 3 estan integradas y la tarea 4 de comprobacion de runtime esta en revision.
+- La fase activa es **Phase 4: Supabase real infrastructure**. Las tareas 1 a 4 estan integradas y la tarea 5 de entorno real esta en curso; queda pendiente la confianza TLS estricta de Prisma CLI en macOS.
 
 ## Base completada
 
@@ -163,16 +163,31 @@ desconexion y timeouts reales de 10 segundos durante consulta/desconexion.
 Se comprobo que las salidas no incluyen la contrasena sintetica. Estas
 comprobaciones no verifican Supabase, credenciales reales ni certificados.
 
-Tras la revision y el commit del propietario, la siguiente tarea propuesta es
-crear o verificar el proyecto de Supabase y configurar el entorno local con
-el propietario. Todavia no se han creado recursos ni introducido secretos;
-la siguiente tarea requiere autorizacion expresa.
+La tarea 4 esta integrada en `d19cb94`. En la tarea 5 el propietario ha creado
+el proyecto y rellenado los tres archivos locales ignorados. Se comprobo el
+formato de la URL publica, el prefijo publishable y la coherencia web/API,
+sin exponer valores. La CA descargada desde Supabase esta copiada en un PEM
+local ignorado y referenciada por las URLs de servidor.
 
-Discrepancias de codigo pendientes, descritas en la guia de entorno:
+`db:check:runtime` pasa contra Supabase con `sslmode=verify-full` y CA explicita.
+El driver pg confirma TLS cifrado y certificado autorizado. CLI paso inicialmente
+con `sslmode=require`; al configurar CA y `sslaccept=strict` falla con P1011.
+El verificador nativo de macOS reproduce un rechazo de confianza e informa de
+Certificate Transparency no verificado. No se ha modificado ningun llavero ni
+se ha desactivado la verificacion TLS. La siguiente accion propuesta requiere
+autorizar por separado una regla de confianza de usuario restringida al host,
+sin dar por hecho que resolvera el fallo. Detalles en la guia de entorno.
 
-- La API no consume `@repo/db`; su health devuelve disponibilidad del proceso.
-- Las comprobaciones CLI/runtime contra Supabase y su TLS siguen pendientes.
-- Los tres archivos locales previstos no existian al iniciar esta tarea; no se han creado ni leido secretos.
+Con el entorno real y la CA local, `pnpm lint`, `pnpm check-types` y
+`pnpm build` pasan en el monorepo; build se completo fuera del sandbox.
+`git diff --check` correcto. No se ejecutaron migraciones ni escrituras remotas.
+
+Pendientes actuales:
+
+- Resolver la confianza estricta de CLI y repetir SELECT 1 sin relajar TLS.
+- La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
+- Email/URLs y bucket `media` se revisaran en las siguientes tareas autorizadas.
+- La comprobacion final de arranque y navegacion con entorno real sigue pendiente.
 
 Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.
 
@@ -191,7 +206,7 @@ pnpm --filter @repo/db prisma:validate
 pnpm --filter @repo/db prisma:generate
 ```
 
-La comprobacion `pnpm --filter @repo/db db:check` sigue pendiente porque requiere credenciales de un proyecto Supabase real.
+Con entorno real, `db:check:runtime` ya pasa. `db:check` paso inicialmente con cifrado, pero su configuracion actual de confianza estricta falla en macOS; no se considera cerrada esa verificacion.
 
 ## Inicio recomendado para un chat nuevo
 
