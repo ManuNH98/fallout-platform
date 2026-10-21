@@ -208,6 +208,66 @@ props/lecturas locales. La home usa Server Components y no depende de API,
 Supabase ni credenciales externas. Al conectar la API, se conserva la forma de
 presentacion y se reemplaza el origen de datos.
 
+El listado `/wiki` recibe `searchParams` de forma asincrona y resuelve la
+consulta en el servidor. La feature wiki encapsula las opciones, la
+normalizacion de parametros y el filtrado de mocks; los componentes de
+presentacion no importan los datos de muestra directamente.
+
+La busqueda y los filtros usan un formulario GET con controles HTML nativos,
+sin estado cliente ni dependencias nuevas. Los parametros publicos son `q`,
+`juego` y `categoria`. La seleccion se conserva al recargar o compartir la URL;
+`/wiki` limpia todos los filtros. El boton aplica la consulta completa.
+
+La busqueda compara titulo y resumen sin distinguir mayusculas ni tildes.
+`q` se recorta a 200 caracteres y se eliminan espacios exteriores; al comparar,
+los espacios consecutivos se consideran uno. Los slugs desconocidos se ignoran,
+los parametros repetidos usan su primer valor y los parametros ajenos al
+listado no afectan a los resultados. Los filtros se combinan con AND.
+
+Al consumir parametros de consulta, `/wiki` se renderiza por peticion; la home
+permanece estatica. Una consulta sin coincidencias ofrece un estado vacio y
+la accion de limpiar filtros, no un error ni un 404.
+
+Los detalles `/wiki/[slug]` usan `generateStaticParams` para los ocho articulos
+mock y `generateMetadata` para titulo, descripcion y Open Graph por articulo.
+Los slugs desconocidos pasan por `notFound()` y el estado espanol del segmento
+wiki; no se desactiva `dynamicParams`, para conservar ese estado personalizado.
+
+El cuerpo se renderiza en servidor con `react-markdown`, sin HTML embebido,
+MDX ni plugins adicionales. Esta dependencia evita mantener un parser propio
+o insertar HTML generado mediante `dangerouslySetInnerHTML`. Se admiten
+encabezados de nivel 2 y 3, parrafos, enfasis, listas, enlaces, citas y codigo;
+el unico `h1` lo proporciona la pagina. Los enlaces internos usan `next/link`.
+El componente conserva la normalizacion segura de URLs de la libreria.
+
+Las tarjetas de articulos enlazan a sus detalles tanto en la home como en
+el listado y los relacionados. Los juegos de las fichas wiki enlazan a
+`/juegos/[slug]`; las categorias mantienen el enlace al listado wiki filtrado.
+
+Las fichas `/juegos/[slug]` son Server Components, con `generateStaticParams`
+para los cuatro juegos mock y metadata por juego. Los slugs desconocidos
+usan `notFound()` y el estado espanol del segmento juegos. Las tarjetas de
+juegos enlazan a esas fichas desde la home y el listado.
+
+`GameDetail` extiende `GameSummary` en `packages/types` con `summary` y
+`description`. Los textos de detalle viven en `lib/mocks/game-content.ts`
+y se resuelven mediante `getGame` en la feature games. Los articulos
+asociados se consultan con `listWikiArticles({ gameSlug })`, reutilizando el
+filtrado existente. La ficha muestra esos resumenes y ofrece un enlace a
+`/wiki?juego=...`; si no hay articulos, presenta un estado vacio con retorno
+a la wiki. Las opciones de filtro usan la coleccion completa de juegos,
+independientemente de los destacados de la home.
+
+Las llamadas principales de la home enlazan a los listados publicos y las
+categorias usan `/wiki?categoria=...`. Las direcciones desconocidas disponen
+de `app/not-found.tsx` en espanol, reutilizando el layout publico.
+
+Los resets de enlaces deben permanecer en la capa base de CSS para no anular
+utilidades de color de Tailwind. La cabecera movil ocupa dos filas; el margen
+de desplazamiento reserva 9 rem por debajo de 640 px y 6 rem a partir de ese
+ancho. Las comprobaciones de integracion estan documentadas en
+`docs/16-phase-3-validation.md`.
+
 ## Forms
 
 Use:

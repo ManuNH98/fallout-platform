@@ -128,6 +128,38 @@ Examples:
 
 Use many-to-many relation between WikiPage and Category.
 
+## Public mock browsing contract
+
+Durante Phase 3, `WikiArticleSummary` en `packages/types` incluye
+`gameSlugs` y `categorySlugs` como colecciones de slugs. Estas relaciones
+permiten filtrar un articulo asociado a varios juegos o categorias sin
+interpretar etiquetas como "Varios juegos". Los campos `game` y `category`
+se mantienen como etiquetas de presentacion para las tarjetas existentes.
+
+`WikiArticleFilters` comparte la forma normalizada de la consulta:
+`query`, `gameSlug` y `categorySlug`; una cadena vacia significa que ese
+criterio no esta activo. Los parametros URL y su normalizacion pertenecen
+a la feature wiki del frontend. Son contratos de navegacion publica sobre
+mocks, no modelos Prisma ni endpoints de API implementados.
+
+`WikiArticleDetail` extiende el resumen con `bodyMarkdown`, `sources` y
+`relatedArticles` (resumenes, sin cuerpos anidados). `WikiSourceSummary`
+identifica cada fuente mediante `id`, `title` y `reference`.
+
+Los cuerpos originales, referencias y relaciones explicitas se almacenan
+en `apps/web/lib/mocks/wiki-content.ts`, separados de los resumenes de
+`public-content.ts`. Los mocks relacionan fuentes por identificador y
+articulos por slug; la funcion `getWikiArticle` resuelve esas relaciones
+antes de entregar los datos a la pagina. Un slug desconocido no devuelve
+un articulo de sustitucion.
+
+Las fuentes iniciales son referencias a escenas, conversaciones o elementos
+dentro de los juegos, sin URLs ni citas textuales inventadas. Los textos son
+fichas breves de muestra, no articulos editoriales completos. Cada cuerpo
+empieza con un encabezado de nivel 2; el titulo y el resumen pertenecen a la
+cabecera de la pagina. Los enlaces del cuerpo y los relacionados apuntan a
+articulos que existen en la coleccion mock.
+
 ## Page relationships
 
 Pages should link to other pages through explicit relationships.

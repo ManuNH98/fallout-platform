@@ -8,6 +8,11 @@ export interface GameSummary {
   tone: "amber" | "sage" | "blue" | "rust";
 }
 
+export interface GameDetail extends GameSummary {
+  summary: string;
+  description: string;
+}
+
 export interface WikiCategorySummary {
   slug: string;
   title: string;
@@ -22,6 +27,26 @@ export interface WikiArticleSummary {
   summary: string;
   category: string;
   game: string;
+  gameSlugs: readonly string[];
+  categorySlugs: readonly string[];
   readTime: string;
   index: string;
+}
+
+export interface WikiArticleFilters {
+  query: string;
+  gameSlug: string;
+  categorySlug: string;
+}
+
+export interface WikiSourceSummary {
+  id: string;
+  title: string;
+  reference: string;
+}
+
+export interface WikiArticleDetail extends WikiArticleSummary {
+  bodyMarkdown: string;
+  sources: readonly WikiSourceSummary[];
+  relatedArticles: readonly WikiArticleSummary[];
 }

@@ -115,6 +115,8 @@ slug quedan para Phase 3.
 
 ## Phase 3: Mock content browsing
 
+**Estado:** integracion implementada y validada el 21 de octubre de 2026; pendiente de revision final del propietario. La fase permanece abierta hasta esa revision.
+
 **Objetivo:** construir la navegacion publica principal sobre datos mock.
 
 **Tareas:**
@@ -132,6 +134,58 @@ slug quedan para Phase 3.
 - Las rutas de detalle funcionan con slugs.
 - Los listados y detalles son responsive, accesibles y SEO-friendly.
 - Sustituir los mocks por la API no requiere redisenar las pantallas.
+
+**Progreso parcial:** `/wiki` muestra ocho articulos mock mediante
+las tarjetas y el shell publicos, con metadata, contador, breadcrumbs y estados
+de carga, vacio y error preparados. La lectura de datos esta encapsulada en la
+feature wiki y los destacados de la home se derivan de la coleccion wiki. La
+cabecera enlaza a los listados wiki y juegos y mantiene el ancla de categorias
+en la home. La busqueda en titulo/resumen y los filtros por juego/categoria usan un
+formulario GET con seleccion persistida en URL, contador de resultados,
+filtros aplicados y accion de limpiar. El filtrado usa relaciones multiples
+por slug, no etiquetas de presentacion. Los destacados de la home conservan
+los tres articulos iniciales. Los ocho detalles por slug incluyen cuerpo
+Markdown original, fuentes dentro de los juegos, metadata individual y
+articulos relacionados. Las tarjetas enlazan a los detalles y los slugs
+desconocidos muestran un estado espanol de no encontrado. Los juegos del
+detalle llevan a sus fichas y las categorias al listado wiki filtrado. `/juegos` muestra los
+cuatro juegos actuales con tarjetas reutilizadas, contador, metadata,
+breadcrumbs y estados de carga, vacio y error preparados. La coleccion de
+juegos se separa de sus destacados y se lee desde la feature games. Las cuatro
+fichas de juego incluyen metadata, textos de muestra, datos del escenario y
+articulos wiki asociados mediante el filtrado existente por slug. Las tarjetas
+de juegos enlazan a sus fichas desde la home y el listado, y cada ficha ofrece
+el enlace a la wiki filtrada. Los slugs desconocidos usan un estado espanol de
+juego no encontrado. Todo el contenido sigue identificado como muestra.
+
+**Validacion parcial:** `pnpm --filter web lint`, `pnpm --filter web check-types`
+y `pnpm --filter web build`, ademas de lint y tipos de `@repo/types`, completados
+correctamente. `/wiki` se renderiza en servidor por peticion para resolver los
+parametros URL; los ocho detalles wiki se prerenderizan mediante
+`generateStaticParams`. Se han comprobado las relaciones y referencias mock,
+los enlaces del cuerpo y el renderizado Markdown sin HTML embebido. La fase
+permanece abierta. El listado `/juegos` tambien supera lint, tipos y build del
+frontend y se prerenderiza como contenido estatico.
+
+Los cuatro detalles de juegos superan lint, tipos y build del frontend, mas
+lint y tipos de `@repo/types`, y se prerenderizan mediante `generateStaticParams`.
+Comprobados articulos asociados, navegacion entre wiki y juegos, enlace al
+filtro wiki y estado espanol de juego no encontrado. La integracion final
+de la home y la revision responsive, de teclado y de estados excepcionales
+se recogen en el siguiente apartado.
+
+**Integracion final entregada:** llamadas de la home a los listados, seis
+categorias enlazadas a sus filtros y accesos a los archivos completos. Corregido
+el contraste de enlaces afectado por el reset global y el margen de
+desplazamiento de la cabecera movil. Agregado un 404 general en espanol.
+
+**Validacion de integracion:** lint, tipos y build del frontend correctos;
+recorrido de 25 URLs del build sin enlaces internos rotos y metadata propia
+en los doce detalles. Revision visual a 320/375/768/1265 px, teclado y estados
+controlados de carga, vacio, error y no encontrado. Los detalles conservan
+la generacion estatica y los mocks permanecen separados de la presentacion.
+El alcance y los limites observados se recogen en `docs/16-phase-3-validation.md`.
+Pendiente de revision final del propietario; no se inicia Phase 4 automaticamente.
 
 ## Phase 4: Supabase real infrastructure
 
