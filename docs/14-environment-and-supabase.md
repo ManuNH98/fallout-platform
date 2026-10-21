@@ -6,11 +6,11 @@ Preparar y verificar Supabase remoto en Phase 4, manteniendo las responsabilidad
 
 No introducir Docker, Supabase local ni dependencias sin justificar. Login, registro, sesiones, roles y validacion JWT corresponden a Phase 5. No anadir modelos, migraciones, seeds ni sustituir mocks en Phase 4.
 
-## Estado comprobado al iniciar Phase 4
+## Estado comprobado de Phase 4
 
-Revision del 21 de octubre de 2026. Esta entrega modifica solo documentacion; los recursos remotos y la conectividad real siguen pendientes de verificar.
+Revision del 21 de octubre de 2026. La tarea documental inicial esta integrada; la tarea 2 actualiza el contrato publico de entorno. Los recursos remotos y la conectividad real siguen pendientes de verificar.
 
-- Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. `apps/web/lib/env.ts` no tiene consumidores y su validacion Supabase no se ejecuta.
+- Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. El layout raiz importa `apps/web/lib/env.ts`, por lo que la validacion publica tambien se ejecuta al cargar el layout de servidor, incluido el build.
 - API: puerto `3001`, ConfigModule, validacion basica y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
 - `GET /health` devuelve `{"status":"ok"}`: acredita disponibilidad de API, no conectividad con PostgreSQL, Auth o Storage.
 - DB: Prisma/client/adapter-pg `7.9.1`, schema sin modelos y factoria `createPrismaClient(connectionString)` preparada.
@@ -20,11 +20,11 @@ Revision del 21 de octubre de 2026. Esta entrega modifica solo documentacion; lo
 
 ## Diferencias entre codigo y configuracion objetivo
 
-Los ejemplos existentes requieren actualizacion antes de introducir credenciales. Estas decisiones son el objetivo de las proximas tareas, no cambios ya implementados.
+El contrato publico ya esta actualizado; los ejemplos de servidor requieren la tarea 3 antes de introducir credenciales. La tabla distingue lo implementado de lo pendiente.
 
 | Area | Contrato actual | Objetivo de Phase 4 |
 | --- | --- | --- |
-| Web | `NEXT_PUBLIC_SUPABASE_ANON_KEY` en ejemplo/helper/Turbo | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` coordinada en los tres sitios y validacion realmente ejecutada |
+| Web | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en ejemplo/helper/Turbo; helper importado desde el layout raiz | Implementado en tarea 2; comprobacion con credenciales reales pendiente |
 | API | Ejemplo/tipo/Turbo incluyen `SUPABASE_JWT_SECRET` | Retirar el requisito anticipado del secreto legacy; registrar sistema de firma para Phase 5 |
 | PostgreSQL | Ejemplos fijan transaction pooler `6543` y `pgbouncer=true` | Elegir por entorno y driver; session pooler como primera opcion para NestJS persistente sobre IPv4 |
 | Verificacion | Solo `db:check` por `DIRECT_URL` | Comprobaciones CLI/runtime independientes, sin escribir datos |
@@ -42,6 +42,10 @@ Requisitos: Node.js 20.19 o superior, pnpm 9 y acceso del propietario al Dashboa
 | `apps/web/.env.local` | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | API local `http://localhost:3001`, URL del proyecto y clave publica; sin cliente Auth todavia |
 | `apps/api/.env` | `NODE_ENV`, `PORT`, `WEB_URL`, `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_STORAGE_BUCKET` | Desarrollo, `3001`, `http://localhost:3000`, conexion runtime y bucket `media` |
 | `packages/db/.env` | `DATABASE_URL`, `DIRECT_URL` | Comprobacion runtime y acceso de Prisma CLI respectivamente |
+
+El contrato web usa `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y exporta `supabasePublishableKey` desde `webEnvironment`. No admite el nombre legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` como alternativa. URL y clave se configuran juntas: ambas ausentes (o vacias) permiten los mocks; solo una presente produce un error en espanol. La validacion comprueba presencia conjunta y sintaxis de URL, no autenticidad ni permisos de la clave. No realiza llamadas a Supabase ni crea sesiones.
+
+Las referencias `process.env.NEXT_PUBLIC_*` son estaticas para que Next pueda incorporarlas durante el build. Cambiar valores publicos requiere reconstruir el despliegue. Referencia: [variables de entorno de Next.js](https://nextjs.org/docs/app/guides/environment-variables).
 
 La presencia de `DATABASE_URL` en la API no implica que NestJS ya use Prisma. Los procesos no cargan automaticamente el entorno de otros workspaces. Next carga `.env.local`, Nest carga su `.env` mediante ConfigModule y Prisma CLI usa dotenv dentro de DB. Turbo declara disponibilidad/hash de variables, pero no carga esos archivos.
 
@@ -90,7 +94,7 @@ No hay un destino de despliegue operativo verificado para esta fase. Registrar l
 | Tarea | Depende de | Entrega |
 | --- | --- | --- |
 | 1. Documentacion | Plan autorizado | Esta guia, AGENTS, roadmap y estado; sin cambios de codigo ni Dashboard |
-| 2. Entorno publico | 1 revisada | Publishable key en ejemplo/helper/Turbo y validacion web efectiva, sin cambios visuales |
+| 2. Entorno publico | 1 revisada | Implementado, pendiente de revision: publishable key y validacion desde el layout, sin cambios visuales |
 | 3. Entorno servidor | 1; ejecutar tras 2 | Ejemplos API/DB, contrato API y pruebas; protocolos/TLS documentados; retirar requisito de JWT secret |
 | 4. Prueba runtime | 3 | Comando propuesto `db:check:runtime`, `SELECT 1`, timeout, cierre y salida sin secretos |
 | 5. Proyecto y entorno real | 2, 3, 4 | Dashboard y archivos locales ignorados, con intervencion del propietario |

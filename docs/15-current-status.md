@@ -15,7 +15,7 @@ Actualizado el 21 de octubre de 2026.
 - La integracion externa con Supabase se retoma en Phase 4; aun no esta verificada.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
-- La fase activa es **Phase 4: Supabase real infrastructure**, con inicio autorizado por el propietario y primera tarea documental en revision.
+- La fase activa es **Phase 4: Supabase real infrastructure**. La tarea documental inicial esta integrada y la tarea 2 de entorno publico esta en revision.
 
 ## Base completada
 
@@ -108,18 +108,31 @@ HTTP 404. El alcance, las comprobaciones y los limites estan en
 
 ## Siguiente tarea
 
-La primera tarea de Phase 4 actualiza exclusivamente `AGENTS.md`, el roadmap,
-esta pagina y `docs/14-environment-and-supabase.md`. No modifica codigo,
-ejemplos `.env`, dependencias, archivos locales con credenciales ni recursos externos.
+La tarea documental inicial esta integrada en `eb36031`. La tarea 2 actualiza
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en el ejemplo web, el helper y Turbo.
+El layout raiz de servidor importa el helper para ejecutar la validacion.
+Ambas variables Supabase pueden omitirse para trabajar con mocks; configurar
+solo URL o solo clave produce un error en espanol. No se comprueba autenticidad
+de la clave ni se realizan llamadas externas.
 
-Tras su revision y el commit del propietario, la siguiente tarea propuesta es
-actualizar el contrato publico de entorno: publishable key y ejecucion efectiva
-de la validacion web. Requiere autorizacion expresa para continuar.
+Validacion de tarea 2: `pnpm --filter web lint`, `pnpm --filter web check-types`
+y `pnpm --filter web build` correctos. Comprobados siete escenarios aislados
+del helper: ausencia, pareja completa, solo URL, solo clave, URL invalida,
+valores vacios y rechazo de la clave legacy como sustituto. Tambien se ha
+verificado con builds reales de Next: sin Supabase compila; solo URL falla
+con el mensaje esperado; URL y publishable key ficticias compilan.
+El intento de build dentro del sandbox se detuvo al no avanzar; estas
+comprobaciones de build se completaron fuera del sandbox. No se utilizaron
+credenciales reales ni se verifico infraestructura externa. No hay cambios
+en Prisma que requieran pruebas de conectividad en esta tarea.
+
+Tras la revision y el commit del propietario, la siguiente tarea propuesta es
+actualizar ejemplos y contrato de entorno de servidor (API/DB), retirando el
+requisito anticipado del JWT secret y precisando conexiones/TLS. Requiere
+autorizacion expresa para continuar.
 
 Discrepancias de codigo pendientes, descritas en la guia de entorno:
 
-- El ejemplo y el helper web todavia usan `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- `apps/web/lib/env.ts` no tiene consumidores; Next solo valida actualmente la URL de API desde su configuracion.
 - Los ejemplos de servidor todavia proponen transaction pooling y JWT secret.
 - La API no consume `@repo/db`; su health devuelve disponibilidad del proceso.
 - No existe aun el comando propuesto `db:check:runtime`.
