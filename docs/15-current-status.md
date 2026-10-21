@@ -34,6 +34,9 @@ Actualizado el 21 de octubre de 2026.
 - Relaciones mock de varios juegos y categorias por articulo mediante slugs y tipos compartidos.
 - Lectura de mocks wiki encapsulada en `apps/web/features/wiki/lib/content.ts`, con coleccion independiente de los destacados de la home.
 - Estados de carga, vacio y error preparados para `/wiki`; cabecera adaptada a la navegacion desde paginas interiores.
+- Ocho detalles `/wiki/[slug]` con cuerpos Markdown originales, fuentes dentro de los juegos, articulos relacionados y metadata individual.
+- Tarjetas de articulos enlazadas desde home, listado y relacionados; enlaces por juego y categoria al listado filtrado.
+- Estado espanol de articulo no encontrado para slugs desconocidos.
 
 ## Decisiones vigentes
 
@@ -67,11 +70,16 @@ Implementar una tarea pequena y acotada de **Phase 3: Mock content browsing**. A
 - `docs/12-roadmap.md`
 - Este documento
 
-El listado `/wiki` y su busqueda y filtros estan implementados. La tarea de busqueda y filtros esta pendiente de revision del propietario antes de continuar. Reutiliza el shell y las tarjetas existentes; los articulos siguen identificados como muestras y no enlazan a detalles todavia.
+El listado `/wiki`, su busqueda y filtros, y los ocho detalles por slug estan implementados. La tarea de detalles esta pendiente de revision del propietario antes de continuar. Las tarjetas reutilizadas enlazan a los detalles; el contenido sigue identificado como muestra.
 
-La siguiente tarea propuesta es implementar `/wiki/[slug]`, con cuerpo Markdown, fuentes, metadata por articulo, enlaces internos y estado de no encontrado. Despues se implementaran las rutas de juegos. Phase 3 sigue abierta; no hay detalles ni rutas de juegos implementados.
+La siguiente tarea propuesta es implementar el listado `/juegos`, reutilizando las tarjetas, breadcrumbs y estados existentes. Despues se implementaran los detalles de juegos y la revision de integracion. Phase 3 sigue abierta; no hay rutas de juegos implementadas.
 
 Validacion del listado con filtros: `pnpm --filter web lint`, `pnpm --filter web check-types`, `pnpm --filter web build`, `pnpm --filter @repo/types lint` y `pnpm --filter @repo/types check-types` completados correctamente. Comprobados busqueda normalizada, filtros combinados, relaciones multiples, resultados vacios, parametros desconocidos/repetidos y coherencia de slugs en los mocks. Al leer `searchParams`, `/wiki` se renderiza en servidor por peticion; la home sigue estatica. La carga y el error no se fuerzan en la experiencia publica; su comprobacion controlada queda para la revision de estados.
+
+Los detalles incorporan `react-markdown` como dependencia de web para renderizar
+Markdown en servidor sin HTML embebido ni parser propio. Se han comprobado
+los ocho cuerpos, referencias y enlaces, la separacion entre resumen y detalle,
+el renderizado sin scripts/URLs ejecutables y el estado espanol de no encontrado.
 
 ## Validacion conocida
 

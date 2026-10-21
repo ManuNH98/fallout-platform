@@ -1,5 +1,6 @@
-import type { WikiArticleFilters, WikiArticleSummary } from "@repo/types";
+import type { WikiArticleDetail, WikiArticleFilters, WikiArticleSummary } from "@repo/types";
 import { featuredGames, wikiArticles, wikiCategories } from "@/lib/mocks/public-content";
+import { wikiArticleContent, wikiSources } from "@/lib/mocks/wiki-content";
 import { normalizeWikiSearch } from "./filters";
 
 export function listWikiArticles(filters: Partial<WikiArticleFilters> = {}): readonly WikiArticleSummary[] {
@@ -16,5 +17,19 @@ export function getWikiFilterOptions() {
   return {
     games: featuredGames.map((game) => ({ slug: game.slug, title: game.subtitle })),
     categories: wikiCategories.map((category) => ({ slug: category.slug, title: category.title })),
+  };
+}
+
+export function getWikiArticle(slug: string): WikiArticleDetail | undefined {
+  const summary = wikiArticles.find((article) => article.slug === slug);
+  const content = wikiArticleContent.find((article) => article.slug === slug);
+
+  if (!summary || !content) return undefined;
+
+  return {
+    ...summary,
+    bodyMarkdown: content.bodyMarkdown,
+    sources: wikiSources.filter((source) => content.sourceIds.includes(source.id)),
+    relatedArticles: wikiArticles.filter((article) => article.slug !== slug && content.relatedSlugs.includes(article.slug)),
   };
 }

@@ -33,3 +33,15 @@ export interface WikiArticleFilters {
   gameSlug: string;
   categorySlug: string;
 }
+
+export interface WikiSourceSummary {
+  id: string;
+  title: string;
+  reference: string;
+}
+
+export interface WikiArticleDetail extends WikiArticleSummary {
+  bodyMarkdown: string;
+  sources: readonly WikiSourceSummary[];
+  relatedArticles: readonly WikiArticleSummary[];
+}

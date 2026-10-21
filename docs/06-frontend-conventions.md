@@ -228,6 +228,22 @@ Al consumir parametros de consulta, `/wiki` se renderiza por peticion; la home
 permanece estatica. Una consulta sin coincidencias ofrece un estado vacio y
 la accion de limpiar filtros, no un error ni un 404.
 
+Los detalles `/wiki/[slug]` usan `generateStaticParams` para los ocho articulos
+mock y `generateMetadata` para titulo, descripcion y Open Graph por articulo.
+Los slugs desconocidos pasan por `notFound()` y el estado espanol del segmento
+wiki; no se desactiva `dynamicParams`, para conservar ese estado personalizado.
+
+El cuerpo se renderiza en servidor con `react-markdown`, sin HTML embebido,
+MDX ni plugins adicionales. Esta dependencia evita mantener un parser propio
+o insertar HTML generado mediante `dangerouslySetInnerHTML`. Se admiten
+encabezados de nivel 2 y 3, parrafos, enfasis, listas, enlaces, citas y codigo;
+el unico `h1` lo proporciona la pagina. Los enlaces internos usan `next/link`.
+El componente conserva la normalizacion segura de URLs de la libreria.
+
+Las tarjetas de articulos enlazan a sus detalles tanto en la home como en
+el listado y los relacionados. Los juegos y categorias del detalle enlazan
+de momento al listado wiki filtrado, hasta disponer de rutas de juegos.
+
 ## Forms
 
 Use:

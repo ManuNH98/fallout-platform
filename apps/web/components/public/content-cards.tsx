@@ -1,4 +1,5 @@
 import type { GameSummary, WikiArticleSummary, WikiCategorySummary } from "@repo/types";
+import Link from "next/link";
 
 export function GameCard({ game }: { game: GameSummary }) {
   return (
@@ -28,8 +29,8 @@ export function ArticleCard({ article }: { article: WikiArticleSummary }) {
   return (
     <li className="article-card card-surface flex min-h-64 flex-col p-5 sm:p-6">
       <div className="flex items-center justify-between font-terminal text-[0.6rem] tracking-widest text-muted"><span>{article.index}</span><span>{article.readTime.toUpperCase()} DE LECTURA</span></div>
-      <div className="mt-8 flex-1"><p className="font-terminal text-[0.62rem] tracking-widest text-phosphor">{article.category.toUpperCase()} <span className="text-muted">/ {article.game.toUpperCase()}</span></p><h3 className="mt-3 text-xl font-medium tracking-[-0.025em] text-paper">{article.title}</h3><p className="mt-3 text-sm leading-6 text-muted">{article.summary}</p></div>
-      <p className="mt-6 border-t border-line pt-4 font-terminal text-[0.6rem] tracking-wide text-muted">CONTENIDO DE MUESTRA · PRÓXIMAMENTE</p>
+      <div className="mt-8 flex-1"><p className="font-terminal text-[0.62rem] tracking-widest text-phosphor">{article.category.toUpperCase()} <span className="text-muted">/ {article.game.toUpperCase()}</span></p><h3 className="mt-3 text-xl font-medium tracking-[-0.025em] text-paper"><Link className="text-link inline-block py-1" href={`/wiki/${article.slug}`}>{article.title}</Link></h3><p className="mt-3 text-sm leading-6 text-muted">{article.summary}</p></div>
+      <p className="mt-6 border-t border-line pt-4 font-terminal text-[0.6rem] tracking-wide text-muted">CONTENIDO DE MUESTRA</p>
     </li>
   );
 }
