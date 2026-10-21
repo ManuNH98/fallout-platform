@@ -1,50 +1,65 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-void: #10130f;
+  --color-panel: #171b15;
+  --color-panel-raised: #20261d;
+  --color-line: #343c30;
+  --color-paper: #e9e6d7;
+  --color-muted: #a3a993;
+  --color-phosphor: #c1d77b;
+  --color-rust: #d48b65;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --background: #10130f;
+  --foreground: #e9e6d7;
+  --surface: #171b15;
+  --surface-raised: #20261d;
+  --line: #343c30;
+  --phosphor: #c1d77b;
+  --muted: #a3a993;
+  --rust: #d48b65;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 6rem; }
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
+  min-height: 100vh;
   margin: 0;
+  color: var(--foreground);
+  background: radial-gradient(ellipse at 14% 0%, rgb(96 118 57 / 10%), transparent 34rem), var(--background);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
+::selection { color: var(--background); background: var(--phosphor); }
+a { color: inherit; text-decoration: none; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 4px; }
+button, a { -webkit-tap-highlight-color: transparent; }
+.font-terminal { font-family: var(--font-geist-mono), monospace; }
+.shell-width { width: min(100% - 3rem, 76rem); margin-inline: auto; }
+.eyebrow { color: var(--phosphor); font-family: var(--font-geist-mono), monospace; font-size: .7rem; font-weight: 500; letter-spacing: .13em; line-height: 1.5; text-transform: uppercase; }
+.section-rule { border-top: 1px solid var(--line); }
+.card-surface { border: 1px solid var(--line); background: linear-gradient(145deg, rgb(255 255 255 / 2.7%), transparent 60%), var(--surface); }
+.scanline { background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 5px, rgb(233 230 215 / 2.2%) 6px); }
+.corner-brackets { position: relative; }
+.corner-brackets::before, .corner-brackets::after { position: absolute; width: .75rem; height: .75rem; content: ""; pointer-events: none; }
+.corner-brackets::before { inset: 0 auto auto 0; border-top: 1px solid var(--phosphor); border-left: 1px solid var(--phosphor); }
+.corner-brackets::after { inset: auto 0 0 auto; border-right: 1px solid var(--phosphor); border-bottom: 1px solid var(--phosphor); }
+.text-link { transition: color 160ms ease; }
+.text-link:hover { color: var(--phosphor); }
+.game-card, .article-card { transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease; }
+.game-card:hover, .article-card:hover { transform: translateY(-2px); border-color: #66734d; }
+.game-card[data-tone="amber"] { --game-accent: #e1b477; }
+.game-card[data-tone="sage"] { --game-accent: #c1d77b; }
+.game-card[data-tone="blue"] { --game-accent: #9bb8c4; }
+.game-card[data-tone="rust"] { --game-accent: #d48b65; }
+@media (max-width: 640px) { .shell-width { width: min(100% - 2rem, 76rem); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }

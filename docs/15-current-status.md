@@ -8,12 +8,13 @@ Este documento resume el estado operativo. Las decisiones normativas siguen pert
 
 ## Estado actual
 
-Actualizado el 29 de julio de 2026.
+Actualizado el 19 de octubre de 2026.
 
 - **Phase 0: Repository foundation** esta completada.
 - La parte local de **Phase 1: Infrastructure and configuration** esta preparada.
 - La integracion externa con Supabase esta aplazada de forma intencionada.
-- La fase activa es **Phase 2: Public design with mocks**.
+- **Phase 2: Public design with mocks** esta completada.
+- La fase activa es **Phase 3: Mock content browsing**.
 
 ## Base completada
 
@@ -26,6 +27,8 @@ Actualizado el 29 de julio de 2026.
 - Validacion de entorno, CORS y endpoint `GET /health` en la API.
 - Configuracion del frontend para consumir la API local.
 - Roadmap reordenado para desarrollar primero la experiencia publica con mocks.
+- Shell publico responsive y home inicial en espanol, con mocks tipados de juegos, categorias y articulos destacados.
+- Tailwind CSS v4, tokens de tema, configuracion inicial de shadcn/ui y metadata SEO base.
 
 ## Decisiones vigentes
 
@@ -51,7 +54,7 @@ La guia detallada se mantiene en `docs/14-environment-and-supabase.md`.
 
 ## Siguiente tarea
 
-Implementar una tarea pequena y acotada de **Phase 2: Public design with mocks**. Antes de modificar codigo frontend se deben leer:
+Implementar una tarea pequena y acotada de **Phase 3: Mock content browsing**. Antes de modificar codigo frontend se deben leer:
 
 - `AGENTS.md`
 - `docs/06-frontend-conventions.md`
@@ -59,7 +62,7 @@ Implementar una tarea pequena y acotada de **Phase 2: Public design with mocks**
 - `docs/12-roadmap.md`
 - Este documento
 
-La tarea debe concretar las rutas o componentes permitidos, usar copy visible en espanol y exigir al menos lint, type checks y build del frontend.
+La primera tarea recomendada es crear el listado `/wiki` con contenido mock reutilizando el shell, los tipos y los componentes publicos existentes. Despues se pueden implementar los detalles por slug y la navegacion de juegos. Mantener copy en espanol y exigir lint, type checks y build del frontend.
 
 ## Validacion conocida
 
@@ -83,5 +86,5 @@ La comprobacion `pnpm --filter @repo/db db:check` sigue pendiente porque requier
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 is complete and the local part of Phase 1 is prepared. Real Supabase integration is intentionally deferred. The active phase is Phase 2: Public design with mocks. Use Spanish-first UI copy and typed mock data. Do not implement Supabase/Auth or real persistence yet.
+Phase 0 is complete, local Phase 1 is prepared, and Phase 2 public design with typed mocks is complete. Real Supabase integration is intentionally deferred. The active phase is Phase 3: Mock content browsing. Use Spanish-first UI copy and keep mocks isolated from presentation. Do not implement Supabase/Auth or real persistence yet.
 ```
