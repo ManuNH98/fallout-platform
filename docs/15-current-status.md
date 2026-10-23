@@ -178,8 +178,13 @@ regla SSL de usuario limitada al host exacto. Se verifico su alcance, pero no
 resolvio el fallo. Se retiro la regla y la CA importada al llavero: la confianza
 de usuario coincide con el estado previo guardado. Se conserva el PEM local de
 runtime; no se ha desactivado TLS ni modificado el almacen de administrador.
-La alternativa de conexion directa para CLI aun no esta evaluada y necesita
-la cadena real del Dashboard y verificar alcance de red/certificado.
+El 2026-10-23 se preparo la URI directa real del propietario en `DIRECT_URL`
+con CA y TLS estricto, manteniendo runtime en el pooler. `db:check` falla con
+P1001: el endpoint tiene AAAA sin A y TCP IPv6 devuelve `EHOSTUNREACH` desde
+esta red. No se ha llegado a negociar TLS ni verificar credenciales en directo.
+La URL directa permanece configurada para una prueba con acceso IPv6.
+Tras este cambio pasan lint, check-types, build y `db:check:runtime` de
+`@repo/db`. No se han modificado codigo, modelos ni configuracion de runtime.
 
 Con el entorno real y la CA local, `pnpm lint`, `pnpm check-types` y
 `pnpm build` pasan en el monorepo; build se completo fuera del sandbox.
@@ -187,7 +192,8 @@ Con el entorno real y la CA local, `pnpm lint`, `pnpm check-types` y
 
 Pendientes actuales:
 
-- Resolver la confianza estricta de CLI y repetir SELECT 1 sin relajar TLS.
+- Resolver acceso IPv6 para evaluar CLI directo o la confianza estricta de CLI
+  en session pooler, y repetir SELECT 1 sin relajar TLS.
 - La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
 - Email/URLs y bucket `media` se revisaran en las siguientes tareas autorizadas.
 - La comprobacion final de arranque y navegacion con entorno real sigue pendiente.
