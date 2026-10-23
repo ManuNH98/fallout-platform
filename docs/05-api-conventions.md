@@ -144,12 +144,29 @@ Protected requests from Next.js should include:
 Authorization: Bearer <supabase_access_token>
 ```
 
-NestJS should:
+Contrato de Phase 5, pendiente de implementacion:
 
-1. validate the Supabase JWT
-2. load or create the local `UserProfile`
-3. attach the app user to the request
-4. check role when required
+1. SupabaseAuthGuard verifica identidad; para la firma ECC P-256 indicada por
+   el propietario se propone ES256/JWKS, condicionado a confirmar Current.
+2. Carga el perfil existente cuando proceda, sin crearlo durante GET.
+3. Adjunta identidad y perfil disponible al contexto de peticion; @CurrentUser
+   expone el perfil local, nunca un perfil ficticio derivado del token.
+4. RolesGuard comprueba el rol actual de PostgreSQL cuando se exige.
+
+| Endpoint | Contrato |
+| --- | --- |
+| POST /auth/perfil | Bearer valido, cuerpo vacio; crea o recupera perfil idempotentemente, HTTP 200. Permite identidad valida aun sin perfil. |
+| GET /auth/me | Devuelve perfil existente, 404 si falta. Sin token valido, 401. No escribe datos. |
+| GET /admin/comprobacion | Exclusivo ADMIN; 200 con mensaje en espanol, 401 sin identidad, 403 sin perfil o con otro rol. Sin panel admin. |
+
+Rol inicial USER. La sincronizacion no acepta supabaseUserId/role del cliente
+ni cambia privilegios existentes. Sin perfil, los endpoints por rol deniegan
+acceso. Error de proveedor/JWKS/DB: 503 generico, sin permitir acceso ni filtrar
+secretos. Health continua publico y no acredita Auth o PostgreSQL.
+
+Los claims role=authenticated de Supabase no son los roles de la aplicacion.
+JWT secret, refresh tokens y claves privilegiadas no forman parte de este
+contrato. Detalles y pruebas en [Phase 5](18-phase-5-auth-foundation.md).
 
 ## Roles
 
@@ -187,7 +204,7 @@ Preferred long-term pattern:
 
 - shared schema in `packages/validation`
 - frontend uses schema for forms
-- backend uses schema for request validation or mirrors it in DTOs
+- backend consumes the same schema when a rule is shared; DTOs must not duplicate shared validation logic
 
 ## Pagination
 

@@ -291,18 +291,28 @@ Con entorno real, `db:check:runtime` y `db:check` pasan con TLS verificado. Los 
 
 ## Siguiente tarea de Phase 5
 
-Tras revisar este cierre documental, concretar el contrato de Auth y su primera
-implementacion acotada: clientes Supabase de navegador y servidor. Identificar
-el algoritmo de firma activo antes de implementar el verificador de NestJS y
-acordar plantilla de confirmacion y destinatario del equipo antes de enviar
-correos. Las rutas reservadas siguen sin implementar; el SMTP incluido no tiene
-entrega verificada. No crear modelos ni migraciones en esta entrega. Cada tarea
-posterior requiere autorizacion del propietario; este crea y sube los commits.
+Contrato y secuencia documentados en [docs/18](18-phase-5-auth-foundation.md),
+con docs/04, docs/05 y docs/07 alineados. Solo documentacion; sin codigo Auth,
+dependencias instaladas, schema, migraciones ni cambios remotos. El propietario
+indica ECC (P-256), equivalente a ES256; confirmar Current e inspeccionar JWKS
+antes de implementar el verificador. No se han verificado tokens reales.
+
+Siguiente tarea propuesta: tarea 2 de docs/18, factorias Supabase de navegador
+y servidor. Alcance: lib/supabase/client.ts y server.ts en apps/web, helper de
+entorno solo si necesario, manifest web/lockfile y pruebas locales asociadas.
+Sin proxy, rutas, formularios ni sesiones reales en esa primera implementacion.
+Las paginas mock siguen funcionando sin configuracion Supabase.
+
+Plantilla de confirmacion y destinatario del equipo pendientes antes de enviar
+correos; las rutas reservadas siguen sin implementar y el SMTP incluido no tiene
+entrega verificada. Cada tarea posterior requiere autorizacion del propietario;
+este crea y sube los commits. La presente entrega solo se valida mediante diff,
+enlaces y coherencia documental; no hay workspaces afectados.
 
 ## Inicio recomendado para un chat nuevo
 
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 and local Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is complete and merged into develop through PR #7 (b324cd5). The owner authorized progression to Phase 5: Auth foundation on feature/Phase-5_auth_foundation. Follow docs/07-auth-and-permissions.md, docs/12-roadmap.md and docs/14-environment-and-supabase.md; preserve the evidence and limitations in docs/17-phase-4-validation.md. CLI Direct requires WARP and a temporary hosts entry on this Mac; runtime uses the session pooler. This documentary closure is not a new infrastructure check. Auth flows, sessions, JWT validation and application models are not implemented yet. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Implement Auth, UserProfile and roles only through scoped owner-authorized tasks. Do not introduce content models, CRUD or seeds. Applying migrations, creating users, sending emails or changing remote configuration requires an expressly authorized task. Do not change networking or keychain settings automatically. Execute one task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
+Phase 0 and local Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is complete and merged into develop through PR #7 (b324cd5). The owner authorized progression to Phase 5: Auth foundation on feature/Phase-5_auth_foundation. Follow docs/07-auth-and-permissions.md, docs/12-roadmap.md, docs/18-phase-5-auth-foundation.md and docs/14-environment-and-supabase.md; preserve the evidence and limitations in docs/17-phase-4-validation.md. CLI Direct requires WARP and a temporary hosts entry on this Mac; runtime uses the session pooler. This documentary closure is not a new infrastructure check. Auth flows, sessions, JWT validation and application models are not implemented yet. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Implement Auth, UserProfile and roles only through scoped owner-authorized tasks. Do not introduce content models, CRUD or seeds. Applying migrations, creating users, sending emails or changing remote configuration requires an expressly authorized task. Do not change networking or keychain settings automatically. Execute one task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
 ```

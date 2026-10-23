@@ -70,16 +70,28 @@ enum CanonStatus {
 
 The application profile linked to Supabase Auth user id.
 
-Fields:
+Contrato minimo de Phase 5 (planificado, aun sin schema ni migracion):
 
-- id
-- supabaseUserId
-- username
-- displayName
-- avatarUrl
-- role
-- createdAt
-- updatedAt
+| Campo | Contrato |
+| --- | --- |
+| id | UUID local, clave primaria |
+| supabaseUserId | UUID obligatorio y unico, obtenido de identidad verificada |
+| username | String opcional, sin requisito de unicidad ni flujo de eleccion en Phase 5 |
+| displayName | String opcional |
+| avatarUrl | String opcional; sin flujo de subida ni edicion en esta fase |
+| role | UserRole obligatorio, USER por defecto |
+| createdAt | Fecha de creacion |
+| updatedAt | Fecha de actualizacion |
+
+La API crea o recupera el perfil idempotentemente mediante POST /auth/perfil.
+Las lecturas no crean filas. Repetir la sincronizacion no cambia roles ni
+sobrescribe campos existentes. No guardar passwords, sesiones ni refresh tokens;
+no copiar email sin necesidad ni aceptar roles desde metadata/formularios.
+No modificar auth.users ni crear relaciones de contenido o triggers.
+Revisar RLS y permisos de Data API en la migracion; el navegador no accede a
+esta tabla directamente. La autorizacion de negocio permanece en NestJS.
+
+Secuencia, migracion y pruebas en [el contrato de Phase 5](18-phase-5-auth-foundation.md).
 
 ### Game
 
@@ -332,11 +344,14 @@ Early implementation may store build details as JSON while the system is being e
 
 Later, normalize perks, mutations, weapons and armor into dedicated tables.
 
-## Suggested first Prisma milestone
+## Hitos Prisma por fase
 
-Implement only:
+**Phase 5:** implementar solo UserProfile y UserRole, mediante tareas separadas
+de modelo/SQL, aplicacion autorizada y sincronizacion en API. No implementar
+todo el modelo conceptual de este documento en una sola entrega.
 
-- UserProfile
+**Phase 6:** implementar los modelos de contenido:
+
 - Game
 - Category
 - WikiPage
