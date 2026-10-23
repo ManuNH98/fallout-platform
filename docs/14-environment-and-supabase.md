@@ -137,21 +137,21 @@ Iniciada el 2026-10-23 por autorizacion del propietario, con la comprobacion CLI
 
 Archivos permitidos en esta entrega documental: `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. Excluidos: codigo de apps/packages, archivos de entorno, schema, migraciones, seeds y registro historico de Phase 3. Se revisaron las skills locales: ninguna corresponde a esta tarea documental y de Dashboard, sin implementacion de Auth.
 
-Preparacion propuesta para desarrollo, pendiente de guardar y confirmar por el propietario:
+Preparacion de desarrollo confirmada por el propietario el 2026-10-23, tras indicar que guardo los ajustes y que no ha configurado SMTP propio. Es evidencia declarada por el propietario, no inspeccion remota ni prueba de envio:
 
 | Ajuste | Valor objetivo | Estado |
 | --- | --- | --- |
-| Authentication > proveedores > Email | Email habilitado y confirmacion de correo activada | Pendiente de confirmacion |
-| Authentication > URL Configuration > Site URL | `http://localhost:3000` | Pendiente de confirmacion |
-| Redirect URLs | `http://localhost:3000/auth/confirmar` | Reserva propuesta para Phase 5, pendiente de confirmacion |
-| Redirect URLs | `http://localhost:3000/restablecer-contrasena` | Reserva propuesta para Phase 5, pendiente de confirmacion |
-| Correo | Identificar si usa SMTP incluido o uno propio ya existente | Pendiente de confirmacion; no crear servicios ni solicitar credenciales |
+| Authentication > proveedores > Email | Email habilitado y confirmacion de correo activada | Confirmado por el propietario |
+| Authentication > URL Configuration > Site URL | `http://localhost:3000` | Confirmado por el propietario |
+| Redirect URLs | `http://localhost:3000/auth/confirmar` | Reserva para Phase 5 confirmada por el propietario |
+| Redirect URLs | `http://localhost:3000/restablecer-contrasena` | Reserva para Phase 5 confirmada por el propietario |
+| Correo | SMTP incluido; sin configuracion propia | Declarado por el propietario; sin prueba de entrega |
 
 Las dos rutas no existen en `apps/web/app/`: registrarlas solo reserva destinos permitidos. No acredita un flujo funcional; Phase 5 revisara PKCE, plantillas, confirmacion y recuperacion antes de enviar correos. No crear rutas, usuarios o sesiones, probar registros ni modificar plantillas en esta tarea. Evitar comodines y no registrar dominios de produccion sin despliegue real.
 
-Si sigue el SMTP incluido, documentar la limitacion para futuras pruebas con el equipo: solo envia a direcciones de miembros del equipo y la documentacion consultada indica actualmente 2 mensajes por hora, sujeto a cambios y sin SLA. SMTP de produccion se decide en otra tarea; no contratarlo ahora. Referencia: [SMTP de Supabase](https://supabase.com/docs/guides/auth/auth-smtp).
+Se conserva el SMTP incluido para la preparacion de desarrollo. Las futuras pruebas de Phase 5 quedan limitadas a direcciones de miembros del equipo: la documentacion consultada indica actualmente 2 mensajes por hora, sujeto a cambios y sin SLA. No se han enviado correos ni acreditado entregabilidad. SMTP propio se decide antes de pruebas con destinatarios externos o produccion; no se contrata ni configura en esta tarea. Referencia: [SMTP de Supabase](https://supabase.com/docs/guides/auth/auth-smtp).
 
-Criterio de aceptacion: el propietario confirma Email, confirmacion, Site URL, las dos entradas exactas de redireccion y el tipo de SMTP; se registran como evidencia declarada, sin afirmar verificacion funcional o inspeccion directa. Esta tarea sigue pendiente hasta esa confirmacion. La preparacion se contrasto con [Email Auth](https://supabase.com/docs/guides/auth/passwords), [redirecciones](https://supabase.com/docs/guides/auth/redirect-urls) y SMTP el 2026-10-23.
+Criterio de aceptacion de preparacion cumplido por confirmacion del propietario: Email, confirmacion, Site URL, las dos entradas exactas de redireccion y el tipo de SMTP registrados. Tarea 6 preparada, sin afirmar verificacion funcional o inspeccion directa; los flujos y entregas siguen pendientes de Phase 5. La preparacion se contrasto con [Email Auth](https://supabase.com/docs/guides/auth/passwords), [redirecciones](https://supabase.com/docs/guides/auth/redirect-urls) y SMTP el 2026-10-23. La tarea 5 y Phase 4 siguen abiertas.
 
 ## Secuencia y revisiones
 
@@ -162,7 +162,7 @@ Criterio de aceptacion: el propietario confirma Email, confirmacion, Site URL, l
 | 3. Entorno servidor | 1; ejecutar tras 2 | Integrado en `36e0b26`: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
 | 4. Prueba runtime | 3 | Integrado en `d19cb94`: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
 | 5. Proyecto y entorno real | 2, 3, 4 | En curso: proyecto creado por el propietario y entorno rellenado; runtime correcto, CLI estricto pendiente en macOS |
-| 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | En preparacion: ajustes y limites documentados; confirmacion del Dashboard pendiente, sin implementar autenticacion |
+| 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | Preparada por confirmacion del propietario: Email, URLs exactas y SMTP incluido; sin implementar ni probar autenticacion |
 | 7. Storage | 5 | Bucket/politicas revisados; rechazo de escritura anonima comprobado |
 | 8. Verificacion final | 1 a 7 | Conexiones, arranque, health y mocks comprobados; registro antes del cierre |
 

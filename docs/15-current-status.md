@@ -208,18 +208,22 @@ confirmado. Autoriza documentar el bloqueo y avanzar a tarea 6 (Email/URLs),
 independiente de Prisma CLI. Se mantienen TLS estricto y el entorno existente.
 La tarea 5 sigue abierta; no se reintenta modificar la confianza del sistema.
 
-Tarea 6 en preparacion documental: Email con confirmacion, Site URL local y
-dos redirecciones exactas propuestas para Phase 5, detalladas en la guia de
-entorno. El propietario debe guardar/confirmar los ajustes y el tipo de SMTP.
-No hay conector Supabase disponible ni inspeccion remota de esos ajustes;
-no se han implementado rutas Auth ni enviado correos. No se marca completada.
+Tarea 6 preparada: el propietario confirma el 2026-10-23 Email habilitado con
+confirmacion, Site URL `http://localhost:3000` y las reservas exactas
+`http://localhost:3000/auth/confirmar` y
+`http://localhost:3000/restablecer-contrasena`. Declara que no ha configurado
+SMTP propio: se conserva el incluido, limitado a miembros del equipo y con
+limites de envio documentados en la guia de entorno. No hay conector Supabase
+ni inspeccion remota de esos ajustes; la evidencia es la confirmacion del
+propietario. No se han implementado rutas Auth, enviado correos ni probado
+entregabilidad. La verificacion funcional corresponde a Phase 5; SMTP propio
+se decidira antes de pruebas con destinatarios externos o produccion.
 
 Pendientes actuales:
 
 - Resolver acceso IPv6 para evaluar CLI directo o la confianza estricta de CLI
   en session pooler, y repetir SELECT 1 sin relajar TLS.
 - La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
-- Email/URLs: preparacion iniciada; pendiente de confirmacion del propietario.
 - Bucket `media`: pendiente de la siguiente tarea autorizada.
 - La comprobacion final de arranque y navegacion con entorno real sigue pendiente.
 
