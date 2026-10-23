@@ -8,7 +8,7 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta activa para revision de cierre: runtime y Prisma CLI verificados con TLS, Email/URLs preparados y Storage verificado. CLI Direct en macOS requiere WARP y una entrada temporal de hosts; condiciones en `docs/17-phase-4-validation.md`. El frontend conserva los mocks.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada y sus pendientes externos se verificaron en Phase 4. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`). El propietario confirmo la integracion y autorizo continuar con **Phase 5: Auth foundation** el 23 de octubre de 2026, en la rama `feature/Phase-5_auth_foundation`. CLI Direct en macOS sigue requiriendo WARP y una entrada temporal de hosts; evidencias y limites en `docs/17-phase-4-validation.md`. El frontend conserva los mocks y el diseno durante Phase 5.
 
 **Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
@@ -47,7 +47,7 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 
 ## Phase 1: Infrastructure and configuration
 
-**Estado:** configuracion local completada; integracion externa aplazada originalmente y retomada en Phase 4, todavia pendiente de verificacion.
+**Estado:** configuracion local completada; integracion externa aplazada originalmente y verificada en Phase 4. Evidencias y limites en `docs/17-phase-4-validation.md`.
 
 **Objetivo:** conectar la infraestructura principal.
 
@@ -72,14 +72,14 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 - Prisma conecta con PostgreSQL.
 - Las variables necesarias estan documentadas sin incluir secretos.
 
-**Pendientes externos trasladados a Phase 4:**
+**Pendientes externos trasladados a Phase 4 y completados en esa fase:**
 
 - Crear el proyecto remoto de Supabase.
 - Configurar Auth y el bucket `media` en Supabase Dashboard.
 - Rellenar los archivos `.env` locales con credenciales reales.
 - Ejecutar `pnpm --filter @repo/db db:check` contra Supabase PostgreSQL.
 
-Estos pendientes deben completarse antes de implementar autenticacion real, migraciones o persistencia. No bloquean un prototipo visual con datos mock, pero las fases dependientes no se consideraran terminadas hasta integrar la infraestructura real.
+Estos requisitos quedaron cubiertos por las evidencias de Phase 4, incluida la preparacion de Email/URLs por confirmacion del propietario. No acreditan flujos Auth, entrega de correo ni persistencia de aplicacion, que siguen pendientes de sus fases correspondientes.
 
 ## Phase 2: Public design with mocks
 
@@ -190,7 +190,7 @@ entrega. Posteriormente la PR #6 quedo integrada y el propietario autorizo Phase
 
 ## Phase 4: Supabase real infrastructure
 
-**Estado:** validacion tecnica realizada; pendiente de revision del propietario, no marcada completada. Runtime y Prisma CLI pasan con TLS verificado. CLI Direct en macOS depende de WARP activo y una entrada temporal del hostname en hosts aplicada por el propietario. Email/URLs preparados por confirmacion, SMTP incluido sin pruebas Auth. Storage privado y rechazo anonimo verificados; aplicaciones, health, mocks y checks validados. Evidencias y limites en `docs/17-phase-4-validation.md`.
+**Estado:** completada e integrada en develop mediante la PR #7 (merge `b324cd5`, que incorpora `8222fb4`). El propietario confirmo el merge y autorizo avanzar a Phase 5 el 23 de octubre de 2026. Runtime y Prisma CLI pasan con TLS verificado segun las evidencias existentes; CLI Direct en macOS depende de WARP activo y una entrada temporal del hostname en hosts. Email/URLs preparados por confirmacion, SMTP incluido sin pruebas Auth. Storage privado y rechazo anonimo verificados; aplicaciones, health, mocks y checks validados. El cierre documental no constituye una nueva verificacion. Evidencias y limites en `docs/17-phase-4-validation.md`.
 
 **Objetivo:** activar la infraestructura externa preparada en Phase 1.
 
@@ -221,6 +221,8 @@ Secuencia, responsabilidades, configuracion objetivo y comandos en `docs/14-envi
 **Fuera de alcance:** login, registro, sesiones, roles, validacion JWT, modelos de contenido, migraciones, seeds, sustitucion de mocks, Docker y Supabase local. No se ejecutan migraciones ni `db:push` como prueba de conexion.
 
 ## Phase 5: Auth foundation
+
+**Estado:** activa para planificacion y preparacion, por autorizacion del propietario el 23 de octubre de 2026, en `feature/Phase-5_auth_foundation`, creada desde el merge de Phase 4. No hay implementacion Auth todavia. Cada tarea de implementacion requiere autorizacion y revision independientes.
 
 **Objetivo:** autenticar usuarios y autorizar acciones desde la API.
 

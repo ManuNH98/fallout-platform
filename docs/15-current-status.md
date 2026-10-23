@@ -15,7 +15,8 @@ Actualizado el 23 de octubre de 2026.
 - Supabase remoto tiene runtime, Prisma CLI y Storage verificados con los requisitos locales documentados; Email/URLs preparados por confirmacion del propietario.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
-- La fase activa es **Phase 4: Supabase real infrastructure**, pendiente de revision de cierre del propietario. CLI Direct funciona en macOS con WARP activo y una entrada temporal del hostname en hosts; no se ha marcado la fase completada.
+- **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`, que incorpora `8222fb4`).
+- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge; todavia no hay flujos Auth, sesiones, validacion JWT ni modelos de aplicacion implementados.
 
 ## Base completada
 
@@ -51,23 +52,27 @@ Actualizado el 23 de octubre de 2026.
 - La primera experiencia publica utilizara datos mock tipados.
 - Los mocks deben quedar aislados para poder sustituirlos por la API sin redisenar las pantallas.
 - Las paginas publicas deben ser responsive, accesibles y SEO-friendly.
-- Phase 4 prepara infraestructura, Email Auth, URLs y Storage; no implementa login, registro, sesiones, roles ni validacion JWT (Phase 5), modelos de contenido, migraciones ni seeds.
-- El frontend sigue usando mocks durante Phase 4, sin cambios de diseno ni llamadas nuevas a la API.
+- Phase 4 preparo infraestructura, Email Auth, URLs y Storage; su cierre no acredita login, registro, sesiones, roles ni validacion JWT. Esos flujos, UserProfile y su migracion corresponden a tareas autorizadas de Phase 5; el contenido persistente sigue reservado a Phase 6.
+- El frontend conserva los mocks y el diseno durante Phase 5; no se sustituyen por llamadas de contenido a la API.
 - Se ejecuta una tarea por revision; el propietario crea/sube los commits y autoriza la siguiente. Cada entrega incluye titulo y descripcion de commit en ingles.
 - No se utilizara Supabase local ni Docker salvo que se planifique expresamente.
 - Next.js, NestJS, Prisma y Supabase mantienen las responsabilidades descritas en `docs/01-architecture.md`.
 
-## Revision pendiente de Phase 4
+## Cierre e integracion de Phase 4
 
 Contratos de entorno, proyecto remoto, archivos locales, preparacion Email/URLs,
 Storage privado, checks de CLI/runtime y arranque/navegacion mock tienen las
 evidencias registradas en `docs/17-phase-4-validation.md`. Email/URLs se basan en
 confirmacion del propietario; no se han probado flujos Auth ni entrega de correo.
 
-Falta revisar y aceptar con el propietario los requisitos locales WARP/hosts de
-CLI Direct y autorizar el cierre. No comenzar Auth ni persistencia real en esta
-entrega. Health por si solo no verifica PostgreSQL; las dos comprobaciones SQL
-son independientes. No hay despliegue remoto operativo verificado.
+El propietario confirmo la integracion de la PR #7 y el inicio de Phase 5.
+El historial Git y las referencias locales develop/origin/develop situan el
+merge en `b324cd5`; la rama de Phase 5 parte de el. No se atribuye a este
+cierre documental una nueva consulta al remoto ni una nueva verificacion de
+infraestructura. Los requisitos locales WARP/hosts de CLI Direct permanecen
+vigentes; runtime usa session pooler. Health por si solo no verifica PostgreSQL;
+las dos comprobaciones SQL son independientes. No hay despliegue remoto
+operativo verificado.
 
 La guia detallada se mantiene en `docs/14-environment-and-supabase.md`.
 
@@ -106,7 +111,11 @@ las respuestas de streaming observadas usan HTTP 200; el 404 general devuelve
 HTTP 404. El alcance, las comprobaciones y los limites estan en
 `docs/16-phase-3-validation.md`.
 
-## Siguiente tarea
+## Historial de preparacion y validacion de Phase 4
+
+Los estados pendientes siguientes describen cada entrega en su momento. El
+resultado posterior y el cierre vigente se recogen arriba y en docs/17; no
+representan bloqueos actuales de Phase 4.
 
 La tarea documental inicial esta integrada en `eb36031`. La tarea 2, integrada en `cb7ca8e`, actualiza
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en el ejemplo web, el helper y Turbo.
@@ -243,12 +252,10 @@ si cambia la IPv6 del proyecto. No se han cambiado .env, codigo ni llaveros.
 Los helpers/copia estan fuera del repositorio. Detalles y retirada de la
 entrada en la guia de entorno y el registro de validacion.
 
-Pendientes actuales:
+Situacion al terminar la validacion, antes del cierre posterior:
 
-- La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
-- Revision del propietario, incluida la dependencia local WARP/hosts, y registro del cierre autorizado de Phase 4.
-
-Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.
+- La API aun no consume `@repo/db`; su health solo acredita disponibilidad. Esta limitacion sigue vigente para Phase 5.
+- La revision y el registro de cierre de Phase 4 estaban pendientes; quedaron resueltos tras la PR #7 y la confirmacion del propietario. Se conservan los requisitos locales WARP/hosts.
 
 Validacion de aplicaciones realizada el 2026-10-23: lint, check-types y build
 forzados en el monorepo; 16 pruebas unitarias y 2 e2e de API correctas; Prisma
@@ -263,7 +270,7 @@ El recorrido HTTP cubre 25 URLs sin enlaces internos rotos y los estados de
 busqueda vacia y no encontrado. Navegacion interactiva comprobada en navegador;
 frontend conserva mocks y diseno. No hay cambios de codigo ni archivos .env del repositorio.
 Registro completo de comandos, puertos, revision de assets y limitaciones en
-`docs/17-phase-4-validation.md`. El cierre queda pendiente de revision del propietario.
+`docs/17-phase-4-validation.md`. La revision de cierre pendiente en aquella entrega quedo superada tras la PR #7 y la autorizacion del propietario para avanzar a Phase 5.
 
 ## Validacion conocida
 
@@ -282,10 +289,20 @@ pnpm --filter @repo/db prisma:generate
 
 Con entorno real, `db:check:runtime` y `db:check` pasan con TLS verificado. Los fallos anteriores del pooler y de Direct sin WARP/hosts quedan registrados como historico; no son la configuracion CLI verificada actual.
 
+## Siguiente tarea de Phase 5
+
+Tras revisar este cierre documental, concretar el contrato de Auth y su primera
+implementacion acotada: clientes Supabase de navegador y servidor. Identificar
+el algoritmo de firma activo antes de implementar el verificador de NestJS y
+acordar plantilla de confirmacion y destinatario del equipo antes de enviar
+correos. Las rutas reservadas siguen sin implementar; el SMTP incluido no tiene
+entrega verificada. No crear modelos ni migraciones en esta entrega. Cada tarea
+posterior requiere autorizacion del propietario; este crea y sube los commits.
+
 ## Inicio recomendado para un chat nuevo
 
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 is complete, local Phase 1 is prepared, and Phases 2 and 3 are complete. Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is active: follow docs/14-environment-and-supabase.md, distinguish current code from planned environment updates, and verify remote infrastructure before claiming completion. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Do not implement auth flows, sessions, roles, JWT validation, content models, migrations, or seeds. Execute one owner-authorized task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
+Phase 0 and local Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is complete and merged into develop through PR #7 (b324cd5). The owner authorized progression to Phase 5: Auth foundation on feature/Phase-5_auth_foundation. Follow docs/07-auth-and-permissions.md, docs/12-roadmap.md and docs/14-environment-and-supabase.md; preserve the evidence and limitations in docs/17-phase-4-validation.md. CLI Direct requires WARP and a temporary hosts entry on this Mac; runtime uses the session pooler. This documentary closure is not a new infrastructure check. Auth flows, sessions, JWT validation and application models are not implemented yet. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Implement Auth, UserProfile and roles only through scoped owner-authorized tasks. Do not introduce content models, CRUD or seeds. Applying migrations, creating users, sending emails or changing remote configuration requires an expressly authorized task. Do not change networking or keychain settings automatically. Execute one task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
 ```
