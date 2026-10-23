@@ -173,10 +173,13 @@ local ignorado y referenciada por las URLs de servidor.
 El driver pg confirma TLS cifrado y certificado autorizado. CLI paso inicialmente
 con `sslmode=require`; al configurar CA y `sslaccept=strict` falla con P1011.
 El verificador nativo de macOS reproduce un rechazo de confianza e informa de
-Certificate Transparency no verificado. No se ha modificado ningun llavero ni
-se ha desactivado la verificacion TLS. La siguiente accion propuesta requiere
-autorizar por separado una regla de confianza de usuario restringida al host,
-sin dar por hecho que resolvera el fallo. Detalles en la guia de entorno.
+Certificate Transparency no verificado. El propietario autorizo y completo una
+regla SSL de usuario limitada al host exacto. Se verifico su alcance, pero no
+resolvio el fallo. Se retiro la regla y la CA importada al llavero: la confianza
+de usuario coincide con el estado previo guardado. Se conserva el PEM local de
+runtime; no se ha desactivado TLS ni modificado el almacen de administrador.
+La alternativa de conexion directa para CLI aun no esta evaluada y necesita
+la cadena real del Dashboard y verificar alcance de red/certificado.
 
 Con el entorno real y la CA local, `pnpm lint`, `pnpm check-types` y
 `pnpm build` pasan en el monorepo; build se completo fuera del sandbox.
