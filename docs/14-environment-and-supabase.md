@@ -8,7 +8,7 @@ No introducir Docker, Supabase local ni dependencias sin justificar. Login, regi
 
 ## Estado comprobado de Phase 4
 
-Revision del 21 de octubre de 2026. Las tareas 1 a 4 estan integradas. El propietario ha creado el proyecto y rellenado el entorno local en la tarea 5, todavia en curso. Runtime conecta con TLS verificado; la validacion estricta de certificados de Prisma CLI en macOS sigue pendiente.
+Revision del 23 de octubre de 2026. Las tareas 1 a 4 estan integradas. El propietario ha creado el proyecto y rellenado el entorno local en la tarea 5, todavia en curso. Runtime conecta con TLS verificado; la validacion estricta de certificados de Prisma CLI en macOS sigue pendiente. El propietario autoriza avanzar con la preparacion independiente de Email/URLs sin cerrar ese bloqueo.
 
 - Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. El layout raiz importa `apps/web/lib/env.ts`, por lo que la validacion publica tambien se ejecuta al cargar el layout de servidor, incluido el build.
 - API: puerto `3001`, ConfigModule, validacion de protocolos/host y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
@@ -87,6 +87,22 @@ El 2026-10-23 el propietario copio la conexion directa real a `DIRECT_URL`. Se m
 
 Tarea 5 sigue abierta. La conexion directa requiere una red con acceso IPv6 antes de poder evaluar TLS; la alternativa session pooler sigue teniendo pendiente el rechazo de confianza de CLI. No ampliar la confianza del sistema, relajar TLS ni contratar un complemento de pago como parte de esta comprobacion. `DIRECT_URL` conserva el endpoint directo para la prueba pendiente; no se declara operativo.
 
+#### Diagnostico adicional del pooler (2026-10-23)
+
+Se reviso el codigo del motor instalado de Prisma 7.9.1, revision `e922089b7d7502aff4249d5da3420f6fa55fc6ad`: `sslcert` carga una CA adicional y `sslaccept=strict` mantiene activa la validacion nativa. Dos pruebas con `DIRECT_URL` sobrescrita solo en el proceso, sin editar el entorno local, confirman que CLI lee el archivo: CA real produce P1011 por confianza; ruta inexistente produce P1011 por archivo no encontrado. No se ejecuto ninguna migracion.
+
+Se obtuvo la cadena completa mediante una conexion pg autorizada. Sus tres certificados encadenan criptograficamente hasta la CA configurada; el nombre del servidor coincide y los certificados estan dentro de sus fechas. Una evaluacion `SecTrust` de macOS con politica SSL, hostname, cadena completa y CA explicita, sin cambios de llavero, falla con codigo -67901. Los detalles del certificado final incluyen `OtherTrustValidityPeriod` y `ServerAuthEKU`. Ese certificado tiene 1825 dias de validez, fue emitido despues de julio de 2019 y no incluye el EKU `serverAuth`. Apple documenta un limite de 825 dias y ese EKU para certificados TLS emitidos desde esa fecha. El diagnostico apunta a requisitos de la politica TLS nativa; el aviso previo de Certificate Transparency no basta para explicar el rechazo.
+
+Runtime sigue pasando SELECT 1 con TLS autorizado. Esto no acredita CLI: usa otro verificador. La siguiente via recomendada es que el propietario consulte a Supabase sobre el certificado servido por el pooler y esos dos motivos de rechazo. Como alternativa, puede evaluarse CLI con TLS estricto en un equipo Linux disponible del propietario; no se ha probado ni se garantiza su resultado. No crear servicios externos, instalar dependencias ni trasladar secretos para esta alternativa sin una tarea acordada. La opcion directa sigue requiriendo IPv6 y su certificado aun no se ha evaluado.
+
+Referencias: [requisitos TLS de Apple](https://support.apple.com/en-au/103769), [carga de CA y validacion en el motor instalado](https://github.com/prisma/prisma-engines/blob/e922089b7d7502aff4249d5da3420f6fa55fc6ad/quaint/src/connector/postgres/native/mod.rs#L839) y [parametros del motor instalado](https://github.com/prisma/prisma-engines/blob/e922089b7d7502aff4249d5da3420f6fa55fc6ad/quaint/src/connector/postgres/url.rs#L272).
+
+#### Seguimiento y continuacion autorizada
+
+El propietario compartio la respuesta de la IA de soporte de Supabase: no confirma el perfil del certificado y recomienda escalar a soporte humano para revisar el certificado servido. No equivale a una confirmacion del proveedor ni acredita un ticket abierto o una solucion. La recomendacion generica sobre `sslrootcert` en libpq no sustituye la configuracion ya comprobada del motor nativo de Prisma.
+
+Por indicacion del propietario se deja este bloqueo documentado y se avanza a la tarea 6. No se repiten cambios de llavero ni se relaja TLS. Criterio para resolverlo: `pnpm --filter @repo/db db:check` termina correctamente con TLS y certificado/hostname verificados por CLI; despues se repite `db:check:runtime`. Mientras tanto la tarea 5 y Phase 4 permanecen abiertas. No se ha enviado ningun mensaje al proveedor desde el agente.
+
 Referencia del valor implicito de confianza: [SecTrustSettingsCopyTrustSettings de Apple](https://developer.apple.com/documentation/security/sectrustsettingscopytrustsettings(_:_:_:)).
 
 Referencia de los parametros del motor nativo: [parser de conexiones de Prisma](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/url.rs) y [carga de la CA y modo estricto](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/native/mod.rs). Las opciones del driver pg y del motor nativo se comprueban por separado.
@@ -115,6 +131,28 @@ Referencias: [redirecciones](https://supabase.com/docs/guides/auth/redirect-urls
 
 No hay un destino de despliegue operativo verificado para esta fase. Registrar la limitacion; no crear hosting ni declarar configuradas variables remotas. Si se identifica un despliegue existente, configurarlo requiere una tarea acotada y URLs reales del propietario.
 
+## Tarea 6: preparacion de Email y URLs
+
+Iniciada el 2026-10-23 por autorizacion del propietario, con la comprobacion CLI de tarea 5 pendiente. Esta configuracion de Auth se revisa en Dashboard y no requiere la conexion de Prisma CLI. No hay conector Supabase disponible en esta sesion: el propietario realiza los cambios y confirma su estado; no se declara inspeccion remota por el agente.
+
+Archivos permitidos en esta entrega documental: `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. Excluidos: codigo de apps/packages, archivos de entorno, schema, migraciones, seeds y registro historico de Phase 3. Se revisaron las skills locales: ninguna corresponde a esta tarea documental y de Dashboard, sin implementacion de Auth.
+
+Preparacion propuesta para desarrollo, pendiente de guardar y confirmar por el propietario:
+
+| Ajuste | Valor objetivo | Estado |
+| --- | --- | --- |
+| Authentication > proveedores > Email | Email habilitado y confirmacion de correo activada | Pendiente de confirmacion |
+| Authentication > URL Configuration > Site URL | `http://localhost:3000` | Pendiente de confirmacion |
+| Redirect URLs | `http://localhost:3000/auth/confirmar` | Reserva propuesta para Phase 5, pendiente de confirmacion |
+| Redirect URLs | `http://localhost:3000/restablecer-contrasena` | Reserva propuesta para Phase 5, pendiente de confirmacion |
+| Correo | Identificar si usa SMTP incluido o uno propio ya existente | Pendiente de confirmacion; no crear servicios ni solicitar credenciales |
+
+Las dos rutas no existen en `apps/web/app/`: registrarlas solo reserva destinos permitidos. No acredita un flujo funcional; Phase 5 revisara PKCE, plantillas, confirmacion y recuperacion antes de enviar correos. No crear rutas, usuarios o sesiones, probar registros ni modificar plantillas en esta tarea. Evitar comodines y no registrar dominios de produccion sin despliegue real.
+
+Si sigue el SMTP incluido, documentar la limitacion para futuras pruebas con el equipo: solo envia a direcciones de miembros del equipo y la documentacion consultada indica actualmente 2 mensajes por hora, sujeto a cambios y sin SLA. SMTP de produccion se decide en otra tarea; no contratarlo ahora. Referencia: [SMTP de Supabase](https://supabase.com/docs/guides/auth/auth-smtp).
+
+Criterio de aceptacion: el propietario confirma Email, confirmacion, Site URL, las dos entradas exactas de redireccion y el tipo de SMTP; se registran como evidencia declarada, sin afirmar verificacion funcional o inspeccion directa. Esta tarea sigue pendiente hasta esa confirmacion. La preparacion se contrasto con [Email Auth](https://supabase.com/docs/guides/auth/passwords), [redirecciones](https://supabase.com/docs/guides/auth/redirect-urls) y SMTP el 2026-10-23.
+
 ## Secuencia y revisiones
 
 | Tarea | Depende de | Entrega |
@@ -124,7 +162,7 @@ No hay un destino de despliegue operativo verificado para esta fase. Registrar l
 | 3. Entorno servidor | 1; ejecutar tras 2 | Integrado en `36e0b26`: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
 | 4. Prueba runtime | 3 | Integrado en `d19cb94`: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
 | 5. Proyecto y entorno real | 2, 3, 4 | En curso: proyecto creado por el propietario y entorno rellenado; runtime correcto, CLI estricto pendiente en macOS |
-| 6. Email y URLs | 5 | Configuracion y limites para Phase 5, sin implementar autenticacion |
+| 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | En preparacion: ajustes y limites documentados; confirmacion del Dashboard pendiente, sin implementar autenticacion |
 | 7. Storage | 5 | Bucket/politicas revisados; rechazo de escritura anonima comprobado |
 | 8. Verificacion final | 1 a 7 | Conexiones, arranque, health y mocks comprobados; registro antes del cierre |
 

@@ -186,16 +186,41 @@ La URL directa permanece configurada para una prueba con acceso IPv6.
 Tras este cambio pasan lint, check-types, build y `db:check:runtime` de
 `@repo/db`. No se han modificado codigo, modelos ni configuracion de runtime.
 
+El diagnostico adicional del pooler confirma que CLI lee `sslcert`. La cadena
+completa llega a la CA configurada y pg valida hostname, TLS y SELECT 1.
+La evaluacion SSL de macOS con cadena completa y CA explicita falla con
+`OtherTrustValidityPeriod` y `ServerAuthEKU`: el certificado final tiene 1825
+dias de validez y no incluye serverAuth. Los requisitos publicados por Apple
+explican esas dos restricciones; no se atribuye el rechazo solo a CT.
+Se recomienda consultar al proveedor sobre ese certificado antes de cambiar
+la confianza local. Una prueba estricta en Linux del propietario es otra via
+pendiente, sin resultado garantizado. Detalles y referencias en la guia de
+entorno. Esta iteracion solo modifica documentacion; no repite lint/build
+porque no cambia codigo ni configuracion persistente.
+
 Con el entorno real y la CA local, `pnpm lint`, `pnpm check-types` y
 `pnpm build` pasan en el monorepo; build se completo fuera del sandbox.
 `git diff --check` correcto. No se ejecutaron migraciones ni escrituras remotas.
+
+El propietario ha compartido una respuesta de la IA de soporte, que recomienda
+revision humana del certificado; no consta una solucion ni un ticket humano
+confirmado. Autoriza documentar el bloqueo y avanzar a tarea 6 (Email/URLs),
+independiente de Prisma CLI. Se mantienen TLS estricto y el entorno existente.
+La tarea 5 sigue abierta; no se reintenta modificar la confianza del sistema.
+
+Tarea 6 en preparacion documental: Email con confirmacion, Site URL local y
+dos redirecciones exactas propuestas para Phase 5, detalladas en la guia de
+entorno. El propietario debe guardar/confirmar los ajustes y el tipo de SMTP.
+No hay conector Supabase disponible ni inspeccion remota de esos ajustes;
+no se han implementado rutas Auth ni enviado correos. No se marca completada.
 
 Pendientes actuales:
 
 - Resolver acceso IPv6 para evaluar CLI directo o la confianza estricta de CLI
   en session pooler, y repetir SELECT 1 sin relajar TLS.
 - La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
-- Email/URLs y bucket `media` se revisaran en las siguientes tareas autorizadas.
+- Email/URLs: preparacion iniciada; pendiente de confirmacion del propietario.
+- Bucket `media`: pendiente de la siguiente tarea autorizada.
 - La comprobacion final de arranque y navegacion con entorno real sigue pendiente.
 
 Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.
@@ -215,7 +240,7 @@ pnpm --filter @repo/db prisma:validate
 pnpm --filter @repo/db prisma:generate
 ```
 
-Con entorno real, `db:check:runtime` ya pasa. `db:check` paso inicialmente con cifrado, pero su configuracion actual de confianza estricta falla en macOS; no se considera cerrada esa verificacion.
+Con entorno real, `db:check:runtime` ya pasa. `db:check` paso inicialmente con cifrado; al exigir confianza estricta falla en el pooler de macOS. La URL directa configurada despues falla por alcance IPv6. No se considera cerrada esa verificacion.
 
 ## Inicio recomendado para un chat nuevo
 

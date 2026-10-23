@@ -8,7 +8,7 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). El propietario ha autorizado iniciar **Phase 4: Supabase real infrastructure**, comenzando por documentacion y preparacion local. Los recursos remotos y la conectividad real siguen sin verificarse; el frontend conserva los mocks.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta activa: proyecto creado por el propietario, entorno local preparado y runtime verificado con TLS. Prisma CLI sigue pendiente; el propietario autoriza avanzar con Email/URLs de forma independiente. El frontend conserva los mocks.
 
 **Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
@@ -190,7 +190,7 @@ entrega. Posteriormente la PR #6 quedo integrada y el propietario autorizo Phase
 
 ## Phase 4: Supabase real infrastructure
 
-**Estado:** activa; documentacion y preparacion autorizadas. Infraestructura remota y conexiones pendientes de verificacion. No completada.
+**Estado:** activa; proyecto remoto y entorno local preparados, runtime verificado con TLS. Prisma CLI sigue pendiente por rechazo del certificado del pooler en macOS y falta de acceso IPv6 al endpoint directo. El propietario autoriza continuar con Email/URLs de forma independiente, sin cerrar ese bloqueo. No completada.
 
 **Objetivo:** activar la infraestructura externa preparada en Phase 1.
 
