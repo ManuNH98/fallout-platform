@@ -12,10 +12,10 @@ Actualizado el 23 de octubre de 2026.
 
 - **Phase 0: Repository foundation** esta completada.
 - La parte local de **Phase 1: Infrastructure and configuration** esta preparada.
-- Supabase remoto tiene runtime y Storage verificados; Email/URLs preparados por confirmacion del propietario. Prisma CLI sigue pendiente.
+- Supabase remoto tiene runtime, Prisma CLI y Storage verificados con los requisitos locales documentados; Email/URLs preparados por confirmacion del propietario.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
-- La fase activa es **Phase 4: Supabase real infrastructure**. Las tareas 1 a 4 estan integradas y la tarea 5 de entorno real esta en curso; queda pendiente la confianza TLS estricta de Prisma CLI en macOS.
+- La fase activa es **Phase 4: Supabase real infrastructure**, pendiente de revision de cierre del propietario. CLI Direct funciona en macOS con WARP activo y una entrada temporal del hostname en hosts; no se ha marcado la fase completada.
 
 ## Base completada
 
@@ -57,17 +57,17 @@ Actualizado el 23 de octubre de 2026.
 - No se utilizara Supabase local ni Docker salvo que se planifique expresamente.
 - Next.js, NestJS, Prisma y Supabase mantienen las responsabilidades descritas en `docs/01-architecture.md`.
 
-## Pendientes de Phase 4
+## Revision pendiente de Phase 4
 
-Antes de implementar autenticacion o persistencia real se debe:
+Contratos de entorno, proyecto remoto, archivos locales, preparacion Email/URLs,
+Storage privado, checks de CLI/runtime y arranque/navegacion mock tienen las
+evidencias registradas en `docs/17-phase-4-validation.md`. Email/URLs se basan en
+confirmacion del propietario; no se han probado flujos Auth ni entrega de correo.
 
-- Actualizar los contratos de entorno y los ejemplos antes de introducir credenciales reales.
-- Crear o verificar el proyecto remoto de Supabase con el propietario.
-- Configurar Supabase Auth y el bucket `media` de Storage.
-- Crear los archivos `.env` locales a partir de los ejemplos, sin commitear secretos.
-- Verificar Prisma CLI con `pnpm --filter @repo/db db:check` (`DIRECT_URL`) y preparar/ejecutar una comprobacion independiente de runtime (`DATABASE_URL`).
-- Comprobar arranque de web/API, `GET /health` y navegacion mock. Health por si solo no verifica PostgreSQL.
-- Completar las tareas externas de Phase 4 y continuar con Auth en Phase 5.
+Falta revisar y aceptar con el propietario los requisitos locales WARP/hosts de
+CLI Direct y autorizar el cierre. No comenzar Auth ni persistencia real en esta
+entrega. Health por si solo no verifica PostgreSQL; las dos comprobaciones SQL
+son independientes. No hay despliegue remoto operativo verificado.
 
 La guia detallada se mantiene en `docs/14-environment-and-supabase.md`.
 
@@ -228,20 +228,32 @@ de solo lectura del nombre UUID exacto confirma ausencia del objeto antes y
 despues del intento. Sin archivos creados, limpieza ni cambios de permisos.
 No se anadieron dependencias ni codigo; validacion documental con
 `git diff --check`, sin repetir lint/tipos/build por ser solo documentacion.
-Procedimiento y evidencias en la guia de entorno. CLI sigue pendiente.
+Procedimiento y evidencias en la guia de entorno. En ese momento CLI seguia pendiente.
+
+Resultado posterior de CLI (2026-10-23): el propietario activa WARP y autoriza
+una entrada temporal unica en /etc/hosts, que aplica con el helper y sudo desde
+su terminal. Se verifica copia previa integra y resto del archivo intacto.
+macOS ya resuelve Direct; `db:check` y `db:check:runtime` terminan con codigo 0.
+CLI conserva hostname, CA y sslaccept=strict. Controles negativos sin CA y con
+IPv6 literal en lugar del hostname fallan con P1011. No se relaja TLS.
+Lint, check-types y build de @repo/db pasan tras esta comprobacion.
+
+WARP debe seguir activo para CLI Direct; la entrada temporal debe actualizarse
+si cambia la IPv6 del proyecto. No se han cambiado .env, codigo ni llaveros.
+Los helpers/copia estan fuera del repositorio. Detalles y retirada de la
+entrada en la guia de entorno y el registro de validacion.
 
 Pendientes actuales:
 
-- Resolver acceso IPv6 para evaluar CLI directo o la confianza estricta de CLI
-  en session pooler, y repetir SELECT 1 sin relajar TLS.
 - La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
-- Incorporar el resultado de CLI y revision del propietario al registro de validacion para cerrar Phase 4.
+- Revision del propietario, incluida la dependencia local WARP/hosts, y registro del cierre autorizado de Phase 4.
 
 Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.
 
 Validacion de aplicaciones realizada el 2026-10-23: lint, check-types y build
 forzados en el monorepo; 16 pruebas unitarias y 2 e2e de API correctas; Prisma
-validate y runtime correctos. CLI devuelve P1001 con la conexion directa actual.
+validate y runtime correctos. CLI dio P1001 inicialmente; la repeticion posterior
+con WARP y hosts pasa, como se detalla arriba.
 Home y health responden en los servidores preexistentes de 3000/3001. Un
 arranque independiente del build en 3100/3101 tambien funciona, tras regenerar
 dist de API eliminado por un intento de dev que fallo por puerto ocupado.
@@ -249,9 +261,9 @@ No se detuvieron los procesos del propietario; los temporales se cerraron.
 
 El recorrido HTTP cubre 25 URLs sin enlaces internos rotos y los estados de
 busqueda vacia y no encontrado. Navegacion interactiva comprobada en navegador;
-frontend conserva mocks y diseno. No hay cambios de codigo o entorno persistente.
+frontend conserva mocks y diseno. No hay cambios de codigo ni archivos .env del repositorio.
 Registro completo de comandos, puertos, revision de assets y limitaciones en
-`docs/17-phase-4-validation.md`. El cierre tecnico sigue pendiente de CLI.
+`docs/17-phase-4-validation.md`. El cierre queda pendiente de revision del propietario.
 
 ## Validacion conocida
 
@@ -268,7 +280,7 @@ pnpm --filter @repo/db prisma:validate
 pnpm --filter @repo/db prisma:generate
 ```
 
-Con entorno real, `db:check:runtime` ya pasa. `db:check` paso inicialmente con cifrado; al exigir confianza estricta falla en el pooler de macOS. La URL directa configurada despues falla por alcance IPv6. No se considera cerrada esa verificacion.
+Con entorno real, `db:check:runtime` y `db:check` pasan con TLS verificado. Los fallos anteriores del pooler y de Direct sin WARP/hosts quedan registrados como historico; no son la configuracion CLI verificada actual.
 
 ## Inicio recomendado para un chat nuevo
 

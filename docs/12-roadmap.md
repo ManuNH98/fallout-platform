@@ -8,7 +8,7 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta activa: proyecto creado por el propietario, entorno local preparado y runtime verificado con TLS. Prisma CLI sigue pendiente; el propietario autoriza avanzar con Email/URLs de forma independiente. El frontend conserva los mocks.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta activa para revision de cierre: runtime y Prisma CLI verificados con TLS, Email/URLs preparados y Storage verificado. CLI Direct en macOS requiere WARP y una entrada temporal de hosts; condiciones en `docs/17-phase-4-validation.md`. El frontend conserva los mocks.
 
 **Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
@@ -190,7 +190,7 @@ entrega. Posteriormente la PR #6 quedo integrada y el propietario autorizo Phase
 
 ## Phase 4: Supabase real infrastructure
 
-**Estado:** activa; proyecto remoto y entorno local preparados, runtime verificado con TLS. Email/URLs preparados por confirmacion del propietario, con SMTP incluido y sin pruebas funcionales de Auth. Storage privado y rechazo anonimo verificados. Aplicaciones, health, mocks y checks del monorepo validados; registro parcial en `docs/17-phase-4-validation.md`. Prisma CLI sigue pendiente por rechazo del certificado del pooler en macOS y falta de acceso IPv6 al endpoint directo. No completada.
+**Estado:** validacion tecnica realizada; pendiente de revision del propietario, no marcada completada. Runtime y Prisma CLI pasan con TLS verificado. CLI Direct en macOS depende de WARP activo y una entrada temporal del hostname en hosts aplicada por el propietario. Email/URLs preparados por confirmacion, SMTP incluido sin pruebas Auth. Storage privado y rechazo anonimo verificados; aplicaciones, health, mocks y checks validados. Evidencias y limites en `docs/17-phase-4-validation.md`.
 
 **Objetivo:** activar la infraestructura externa preparada en Phase 1.
 

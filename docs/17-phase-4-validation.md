@@ -2,14 +2,17 @@
 
 Fecha: 23 de octubre de 2026.
 
-Estado: validacion de aplicaciones y runtime realizada; **Phase 4 sigue abierta**.
-Prisma CLI no supera aun su comprobacion con TLS verificado. Este registro no
-autoriza el cierre de fase ni el inicio de implementaciones de Phase 5.
+Estado: aplicaciones, runtime y Prisma CLI verificados; **Phase 4 sigue abierta
+para revision del propietario**. CLI funciona en macOS mediante Direct con
+WARP activo y una entrada temporal de su hostname en /etc/hosts. La revision
+debe incluir esta dependencia local. No se inicia Phase 5 en esta entrega.
 
 ## Alcance
 
-Entrega de verificacion, sin cambios de codigo, dependencias, diseno o entorno
-persistente. Archivos permitidos: este registro y docs/12, docs/14 y docs/15.
+Entrega de verificacion, sin cambios de codigo, dependencias del repositorio,
+diseno o archivos .env. El seguimiento incorpora WARP instalado por el
+propietario y una entrada temporal de sistema aplicada por el con sudo.
+Archivos permitidos del repositorio: este registro y docs/12, docs/14 y docs/15.
 Excluidos apps/packages, schema, migraciones, seeds y el registro historico de
 Phase 3. Se revisaron las skills locales; no se aplica una guia de implementacion
 porque solo se ejecutan checks existentes y se registra la evidencia.
@@ -25,15 +28,52 @@ porque solo se ejecutan checks existentes y se registra la evidencia.
 | `pnpm --filter api run test:e2e --runInBand` | 2 pruebas correctas |
 | `pnpm --filter @repo/db prisma:validate` | Correcto |
 | `pnpm --filter @repo/db db:check:runtime` | Correcto contra Supabase |
-| `pnpm --filter @repo/db db:check` | Falla con P1001 en DIRECT_URL directa |
+| `pnpm --filter @repo/db db:check` | Correcto en Direct con WARP y entrada temporal de hosts; antes fallaba con P1001 |
 | `git diff --check` | Correcto |
 
 `--force` solicita la ejecucion de las tareas de Turbo sin reutilizar su cache.
 Runtime usa session pooler con `sslmode=verify-full` y CA explicita. En esta
 entrega no se relaja TLS ni se ejecutan migraciones, seeds o escrituras remotas.
-El fallo de CLI sigue documentado: el endpoint directo requiere acceso IPv6
-no disponible desde esta red; el pooler falla la politica TLS nativa de macOS.
-Diagnostico y seguimiento en docs/14-environment-and-supabase.md.
+Los fallos iniciales de CLI quedan como historico: sin WARP no habia salida
+IPv6; el pooler falla la politica TLS nativa de macOS. El camino verificado
+actual es Direct. Diagnostico y seguimiento en docs/14-environment-and-supabase.md.
+
+## CLI Direct: resultado con WARP y DNS local
+
+El propietario ha instalado WARP gratuito y activado Trafico y DNS (HTTPS).
+Las pruebas TCP a Supabase Direct y un control publico pasan por IPv6. La
+consulta DNS AAAA directa encuentra el host, pero el resolvedor nativo de
+macOS seguia devolviendo ENOTFOUND; vaciar la cache local no lo resolvio.
+Una conexion pg a la IPv6 resuelta explicitamente, conservando el hostname
+original en TLS, paso SELECT 1 con CA y hostname verificados. El certificado
+Direct observado tiene serverAuth y 730 dias de validez.
+
+Tras autorizacion explicita, se preparo un diff de una unica entrada temporal
+en /etc/hosts, sin publicar IP ni referencia del proyecto. El intento automatico
+no tenia autenticacion sudo y no modifico el archivo. El propietario ejecuto
+el helper desde su terminal. La verificacion posterior confirma que el archivo
+es exactamente la copia previa mas esa entrada; no cambiaron los demas hosts.
+La copia y helpers estan en /private/tmp y no se versionan.
+
+Con esa entrada, macOS resuelve IPv6 y `pnpm --filter @repo/db db:check` termina
+con codigo 0. Conserva la URI original del hostname Direct, CA en sslcert,
+sslmode=require y sslaccept=strict. `db:check:runtime` tambien termina con 0.
+Controles negativos con DIRECT_URL sobrescrita solo en el proceso: quitar la
+CA adicional y usar la IPv6 literal (no incluida en el certificado) producen
+P1011 por confianza. Esto acredita rechazo por CA y por identidad incorrecta;
+no se desactivo TLS ni se modificaron los .env para las pruebas.
+
+Tras estas comprobaciones pasan lint, check-types y build de @repo/db. Los
+checks completos de aplicaciones listados arriba son de la validacion previa;
+no se repiten en esta iteracion documental sin cambios de codigo de apps.
+
+Limite operativo: WARP debe estar activo para alcanzar Direct y la entrada
+temporal debe seguir apuntando a la IPv6 vigente. No es una reparacion general
+del DNS de macOS. Si Supabase cambia la IP, detener la prueba, resolver de
+nuevo el host y revisar la entrada con el propietario; no sustituir el hostname
+por una IP en la URI ni relajar TLS. El helper temporal admite --rollback para
+retirar solo su entrada; si se retira sin resolver el DNS, CLI puede volver a
+fallar. Conservar el registro de la copia antes de limpiar los temporales.
 
 ## Arranque y health
 
@@ -105,8 +145,8 @@ esta validacion es local contra Supabase remoto. No se ha creado hosting.
 
 ## Pendiente para cerrar
 
-Resolver el camino de Prisma CLI y repetir `pnpm --filter @repo/db db:check`
-con TLS y certificado/hostname verificados, seguido de `db:check:runtime`.
-Si la solucion cambia codigo o configuracion, repetir los checks afectados.
-Actualizar este registro, roadmap y estado con los resultados y someter el
-cierre a revision del propietario. Hasta entonces Phase 4 no esta completada.
+El bloqueo de conexion CLI queda superado bajo los requisitos locales
+documentados. Falta la revision del propietario, incluida la aceptacion del
+uso de WARP y la entrada temporal de hosts, y registrar el cierre autorizado.
+Hasta entonces Phase 4 no esta marcada completada. Si cambia esa configuracion,
+repetir ambas comprobaciones de conectividad y los checks afectados.

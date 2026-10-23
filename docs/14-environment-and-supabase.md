@@ -8,14 +8,14 @@ No introducir Docker, Supabase local ni dependencias sin justificar. Login, regi
 
 ## Estado comprobado de Phase 4
 
-Revision del 23 de octubre de 2026. Las tareas 1 a 4 estan integradas. El propietario ha creado el proyecto y rellenado el entorno local en la tarea 5, todavia en curso. Runtime conecta con TLS verificado; la validacion estricta de certificados de Prisma CLI en macOS sigue pendiente. El propietario autoriza avanzar con la preparacion independiente de Email/URLs sin cerrar ese bloqueo.
+Revision del 23 de octubre de 2026. Runtime y CLI conectan con TLS verificado. CLI usa Direct en macOS con WARP activo y una entrada temporal del hostname en /etc/hosts aplicada por el propietario. Email/URLs preparados por confirmacion y Storage verificado. El registro docs/17-phase-4-validation.md detalla las evidencias y la dependencia local de WARP/hosts. Phase 4 permanece abierta para revision del propietario.
 
 - Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. El layout raiz importa `apps/web/lib/env.ts`, por lo que la validacion publica tambien se ejecuta al cargar el layout de servidor, incluido el build.
 - API: puerto `3001`, ConfigModule, validacion de protocolos/host y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
 - `GET /health` devuelve `{"status":"ok"}`: acredita disponibilidad de API, no conectividad con PostgreSQL, Auth o Storage.
 - DB: Prisma/client/adapter-pg `7.9.1`, schema sin modelos y factoria `createPrismaClient(connectionString)` preparada.
 - Prisma CLI carga dotenv en `packages/db` y usa `DIRECT_URL` mediante `datasource.url` en `prisma.config.ts`. Sin ella se permite validar/generar localmente.
-- `db:check` ejecuta `prisma/check-connection.sql`, que contiene solo `SELECT 1;`, por la URL de CLI. `db:check:runtime` comprueba `DATABASE_URL` mediante la factoria Prisma existente y `SELECT 1 AS ok`; runtime ya ha pasado contra Supabase; CLI paso con cifrado, pero falla al exigir confianza estricta en macOS.
+- `db:check` ejecuta `prisma/check-connection.sql`, que contiene solo `SELECT 1;`, por la URL de CLI. `db:check:runtime` comprueba `DATABASE_URL` mediante la factoria Prisma existente y `SELECT 1 AS ok`; ambos pasan con TLS verificado, CLI por Direct con WARP/hosts y runtime por session pooler.
 - Los archivos `apps/web/.env.local`, `apps/api/.env` y `packages/db/.env` existen localmente y estan ignorados por Git. El certificado CA local en `packages/db/.certs/prod-ca-2021.pem` tambien esta ignorado; no se versionan valores ni credenciales.
 
 ## Diferencias entre codigo y configuracion objetivo
@@ -26,8 +26,8 @@ Los contratos y ejemplos publicos/de servidor estan actualizados. La tabla disti
 | --- | --- | --- |
 | Web | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en ejemplo/helper/Turbo; helper importado desde el layout raiz | Entorno real rellenado; formato y coherencia local comprobados, sin ejecutar Auth |
 | API | Sin `SUPABASE_JWT_SECRET` en ejemplo, tipo ni Turbo; URLs opcionales con protocolos y host validados | Implementado en tarea 3; registrar sistema de firma remoto antes de Phase 5 |
-| PostgreSQL | Session pooler `5432`; CA descargada por el propietario y configurada localmente | Runtime verificado; confianza estricta de CLI en macOS pendiente |
-| Verificacion | `db:check` por `DIRECT_URL` y `db:check:runtime` por `DATABASE_URL` | SELECT 1 de runtime correcto; CLI con `sslaccept=strict` falla por confianza TLS |
+| PostgreSQL | Session pooler para runtime; Direct para CLI; CA configurada localmente | Ambos verificados; CLI depende de WARP y entrada temporal de hosts en macOS |
+| Verificacion | `db:check` por `DIRECT_URL` y `db:check:runtime` por `DATABASE_URL` | Ambos correctos; CLI rechaza CA ausente e identidad incorrecta en controles negativos |
 
 Supabase recomienda publishable keys (`sb_publishable_...`) para componentes publicos; `anon` y `service_role` son legacy. No hace falta obtener una secret key para esta fase. Referencia: [API keys](https://supabase.com/docs/guides/getting-started/api-keys).
 
@@ -71,9 +71,11 @@ Exigir transporte cifrado. `sslmode=require` exige cifrado, pero no garantiza po
 
 Los ejemplos de runtime API/DB usan `sslmode=verify-full`, admitido por la version instalada de `pg-connection-string` (2.14.0) y consumido por `PrismaPg`; si la CA no es de confianza, configurar `sslrootcert` con su ruta local real. No introducir una ruta ficticia activa en el ejemplo. No combinar parametros SSL de la URI con un objeto `ssl` sin revisar su precedencia en pg.
 
-El ejemplo de `DIRECT_URL` usa `sslmode=require`, que Prisma CLI documenta para exigir TLS. La documentacion de su conector PostgreSQL enumera `sslcert` para el certificado de servidor, mientras pg utiliza `sslrootcert` para la CA: no copiar opciones entre ambos caminos sin verificarlas. La configuracion de confianza y la comprobacion de identidad del servidor siguen pendientes del endpoint real. `require` por si solo no acredita que se haya verificado esa identidad.
+El ejemplo de `DIRECT_URL` usa `sslmode=require`, que Prisma CLI documenta para exigir TLS. La documentacion de su conector PostgreSQL enumera `sslcert` para el certificado de servidor, mientras pg utiliza `sslrootcert` para la CA: no copiar opciones entre ambos caminos sin verificarlas. El entorno real de CLI anade CA en `sslcert` y `sslaccept=strict`; la conexion Direct y sus controles negativos se han verificado con los requisitos locales descritos abajo. `require` por si solo no acredita que se haya verificado esa identidad.
 
 ### Verificacion real de tarea 5: macOS
+
+Los intentos siguientes son el historico del bloqueo. El resultado vigente es CLI Direct correcto con WARP y hosts, descrito en la subseccion final y en docs/17-phase-4-validation.md.
 
 El propietario descargo la CA desde Supabase Dashboard. Se verifico que es una CA vigente y se copio como PEM a un archivo local ignorado. Las dos URLs de runtime usan `sslmode=verify-full` y `sslrootcert` con ruta absoluta al PEM. `db:check:runtime` pasa contra Supabase y una comprobacion con el mismo driver pg confirma conexion cifrada y certificado autorizado.
 
@@ -104,6 +106,14 @@ El propietario compartio la respuesta de la IA de soporte de Supabase: no confir
 Por indicacion del propietario se deja este bloqueo documentado y se avanza a la tarea 6. No se repiten cambios de llavero ni se relaja TLS. Criterio para resolverlo: `pnpm --filter @repo/db db:check` termina correctamente con TLS y certificado/hostname verificados por CLI; despues se repite `db:check:runtime`. Mientras tanto la tarea 5 y Phase 4 permanecen abiertas. No se ha enviado ningun mensaje al proveedor desde el agente.
 
 Referencia del valor implicito de confianza: [SecTrustSettingsCopyTrustSettings de Apple](https://developer.apple.com/documentation/security/sectrustsettingscopytrustsettings(_:_:_:)).
+
+#### Resultado vigente: Direct con WARP y entrada temporal de hosts
+
+WARP instalado y activado por el propietario proporciona acceso IPv6 a Direct. Persistia ENOTFOUND en el resolvedor de macOS aunque la consulta AAAA directa funcionaba; vaciar cache no lo resolvio. El propietario autorizo y aplico con sudo una unica entrada del hostname Direct a su IPv6 en /etc/hosts. Se verifico que los demas hosts siguen intactos y que la copia previa es integra. No se publican IP, hostname real ni credenciales; los helpers y copia quedan fuera del repositorio, en /private/tmp.
+
+Tras el cambio macOS resuelve el host y pasan `db:check` y `db:check:runtime`. CLI conserva hostname, `sslmode=require`, `sslcert` y `sslaccept=strict`. Sin CA adicional y con hostname sustituido por IPv6 literal, dos controles negativos solo en memoria fallan con P1011. El certificado Direct observado incluye serverAuth y tiene 730 dias de validez. No se cambiaron .env, llaveros, politicas remotas ni codigo. Lint, check-types y build de @repo/db pasan.
+
+Mantener WARP activo al usar Direct y revisar la entrada si cambia la IPv6 del proyecto. Es una solucion local temporal, no una reparacion general del DNS ni una garantia al cambiar de red. No sustituir la URI por una IP ni relajar TLS. El helper `/private/tmp/fallout-direct-hosts.py` admite `--rollback` con sudo y retira solo su entrada; conservar antes la copia y el registro de su ubicacion si se limpian temporales. Al retirarla puede volver el fallo DNS. El cierre de fase queda pendiente de revision del propietario sobre estos requisitos operativos.
 
 Referencia de los parametros del motor nativo: [parser de conexiones de Prisma](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/url.rs) y [carga de la CA y modo estricto](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/native/mod.rs). Las opciones del driver pg y del motor nativo se comprueban por separado.
 
@@ -179,10 +189,10 @@ Referencias contrastadas el 2026-10-23: [crear buckets](https://supabase.com/doc
 | 2. Entorno publico | 1 revisada | Integrado en `cb7ca8e`: publishable key y validacion desde el layout, sin cambios visuales |
 | 3. Entorno servidor | 1; ejecutar tras 2 | Integrado en `36e0b26`: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
 | 4. Prueba runtime | 3 | Integrado en `d19cb94`: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
-| 5. Proyecto y entorno real | 2, 3, 4 | En curso: proyecto creado por el propietario y entorno rellenado; runtime correcto, CLI estricto pendiente en macOS |
+| 5. Proyecto y entorno real | 2, 3, 4 | Runtime y CLI verificados; Direct depende de WARP/hosts en macOS; revision del propietario pendiente |
 | 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | Preparada por confirmacion del propietario: Email, URLs exactas y SMTP incluido; sin implementar ni probar autenticacion |
 | 7. Storage | Proyecto/entorno de 5 preparados; continuacion autorizada con CLI pendiente | Verificada: media privado, RLS activo, cero politicas, subida anonima rechazada por RLS y objeto ausente |
-| 8. Verificacion final | 1 a 7; comprobaciones independientes autorizadas con CLI pendiente | Aplicaciones, health y mocks comprobados; registro parcial en docs/17-phase-4-validation.md; cierre pendiente de CLI |
+| 8. Verificacion final | 1 a 7 | Aplicaciones, health, mocks y conectividad comprobados; registro en docs/17-phase-4-validation.md; revision de cierre pendiente |
 
 Antes de cada tarea confirmar sus archivos permitidos/excluidos. En la tarea 1 solo se modifican `AGENTS.md`, `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. No modificar el registro historico `docs/16-phase-3-validation.md`.
 
@@ -242,12 +252,12 @@ Phase 4 solo puede cerrarse tras registrar estas evidencias sin secretos:
 
 - [x] Proyecto operativo y configuracion por consumidor, sin `.env` raiz ni secretos versionados/publicos; alcance de revision en docs/17-phase-4-validation.md.
 - [x] Contratos de entorno y ejemplos alineados; ausencia de Supabase permitida para desarrollo mock.
-- [ ] CLI y runtime conectan con pruebas de solo lectura independientes y TLS verificado.
+- [x] CLI y runtime conectan con pruebas de solo lectura independientes y TLS verificado; CLI requiere WARP/hosts local.
 - [x] Email, confirmacion, URLs exactas y limites de correo preparados para Phase 5 por confirmacion del propietario.
 - [x] `media` existe con visibilidad documentada y sin escrituras anonimas; politicas y rechazo comprobados.
 - [x] Web/API arrancan con configuracion real; `/health` devuelve HTTP 200 y `{"status":"ok"}`; puertos y limites en docs/17-phase-4-validation.md.
 - [x] Home, wiki, juegos y detalles conservan mocks y diseno.
-- [ ] Registro parcial disponible en `docs/17-phase-4-validation.md`; falta incorporar CLI verificado y revision del propietario para el cierre.
+- [ ] Registro disponible en `docs/17-phase-4-validation.md`, incluido CLI verificado; falta revision del propietario para el cierre.
 
 ## Vigencia
 
