@@ -182,7 +182,7 @@ Referencias contrastadas el 2026-10-23: [crear buckets](https://supabase.com/doc
 | 5. Proyecto y entorno real | 2, 3, 4 | En curso: proyecto creado por el propietario y entorno rellenado; runtime correcto, CLI estricto pendiente en macOS |
 | 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | Preparada por confirmacion del propietario: Email, URLs exactas y SMTP incluido; sin implementar ni probar autenticacion |
 | 7. Storage | Proyecto/entorno de 5 preparados; continuacion autorizada con CLI pendiente | Verificada: media privado, RLS activo, cero politicas, subida anonima rechazada por RLS y objeto ausente |
-| 8. Verificacion final | 1 a 7 | Conexiones, arranque, health y mocks comprobados; registro antes del cierre |
+| 8. Verificacion final | 1 a 7; comprobaciones independientes autorizadas con CLI pendiente | Aplicaciones, health y mocks comprobados; registro parcial en docs/17-phase-4-validation.md; cierre pendiente de CLI |
 
 Antes de cada tarea confirmar sus archivos permitidos/excluidos. En la tarea 1 solo se modifican `AGENTS.md`, `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. No modificar el registro historico `docs/16-phase-3-validation.md`.
 
@@ -240,14 +240,14 @@ No ejecutar `db:migrate`, `db:deploy`, `db:push`, seeds ni DDL como comprobacion
 
 Phase 4 solo puede cerrarse tras registrar estas evidencias sin secretos:
 
-- [ ] Proyecto operativo y configuracion por consumidor, sin `.env` raiz ni secretos versionados/publicos.
-- [ ] Contratos de entorno y ejemplos alineados; ausencia de Supabase permitida para desarrollo mock.
+- [x] Proyecto operativo y configuracion por consumidor, sin `.env` raiz ni secretos versionados/publicos; alcance de revision en docs/17-phase-4-validation.md.
+- [x] Contratos de entorno y ejemplos alineados; ausencia de Supabase permitida para desarrollo mock.
 - [ ] CLI y runtime conectan con pruebas de solo lectura independientes y TLS verificado.
-- [ ] Email, confirmacion, URLs exactas y limites de correo preparados para Phase 5.
+- [x] Email, confirmacion, URLs exactas y limites de correo preparados para Phase 5 por confirmacion del propietario.
 - [x] `media` existe con visibilidad documentada y sin escrituras anonimas; politicas y rechazo comprobados.
-- [ ] Web/API arrancan con configuracion real; `/health` devuelve HTTP 200 y `{"status":"ok"}`.
-- [ ] Home, wiki, juegos y detalles conservan mocks y diseno.
-- [ ] Validaciones, limites y estado de despliegue registrados en la futura `docs/17-phase-4-validation.md`; roadmap/estado actualizados tras revision del propietario.
+- [x] Web/API arrancan con configuracion real; `/health` devuelve HTTP 200 y `{"status":"ok"}`; puertos y limites en docs/17-phase-4-validation.md.
+- [x] Home, wiki, juegos y detalles conservan mocks y diseno.
+- [ ] Registro parcial disponible en `docs/17-phase-4-validation.md`; falta incorporar CLI verificado y revision del propietario para el cierre.
 
 ## Vigencia
 

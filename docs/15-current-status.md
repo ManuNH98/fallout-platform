@@ -8,11 +8,11 @@ Este documento resume el estado operativo. Las decisiones normativas siguen pert
 
 ## Estado actual
 
-Actualizado el 21 de octubre de 2026.
+Actualizado el 23 de octubre de 2026.
 
 - **Phase 0: Repository foundation** esta completada.
 - La parte local de **Phase 1: Infrastructure and configuration** esta preparada.
-- La integracion externa con Supabase se retoma en Phase 4; aun no esta verificada.
+- Supabase remoto tiene runtime y Storage verificados; Email/URLs preparados por confirmacion del propietario. Prisma CLI sigue pendiente.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
 - La fase activa es **Phase 4: Supabase real infrastructure**. Las tareas 1 a 4 estan integradas y la tarea 5 de entorno real esta en curso; queda pendiente la confianza TLS estricta de Prisma CLI en macOS.
@@ -235,9 +235,23 @@ Pendientes actuales:
 - Resolver acceso IPv6 para evaluar CLI directo o la confianza estricta de CLI
   en session pooler, y repetir SELECT 1 sin relajar TLS.
 - La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
-- La comprobacion final de arranque y navegacion con entorno real sigue pendiente.
+- Incorporar el resultado de CLI y revision del propietario al registro de validacion para cerrar Phase 4.
 
 Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.
+
+Validacion de aplicaciones realizada el 2026-10-23: lint, check-types y build
+forzados en el monorepo; 16 pruebas unitarias y 2 e2e de API correctas; Prisma
+validate y runtime correctos. CLI devuelve P1001 con la conexion directa actual.
+Home y health responden en los servidores preexistentes de 3000/3001. Un
+arranque independiente del build en 3100/3101 tambien funciona, tras regenerar
+dist de API eliminado por un intento de dev que fallo por puerto ocupado.
+No se detuvieron los procesos del propietario; los temporales se cerraron.
+
+El recorrido HTTP cubre 25 URLs sin enlaces internos rotos y los estados de
+busqueda vacia y no encontrado. Navegacion interactiva comprobada en navegador;
+frontend conserva mocks y diseno. No hay cambios de codigo o entorno persistente.
+Registro completo de comandos, puertos, revision de assets y limitaciones en
+`docs/17-phase-4-validation.md`. El cierre tecnico sigue pendiente de CLI.
 
 ## Validacion conocida
 

@@ -190,7 +190,7 @@ entrega. Posteriormente la PR #6 quedo integrada y el propietario autorizo Phase
 
 ## Phase 4: Supabase real infrastructure
 
-**Estado:** activa; proyecto remoto y entorno local preparados, runtime verificado con TLS. Email/URLs preparados por confirmacion del propietario, con SMTP incluido y sin pruebas funcionales de Auth. Prisma CLI sigue pendiente por rechazo del certificado del pooler en macOS y falta de acceso IPv6 al endpoint directo. Storage y validacion final pendientes. No completada.
+**Estado:** activa; proyecto remoto y entorno local preparados, runtime verificado con TLS. Email/URLs preparados por confirmacion del propietario, con SMTP incluido y sin pruebas funcionales de Auth. Storage privado y rechazo anonimo verificados. Aplicaciones, health, mocks y checks del monorepo validados; registro parcial en `docs/17-phase-4-validation.md`. Prisma CLI sigue pendiente por rechazo del certificado del pooler en macOS y falta de acceso IPv6 al endpoint directo. No completada.
 
 **Objetivo:** activar la infraestructura externa preparada en Phase 1.
 
