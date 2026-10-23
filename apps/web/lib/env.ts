@@ -17,11 +17,11 @@ const supabaseUrl = parsePublicUrl(
   "NEXT_PUBLIC_SUPABASE_URL",
   process.env.NEXT_PUBLIC_SUPABASE_URL,
 );
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (Boolean(supabaseUrl) !== Boolean(supabaseAnonKey)) {
+if (Boolean(supabaseUrl) !== Boolean(supabasePublishableKey)) {
   throw new Error(
-    "NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY deben configurarse juntas.",
+    "NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY deben configurarse juntas.",
   );
 }
 
@@ -30,5 +30,5 @@ export const webEnvironment = Object.freeze({
     parsePublicUrl("NEXT_PUBLIC_API_URL", process.env.NEXT_PUBLIC_API_URL) ??
     "http://localhost:3001",
   supabaseUrl,
-  supabaseAnonKey,
+  supabasePublishableKey,
 });

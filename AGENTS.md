@@ -102,7 +102,7 @@ docs/
 Recommended route groups:
 
 ```txt
-apps/web/src/app/
+apps/web/app/
   (public)/
     page.tsx
     wiki/
@@ -288,16 +288,20 @@ pnpm --filter @repo/ui check-types
 
 ## Current priority
 
-Phase 0 is complete and the local part of Phase 1 is prepared. Real Supabase integration is intentionally deferred while the first public experience is developed with mock data.
+Phase 0 is complete and the local part of Phase 1 is prepared. Phases 2 and 3 are complete; Phase 3 was integrated through PR #6 (merge commit `4cf28bd`). Phase 4 is active with owner-authorized planning and documentation; remote Supabase infrastructure and connectivity remain unverified. Public pages must continue using typed mock data throughout Phase 4.
 
 Current implementation order:
 
 1. Public design and shell with typed mock data (Phase 2, completed).
-2. Mock wiki and games browsing routes (Phase 3, active).
-3. Real Supabase infrastructure and connection verification.
+2. Mock wiki and games browsing routes (Phase 3, completed).
+3. Real Supabase infrastructure and connection verification (Phase 4, active).
 4. Authentication flow and application roles.
 5. Core Prisma content models and REST API.
 6. Replace public mocks with API data.
 7. Protected admin panel and content CRUD.
 
 The complete phase definitions are maintained in `docs/12-roadmap.md`.
+
+During Phase 4, follow `docs/14-environment-and-supabase.md`. Do not implement auth flows, sessions, roles, JWT validation, content models, migrations or seeds, replace mocks, or change the public design. Do not introduce Docker, local Supabase, or a root `.env` file. Never request secrets in chat or use migrations or `db:push` as connectivity checks.
+
+Execute one scoped task at a time. After each implementation, validate affected workspaces, report changes and limitations, and provide an English commit title and description. Stop for owner review; the owner creates and pushes commits and authorizes the next task. Phase 4 stays open until all its acceptance criteria have been verified.

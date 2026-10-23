@@ -8,18 +8,19 @@ Este documento resume el estado operativo. Las decisiones normativas siguen pert
 
 ## Estado actual
 
-Actualizado el 21 de octubre de 2026.
+Actualizado el 23 de octubre de 2026.
 
 - **Phase 0: Repository foundation** esta completada.
 - La parte local de **Phase 1: Infrastructure and configuration** esta preparada.
-- La integracion externa con Supabase esta aplazada de forma intencionada.
+- Supabase remoto tiene runtime, Prisma CLI y Storage verificados con los requisitos locales documentados; Email/URLs preparados por confirmacion del propietario.
 - **Phase 2: Public design with mocks** esta completada.
-- La fase activa es **Phase 3: Mock content browsing**.
+- **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
+- La fase activa es **Phase 4: Supabase real infrastructure**, pendiente de revision de cierre del propietario. CLI Direct funciona en macOS con WARP activo y una entrada temporal del hostname en hosts; no se ha marcado la fase completada.
 
 ## Base completada
 
 - Monorepo con pnpm workspaces y Turborepo.
-- Frontend Next.js en `apps/web`, con puerto local `3000`.
+- Frontend Next.js en `apps/web`, App Router en `apps/web/app/` (sin `src/`), con puerto local `3000`.
 - API NestJS en `apps/api`, con puerto local `3001`.
 - Packages compartidos para base de datos, UI, tipos, validacion, ESLint y TypeScript.
 - Prisma 7 preparado en `packages/db`, con schema inicial, cliente y scripts de trabajo.
@@ -50,27 +51,36 @@ Actualizado el 21 de octubre de 2026.
 - La primera experiencia publica utilizara datos mock tipados.
 - Los mocks deben quedar aislados para poder sustituirlos por la API sin redisenar las pantallas.
 - Las paginas publicas deben ser responsive, accesibles y SEO-friendly.
-- No se implementaran todavia Supabase Auth, persistencia real ni migraciones de contenido.
+- Phase 4 prepara infraestructura, Email Auth, URLs y Storage; no implementa login, registro, sesiones, roles ni validacion JWT (Phase 5), modelos de contenido, migraciones ni seeds.
+- El frontend sigue usando mocks durante Phase 4, sin cambios de diseno ni llamadas nuevas a la API.
+- Se ejecuta una tarea por revision; el propietario crea/sube los commits y autoriza la siguiente. Cada entrega incluye titulo y descripcion de commit en ingles.
 - No se utilizara Supabase local ni Docker salvo que se planifique expresamente.
 - Next.js, NestJS, Prisma y Supabase mantienen las responsabilidades descritas en `docs/01-architecture.md`.
 
-## Trabajo aplazado
+## Revision pendiente de Phase 4
 
-Antes de implementar autenticacion o persistencia real se debe:
+Contratos de entorno, proyecto remoto, archivos locales, preparacion Email/URLs,
+Storage privado, checks de CLI/runtime y arranque/navegacion mock tienen las
+evidencias registradas en `docs/17-phase-4-validation.md`. Email/URLs se basan en
+confirmacion del propietario; no se han probado flujos Auth ni entrega de correo.
 
-- Crear el proyecto remoto de Supabase.
-- Configurar Supabase Auth y el bucket `media` de Storage.
-- Crear los archivos `.env` locales a partir de los ejemplos, sin commitear secretos.
-- Verificar la conexion PostgreSQL con `pnpm --filter @repo/db db:check`.
-- Completar las tareas externas de Phase 4 y continuar con Auth en Phase 5.
+Falta revisar y aceptar con el propietario los requisitos locales WARP/hosts de
+CLI Direct y autorizar el cierre. No comenzar Auth ni persistencia real en esta
+entrega. Health por si solo no verifica PostgreSQL; las dos comprobaciones SQL
+son independientes. No hay despliegue remoto operativo verificado.
 
 La guia detallada se mantiene en `docs/14-environment-and-supabase.md`.
 
-## Siguiente tarea
+## Entrega integrada de Phase 3
 
-La integracion de **Phase 3: Mock content browsing** esta implementada y
-validada tecnicamente, pendiente de revision final del propietario. La fase
-permanece abierta y no se inicia Phase 4 automaticamente.
+La integracion se incorporo mediante la PR #6, merge `4cf28bd`, que contiene
+`bca7fc4`. El propietario autorizo iniciar Phase 4 el 21 de octubre de 2026.
+El documento de validacion de Phase 3 conserva el estado historico de su entrega;
+no representa una revision pendiente actual.
+
+La comprobacion se basa en el historial Git disponible. La consulta directa del
+remoto mediante `git ls-remote` fallo por resolucion DNS; no se afirma una
+verificacion adicional del estado actual de GitHub.
 
 Entregado:
 
@@ -83,7 +93,7 @@ Entregado:
   con margen de desplazamiento adaptado a la cabecera movil.
 - Mocks y contratos separados de la presentacion, sin integrar API ni Supabase.
 
-Validacion final: `pnpm --filter web lint`, `pnpm --filter web check-types`,
+Validacion final registrada de Phase 3: `pnpm --filter web lint`, `pnpm --filter web check-types`,
 `pnpm --filter web build` y `git diff --check` correctos. Recorrido de 25 URLs
 sobre el build de produccion sin enlaces internos rotos y metadata propia
 para los doce detalles. Revision visual a 320/375/768/1265 px y comprobacion de
@@ -96,9 +106,164 @@ las respuestas de streaming observadas usan HTTP 200; el 404 general devuelve
 HTTP 404. El alcance, las comprobaciones y los limites estan en
 `docs/16-phase-3-validation.md`.
 
-Tras la revision final y el commit del propietario se puede cerrar Phase 3.
-La siguiente fase del roadmap es la infraestructura real de Supabase, que
-requiere planificacion expresa antes de activar recursos externos.
+## Siguiente tarea
+
+La tarea documental inicial esta integrada en `eb36031`. La tarea 2, integrada en `cb7ca8e`, actualiza
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en el ejemplo web, el helper y Turbo.
+El layout raiz de servidor importa el helper para ejecutar la validacion.
+Ambas variables Supabase pueden omitirse para trabajar con mocks; configurar
+solo URL o solo clave produce un error en espanol. No se comprueba autenticidad
+de la clave ni se realizan llamadas externas.
+
+Validacion de tarea 2: `pnpm --filter web lint`, `pnpm --filter web check-types`
+y `pnpm --filter web build` correctos. Comprobados siete escenarios aislados
+del helper: ausencia, pareja completa, solo URL, solo clave, URL invalida,
+valores vacios y rechazo de la clave legacy como sustituto. Tambien se ha
+verificado con builds reales de Next: sin Supabase compila; solo URL falla
+con el mensaje esperado; URL y publishable key ficticias compilan.
+El intento de build dentro del sandbox se detuvo al no avanzar; estas
+comprobaciones de build se completaron fuera del sandbox. No se utilizaron
+credenciales reales ni se verifico infraestructura externa. No hay cambios
+en Prisma que requieran pruebas de conectividad en esta tarea.
+
+La tarea 3, integrada en `36e0b26`, elimina `SUPABASE_JWT_SECRET` del tipo de entorno API, su ejemplo
+y Turbo. Los ejemplos de API/DB usan session pooler `5432` sin `pgbouncer=true`;
+runtime usa `sslmode=verify-full` y CLI `sslmode=require`, con las diferencias
+de certificados y los limites pendientes descritos en la guia. No se declara
+verificada la confianza del certificado ni la conectividad remota.
+
+La API valida host y protocolos HTTP(S) o PostgreSQL segun la variable.
+Mantiene variables externas opcionales para los mocks y mensajes sin valores
+sensibles. No se implementa validacion JWT ni se conecta NestJS a Prisma.
+
+Validacion de tarea 3: lint, check-types y build correctos en `api` y
+`@repo/db`; `prisma:validate` y `prisma:generate` correctos sin credenciales.
+`pnpm --filter api run test --runInBand` pasa con 16 pruebas y
+`pnpm --filter api run test:e2e --runInBand` con 2, incluido `/health`.
+Las e2e se completaron fuera del sandbox tras un error `listen EPERM` al
+abrir el puerto local. Con pnpm 9 se usa `run test` para pasar `--runInBand`
+al script; la forma abreviada `test --runInBand` fue rechazada por pnpm.
+No se ejecuto `db:check` ni se hicieron conexiones a Supabase.
+
+La tarea 4 incorpora `pnpm --filter @repo/db db:check:runtime`. Genera y
+compila con las dependencias existentes, carga el entorno de DB y comprueba
+solo `DATABASE_URL` mediante la factoria Prisma y `SELECT 1 AS ok`. Verifica
+el resultado y desconecta antes de anunciar exito. El limite de 10 segundos
+incluye conexion, consulta y desconexion; si se supera, fuerza la salida y
+el sistema operativo cierra los sockets. Las salidas no imprimen errores del
+driver ni credenciales. La politica TLS real sigue pendiente de verificar.
+
+Validacion de tarea 4: lint, check-types, build, `prisma:validate` y
+`prisma:generate` correctos en `@repo/db`, mas `git diff --check`. El comando
+completo genera/compila y falla como se espera sin `DATABASE_URL`. Nueve
+comprobaciones locales cubren ausencia, ausencia de fallback a `DIRECT_URL`,
+protocolo invalido, fallo local con cliente Prisma real y, con cliente
+simulado en memoria, exito, resultado inesperado, error de consulta,
+desconexion y timeouts reales de 10 segundos durante consulta/desconexion.
+Se comprobo que las salidas no incluyen la contrasena sintetica. Estas
+comprobaciones no verifican Supabase, credenciales reales ni certificados.
+
+La tarea 4 esta integrada en `d19cb94`. En la tarea 5 el propietario ha creado
+el proyecto y rellenado los tres archivos locales ignorados. Se comprobo el
+formato de la URL publica, el prefijo publishable y la coherencia web/API,
+sin exponer valores. La CA descargada desde Supabase esta copiada en un PEM
+local ignorado y referenciada por las URLs de servidor.
+
+`db:check:runtime` pasa contra Supabase con `sslmode=verify-full` y CA explicita.
+El driver pg confirma TLS cifrado y certificado autorizado. CLI paso inicialmente
+con `sslmode=require`; al configurar CA y `sslaccept=strict` falla con P1011.
+El verificador nativo de macOS reproduce un rechazo de confianza e informa de
+Certificate Transparency no verificado. El propietario autorizo y completo una
+regla SSL de usuario limitada al host exacto. Se verifico su alcance, pero no
+resolvio el fallo. Se retiro la regla y la CA importada al llavero: la confianza
+de usuario coincide con el estado previo guardado. Se conserva el PEM local de
+runtime; no se ha desactivado TLS ni modificado el almacen de administrador.
+El 2026-10-23 se preparo la URI directa real del propietario en `DIRECT_URL`
+con CA y TLS estricto, manteniendo runtime en el pooler. `db:check` falla con
+P1001: el endpoint tiene AAAA sin A y TCP IPv6 devuelve `EHOSTUNREACH` desde
+esta red. No se ha llegado a negociar TLS ni verificar credenciales en directo.
+La URL directa permanece configurada para una prueba con acceso IPv6.
+Tras este cambio pasan lint, check-types, build y `db:check:runtime` de
+`@repo/db`. No se han modificado codigo, modelos ni configuracion de runtime.
+
+El diagnostico adicional del pooler confirma que CLI lee `sslcert`. La cadena
+completa llega a la CA configurada y pg valida hostname, TLS y SELECT 1.
+La evaluacion SSL de macOS con cadena completa y CA explicita falla con
+`OtherTrustValidityPeriod` y `ServerAuthEKU`: el certificado final tiene 1825
+dias de validez y no incluye serverAuth. Los requisitos publicados por Apple
+explican esas dos restricciones; no se atribuye el rechazo solo a CT.
+Se recomienda consultar al proveedor sobre ese certificado antes de cambiar
+la confianza local. Una prueba estricta en Linux del propietario es otra via
+pendiente, sin resultado garantizado. Detalles y referencias en la guia de
+entorno. Esta iteracion solo modifica documentacion; no repite lint/build
+porque no cambia codigo ni configuracion persistente.
+
+Con el entorno real y la CA local, `pnpm lint`, `pnpm check-types` y
+`pnpm build` pasan en el monorepo; build se completo fuera del sandbox.
+`git diff --check` correcto. No se ejecutaron migraciones ni escrituras remotas.
+
+El propietario ha compartido una respuesta de la IA de soporte, que recomienda
+revision humana del certificado; no consta una solucion ni un ticket humano
+confirmado. Autoriza documentar el bloqueo y avanzar a tarea 6 (Email/URLs),
+independiente de Prisma CLI. Se mantienen TLS estricto y el entorno existente.
+La tarea 5 sigue abierta; no se reintenta modificar la confianza del sistema.
+
+Tarea 6 preparada: el propietario confirma el 2026-10-23 Email habilitado con
+confirmacion, Site URL `http://localhost:3000` y las reservas exactas
+`http://localhost:3000/auth/confirmar` y
+`http://localhost:3000/restablecer-contrasena`. Declara que no ha configurado
+SMTP propio: se conserva el incluido, limitado a miembros del equipo y con
+limites de envio documentados en la guia de entorno. No hay conector Supabase
+ni inspeccion remota de esos ajustes; la evidencia es la confirmacion del
+propietario. No se han implementado rutas Auth, enviado correos ni probado
+entregabilidad. La verificacion funcional corresponde a Phase 5; SMTP propio
+se decidira antes de pruebas con destinatarios externos o produccion.
+
+Tarea 7 verificada el 2026-10-23 tras la creacion del bucket por el propietario.
+La inspeccion remota con pg y TLS autorizado confirma `media` privado, RLS
+activo y cero politicas en `storage.objects`, incluidas las generales.
+Una unica subida sin sesion, con publishable key en `apikey` y sin upsert,
+fue rechazada por RLS: HTTP 400 con statusCode 403 en el cuerpo. La consulta
+de solo lectura del nombre UUID exacto confirma ausencia del objeto antes y
+despues del intento. Sin archivos creados, limpieza ni cambios de permisos.
+No se anadieron dependencias ni codigo; validacion documental con
+`git diff --check`, sin repetir lint/tipos/build por ser solo documentacion.
+Procedimiento y evidencias en la guia de entorno. En ese momento CLI seguia pendiente.
+
+Resultado posterior de CLI (2026-10-23): el propietario activa WARP y autoriza
+una entrada temporal unica en /etc/hosts, que aplica con el helper y sudo desde
+su terminal. Se verifica copia previa integra y resto del archivo intacto.
+macOS ya resuelve Direct; `db:check` y `db:check:runtime` terminan con codigo 0.
+CLI conserva hostname, CA y sslaccept=strict. Controles negativos sin CA y con
+IPv6 literal en lugar del hostname fallan con P1011. No se relaja TLS.
+Lint, check-types y build de @repo/db pasan tras esta comprobacion.
+
+WARP debe seguir activo para CLI Direct; la entrada temporal debe actualizarse
+si cambia la IPv6 del proyecto. No se han cambiado .env, codigo ni llaveros.
+Los helpers/copia estan fuera del repositorio. Detalles y retirada de la
+entrada en la guia de entorno y el registro de validacion.
+
+Pendientes actuales:
+
+- La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
+- Revision del propietario, incluida la dependencia local WARP/hosts, y registro del cierre autorizado de Phase 4.
+
+Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.
+
+Validacion de aplicaciones realizada el 2026-10-23: lint, check-types y build
+forzados en el monorepo; 16 pruebas unitarias y 2 e2e de API correctas; Prisma
+validate y runtime correctos. CLI dio P1001 inicialmente; la repeticion posterior
+con WARP y hosts pasa, como se detalla arriba.
+Home y health responden en los servidores preexistentes de 3000/3001. Un
+arranque independiente del build en 3100/3101 tambien funciona, tras regenerar
+dist de API eliminado por un intento de dev que fallo por puerto ocupado.
+No se detuvieron los procesos del propietario; los temporales se cerraron.
+
+El recorrido HTTP cubre 25 URLs sin enlaces internos rotos y los estados de
+busqueda vacia y no encontrado. Navegacion interactiva comprobada en navegador;
+frontend conserva mocks y diseno. No hay cambios de codigo ni archivos .env del repositorio.
+Registro completo de comandos, puertos, revision de assets y limitaciones en
+`docs/17-phase-4-validation.md`. El cierre queda pendiente de revision del propietario.
 
 ## Validacion conocida
 
@@ -115,12 +280,12 @@ pnpm --filter @repo/db prisma:validate
 pnpm --filter @repo/db prisma:generate
 ```
 
-La comprobacion `pnpm --filter @repo/db db:check` sigue pendiente porque requiere credenciales de un proyecto Supabase real.
+Con entorno real, `db:check:runtime` y `db:check` pasan con TLS verificado. Los fallos anteriores del pooler y de Direct sin WARP/hosts quedan registrados como historico; no son la configuracion CLI verificada actual.
 
 ## Inicio recomendado para un chat nuevo
 
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 is complete, local Phase 1 is prepared, and Phase 2 public design with typed mocks is complete. Real Supabase integration is intentionally deferred. The active phase is Phase 3: Mock content browsing. Use Spanish-first UI copy and keep mocks isolated from presentation. Do not implement Supabase/Auth or real persistence yet.
+Phase 0 is complete, local Phase 1 is prepared, and Phases 2 and 3 are complete. Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is active: follow docs/14-environment-and-supabase.md, distinguish current code from planned environment updates, and verify remote infrastructure before claiming completion. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Do not implement auth flows, sessions, roles, JWT validation, content models, migrations, or seeds. Execute one owner-authorized task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
 ```

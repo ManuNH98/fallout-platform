@@ -19,11 +19,10 @@
         "DATABASE_URL",
         "DIRECT_URL",
         "SUPABASE_URL",
-        "SUPABASE_JWT_SECRET",
         "SUPABASE_STORAGE_BUCKET",
         "NEXT_PUBLIC_API_URL",
         "NEXT_PUBLIC_SUPABASE_URL",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
       ]
     },
     "lint": {
@@ -49,11 +48,10 @@
         "DATABASE_URL",
         "DIRECT_URL",
         "SUPABASE_URL",
-        "SUPABASE_JWT_SECRET",
         "SUPABASE_STORAGE_BUCKET",
         "NEXT_PUBLIC_API_URL",
         "NEXT_PUBLIC_SUPABASE_URL",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
       ]
     },
     "clean": {

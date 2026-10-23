@@ -8,11 +8,11 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. La conexion real con Supabase queda aplazada por decision del propietario mientras el desarrollo inicial de interfaz utiliza datos mock.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta activa para revision de cierre: runtime y Prisma CLI verificados con TLS, Email/URLs preparados y Storage verificado. CLI Direct en macOS requiere WARP y una entrada temporal de hosts; condiciones en `docs/17-phase-4-validation.md`. El frontend conserva los mocks.
 
 **Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
-La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las validaciones de cierre `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm lint`, `pnpm check-types`, `pnpm build` y `pnpm test` funcionan correctamente.
+La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las validaciones de cierre de la base local `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm lint`, `pnpm check-types`, `pnpm build` y `pnpm test` se completaron correctamente; no constituyen verificaciones de Supabase real.
 
 ## Phase 0: Repository foundation
 
@@ -47,7 +47,7 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 
 ## Phase 1: Infrastructure and configuration
 
-**Estado:** configuracion local completada; integracion externa aplazada.
+**Estado:** configuracion local completada; integracion externa aplazada originalmente y retomada en Phase 4, todavia pendiente de verificacion.
 
 **Objetivo:** conectar la infraestructura principal.
 
@@ -72,7 +72,7 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 - Prisma conecta con PostgreSQL.
 - Las variables necesarias estan documentadas sin incluir secretos.
 
-**Pendientes externos aplazados:**
+**Pendientes externos trasladados a Phase 4:**
 
 - Crear el proyecto remoto de Supabase.
 - Configurar Auth y el bucket `media` en Supabase Dashboard.
@@ -115,7 +115,7 @@ slug quedan para Phase 3.
 
 ## Phase 3: Mock content browsing
 
-**Estado:** integracion implementada y validada el 21 de octubre de 2026; pendiente de revision final del propietario. La fase permanece abierta hasta esa revision.
+**Estado:** completada e integrada mediante la PR #6 (merge `4cf28bd`) el 21 de octubre de 2026. El propietario ha autorizado continuar con Phase 4. El registro de validacion original se conserva en `docs/16-phase-3-validation.md`.
 
 **Objetivo:** construir la navegacion publica principal sobre datos mock.
 
@@ -163,8 +163,8 @@ y `pnpm --filter web build`, ademas de lint y tipos de `@repo/types`, completado
 correctamente. `/wiki` se renderiza en servidor por peticion para resolver los
 parametros URL; los ocho detalles wiki se prerenderizan mediante
 `generateStaticParams`. Se han comprobado las relaciones y referencias mock,
-los enlaces del cuerpo y el renderizado Markdown sin HTML embebido. La fase
-permanece abierta. El listado `/juegos` tambien supera lint, tipos y build del
+los enlaces del cuerpo y el renderizado Markdown sin HTML embebido. En ese punto
+la fase seguia abierta. El listado `/juegos` tambien supera lint, tipos y build del
 frontend y se prerenderiza como contenido estatico.
 
 Los cuatro detalles de juegos superan lint, tipos y build del frontend, mas
@@ -185,28 +185,40 @@ en los doce detalles. Revision visual a 320/375/768/1265 px, teclado y estados
 controlados de carga, vacio, error y no encontrado. Los detalles conservan
 la generacion estatica y los mocks permanecen separados de la presentacion.
 El alcance y los limites observados se recogen en `docs/16-phase-3-validation.md`.
-Pendiente de revision final del propietario; no se inicia Phase 4 automaticamente.
+La revision pendiente registrada en ese documento corresponde al momento de la
+entrega. Posteriormente la PR #6 quedo integrada y el propietario autorizo Phase 4.
 
 ## Phase 4: Supabase real infrastructure
+
+**Estado:** validacion tecnica realizada; pendiente de revision del propietario, no marcada completada. Runtime y Prisma CLI pasan con TLS verificado. CLI Direct en macOS depende de WARP activo y una entrada temporal del hostname en hosts aplicada por el propietario. Email/URLs preparados por confirmacion, SMTP incluido sin pruebas Auth. Storage privado y rechazo anonimo verificados; aplicaciones, health, mocks y checks validados. Evidencias y limites en `docs/17-phase-4-validation.md`.
 
 **Objetivo:** activar la infraestructura externa preparada en Phase 1.
 
 **Tareas:**
 
-- Crear el proyecto remoto de Supabase.
-- Configurar los archivos `.env` locales y entornos de despliegue.
-- Configurar Email en Supabase Auth y las URLs permitidas.
-- Crear el bucket `media` en Supabase Storage.
-- Configurar las connection strings de runtime y Prisma CLI.
-- Ejecutar `pnpm --filter @repo/db db:check`.
-- Verificar que web y API arrancan con la configuracion real.
+- Actualizar la guia y los contratos de entorno con documentacion oficial vigente.
+- Preparar una comprobacion de runtime independiente de la de Prisma CLI.
+- Crear o verificar el proyecto remoto de Supabase con el propietario.
+- Configurar los archivos locales por aplicacion/package, sin `.env` raiz. Registrar el estado de despliegue; no crear hosting como parte implicita de esta fase.
+- Configurar Email y las URLs exactas reservadas para Phase 5, sin implementar flujos.
+- Crear o verificar el bucket `media`, inicialmente privado y sin escrituras anonimas.
+- Configurar y verificar conexiones de runtime y Prisma CLI, incluido TLS.
+- Ejecutar `pnpm --filter @repo/db db:check` y la comprobacion de runtime que se prepare.
+- Verificar arranque de web/API, `GET /health` y navegacion publica con mocks.
+
+Secuencia, responsabilidades, configuracion objetivo y comandos en `docs/14-environment-and-supabase.md`. Se ejecuta una tarea por revision; el propietario crea/sube cada commit y autoriza la siguiente.
 
 **Definicion de completado:**
 
-- Prisma conecta con Supabase PostgreSQL.
+- Prisma CLI y el camino de runtime conectan con Supabase PostgreSQL mediante comprobaciones de solo lectura independientes.
 - Web y API disponen de las variables necesarias sin exponer secretos.
-- Supabase Auth esta preparado para los flujos de la siguiente fase.
+- Web y API arrancan; `GET /health` responde correctamente. Health acredita disponibilidad de API, no conectividad PostgreSQL.
+- Email Auth, confirmacion, URLs y limites de correo estan documentados y preparados para Phase 5.
 - El bucket `media` existe y no permite escrituras anonimas.
+- El frontend conserva navegacion, diseno y contenido mock.
+- Resultados y limitaciones quedan registrados sin secretos antes de cerrar la fase.
+
+**Fuera de alcance:** login, registro, sesiones, roles, validacion JWT, modelos de contenido, migraciones, seeds, sustitucion de mocks, Docker y Supabase local. No se ejecutan migraciones ni `db:push` como prueba de conexion.
 
 ## Phase 5: Auth foundation
 
