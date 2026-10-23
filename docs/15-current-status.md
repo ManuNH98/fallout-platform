@@ -219,12 +219,20 @@ propietario. No se han implementado rutas Auth, enviado correos ni probado
 entregabilidad. La verificacion funcional corresponde a Phase 5; SMTP propio
 se decidira antes de pruebas con destinatarios externos o produccion.
 
+Tarea 7 iniciada por autorizacion del propietario. La inspeccion remota con pg
+y TLS autorizado, en transaccion de solo lectura, confirma que `media` no
+existe, RLS esta activo en `storage.objects` y no hay politicas en esa tabla.
+Falta que el propietario cree el bucket privado desde Dashboard; despues se
+revisaran nuevamente las politicas y se probara una subida sin sesion y la
+ausencia del objeto. No se ha creado ningun recurso ni realizado subidas.
+Procedimiento y criterios en la guia de entorno. CLI sigue pendiente.
+
 Pendientes actuales:
 
 - Resolver acceso IPv6 para evaluar CLI directo o la confianza estricta de CLI
   en session pooler, y repetir SELECT 1 sin relajar TLS.
 - La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
-- Bucket `media`: pendiente de la siguiente tarea autorizada.
+- Bucket `media`: creacion privada y prueba de rechazo anonimo pendientes.
 - La comprobacion final de arranque y navegacion con entorno real sigue pendiente.
 
 Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.

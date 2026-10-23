@@ -153,6 +153,20 @@ Se conserva el SMTP incluido para la preparacion de desarrollo. Las futuras prue
 
 Criterio de aceptacion de preparacion cumplido por confirmacion del propietario: Email, confirmacion, Site URL, las dos entradas exactas de redireccion y el tipo de SMTP registrados. Tarea 6 preparada, sin afirmar verificacion funcional o inspeccion directa; los flujos y entregas siguen pendientes de Phase 5. La preparacion se contrasto con [Email Auth](https://supabase.com/docs/guides/auth/passwords), [redirecciones](https://supabase.com/docs/guides/auth/redirect-urls) y SMTP el 2026-10-23. La tarea 5 y Phase 4 siguen abiertas.
 
+## Tarea 7: bucket media y rechazo anonimo
+
+Iniciada por autorizacion del propietario el 2026-10-23, manteniendo abierta la verificacion CLI de tarea 5. Storage no depende de resolver ese camino de Prisma. Se revisaron las skills locales: ninguna corresponde a esta preparacion de Dashboard y comprobacion de infraestructura sin implementar media. Archivos permitidos: esta guia y `docs/15-current-status.md`; excluidos: codigo, entorno, modelos, migraciones, seeds y diseno publico. Sin nuevas dependencias.
+
+Inspeccion remota de solo lectura realizada por el agente mediante pg, con el `DATABASE_URL` existente y TLS autorizado, dentro de `BEGIN READ ONLY` y `ROLLBACK`: `media` no existe en `storage.buckets`, RLS esta activado en `storage.objects` y `pg_policies` no contiene politicas para esa tabla. No se consultaron objetos ni se modificaron recursos. No confundir esta inspeccion por pg con la verificacion pendiente de Prisma CLI.
+
+Paso manual pendiente: en Storage, crear un bucket estandar llamado exactamente `media` con Public bucket desactivado; si aparece antes de crearlo, verificar el existente sin duplicarlo. Conservar los limites predeterminados y no crear politicas, subir archivos ni habilitar acceso generico a `anon` o `authenticated`. No se configura aun el flujo de subida ni la lectura publica.
+
+Tras confirmar la creacion, repetir la inspeccion de bucket, RLS y todas las politicas de `storage.objects`, incluidas las generales. Si siguen sin permitir escrituras anonimas, realizar una unica subida controlada sin sesion, usando solo la publishable key local y un nombre unico, sin upsert ni credenciales privilegiadas. Exigir rechazo por permisos/RLS: un error de red, clave invalida o bucket inexistente no acredita este criterio. Comprobar despues mediante consulta de solo lectura que no se creo ese objeto. Si se acepta inesperadamente, detener las pruebas y registrar el incidente y la limpieza pendiente, sin ampliar permisos ni borrar otros objetos.
+
+Criterios de aceptacion: `media` existe y es privado, RLS y todas las politicas revisadas sin permisos de INSERT/UPDATE/DELETE anonimos, subida sin sesion rechazada por permisos y ausencia del objeto confirmada. Por ahora solo estan comprobadas la ausencia del bucket, RLS activado y cero politicas; tarea 7 pendiente, Phase 4 abierta.
+
+Referencias contrastadas el 2026-10-23: [crear buckets](https://supabase.com/docs/guides/storage/buckets/creating-buckets), [buckets privados](https://supabase.com/docs/guides/storage/buckets/fundamentals) y [control de acceso](https://supabase.com/docs/guides/storage/security/access-control). Storage deniega subidas sin politicas RLS que las permitan; no copiar las politicas permisivas de los ejemplos para esta fase.
+
 ## Secuencia y revisiones
 
 | Tarea | Depende de | Entrega |
@@ -163,7 +177,7 @@ Criterio de aceptacion de preparacion cumplido por confirmacion del propietario:
 | 4. Prueba runtime | 3 | Integrado en `d19cb94`: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
 | 5. Proyecto y entorno real | 2, 3, 4 | En curso: proyecto creado por el propietario y entorno rellenado; runtime correcto, CLI estricto pendiente en macOS |
 | 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | Preparada por confirmacion del propietario: Email, URLs exactas y SMTP incluido; sin implementar ni probar autenticacion |
-| 7. Storage | 5 | Bucket/politicas revisados; rechazo de escritura anonima comprobado |
+| 7. Storage | Proyecto/entorno de 5 preparados; continuacion autorizada con CLI pendiente | En curso: media aun no existe, RLS activo y cero politicas comprobados; creacion y prueba anonima pendientes |
 | 8. Verificacion final | 1 a 7 | Conexiones, arranque, health y mocks comprobados; registro antes del cierre |
 
 Antes de cada tarea confirmar sus archivos permitidos/excluidos. En la tarea 1 solo se modifican `AGENTS.md`, `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. No modificar el registro historico `docs/16-phase-3-validation.md`.
