@@ -219,20 +219,22 @@ propietario. No se han implementado rutas Auth, enviado correos ni probado
 entregabilidad. La verificacion funcional corresponde a Phase 5; SMTP propio
 se decidira antes de pruebas con destinatarios externos o produccion.
 
-Tarea 7 iniciada por autorizacion del propietario. La inspeccion remota con pg
-y TLS autorizado, en transaccion de solo lectura, confirma que `media` no
-existe, RLS esta activo en `storage.objects` y no hay politicas en esa tabla.
-Falta que el propietario cree el bucket privado desde Dashboard; despues se
-revisaran nuevamente las politicas y se probara una subida sin sesion y la
-ausencia del objeto. No se ha creado ningun recurso ni realizado subidas.
-Procedimiento y criterios en la guia de entorno. CLI sigue pendiente.
+Tarea 7 verificada el 2026-10-23 tras la creacion del bucket por el propietario.
+La inspeccion remota con pg y TLS autorizado confirma `media` privado, RLS
+activo y cero politicas en `storage.objects`, incluidas las generales.
+Una unica subida sin sesion, con publishable key en `apikey` y sin upsert,
+fue rechazada por RLS: HTTP 400 con statusCode 403 en el cuerpo. La consulta
+de solo lectura del nombre UUID exacto confirma ausencia del objeto antes y
+despues del intento. Sin archivos creados, limpieza ni cambios de permisos.
+No se anadieron dependencias ni codigo; validacion documental con
+`git diff --check`, sin repetir lint/tipos/build por ser solo documentacion.
+Procedimiento y evidencias en la guia de entorno. CLI sigue pendiente.
 
 Pendientes actuales:
 
 - Resolver acceso IPv6 para evaluar CLI directo o la confianza estricta de CLI
   en session pooler, y repetir SELECT 1 sin relajar TLS.
 - La API aun no consume `@repo/db`; su health solo acredita disponibilidad.
-- Bucket `media`: creacion privada y prueba de rechazo anonimo pendientes.
 - La comprobacion final de arranque y navegacion con entorno real sigue pendiente.
 
 Phase 4 permanece abierta hasta verificar todos los criterios del roadmap.

@@ -159,11 +159,15 @@ Iniciada por autorizacion del propietario el 2026-10-23, manteniendo abierta la 
 
 Inspeccion remota de solo lectura realizada por el agente mediante pg, con el `DATABASE_URL` existente y TLS autorizado, dentro de `BEGIN READ ONLY` y `ROLLBACK`: `media` no existe en `storage.buckets`, RLS esta activado en `storage.objects` y `pg_policies` no contiene politicas para esa tabla. No se consultaron objetos ni se modificaron recursos. No confundir esta inspeccion por pg con la verificacion pendiente de Prisma CLI.
 
-Paso manual pendiente: en Storage, crear un bucket estandar llamado exactamente `media` con Public bucket desactivado; si aparece antes de crearlo, verificar el existente sin duplicarlo. Conservar los limites predeterminados y no crear politicas, subir archivos ni habilitar acceso generico a `anon` o `authenticated`. No se configura aun el flujo de subida ni la lectura publica.
+El propietario confirmo la creacion de `media` privado en Dashboard. La inspeccion posterior del agente confirma que existe, tiene `public=false`, RLS sigue activo y no hay politicas en `storage.objects`, incluidas las generales. No se anadieron politicas ni permisos para `anon` o `authenticated`. No se configura aun el flujo de subida ni la lectura publica.
 
 Tras confirmar la creacion, repetir la inspeccion de bucket, RLS y todas las politicas de `storage.objects`, incluidas las generales. Si siguen sin permitir escrituras anonimas, realizar una unica subida controlada sin sesion, usando solo la publishable key local y un nombre unico, sin upsert ni credenciales privilegiadas. Exigir rechazo por permisos/RLS: un error de red, clave invalida o bucket inexistente no acredita este criterio. Comprobar despues mediante consulta de solo lectura que no se creo ese objeto. Si se acepta inesperadamente, detener las pruebas y registrar el incidente y la limpieza pendiente, sin ampliar permisos ni borrar otros objetos.
 
-Criterios de aceptacion: `media` existe y es privado, RLS y todas las politicas revisadas sin permisos de INSERT/UPDATE/DELETE anonimos, subida sin sesion rechazada por permisos y ausencia del objeto confirmada. Por ahora solo estan comprobadas la ausencia del bucket, RLS activado y cero politicas; tarea 7 pendiente, Phase 4 abierta.
+Criterios de aceptacion comprobados el 2026-10-23: `media` existe y es privado, RLS activo y cero politicas en `storage.objects` (sin concesiones anonimas de INSERT/UPDATE/DELETE). Se realizo una unica peticion POST al endpoint Storage de objetos, con un nombre UUID nuevo bajo `phase-4-verification/`, contenido de texto inocuo, `x-upsert=false` y solo la publishable key del entorno local en `apikey`; sin Authorization, cookies, sesion ni claves privilegiadas en la solicitud. Se verifico previamente que URL publica y conexion PostgreSQL pertenecen al mismo proyecto, sin publicar valores.
+
+La respuesta fue HTTP 400 con `statusCode=403` en el cuerpo y mensaje de violacion de row-level security. No se trata de un fallo de red, JWT o bucket inexistente. Una consulta parametrizada de solo lectura a `storage.objects` confirma cero filas para el bucket y nombre exactos antes y despues del intento. No se creo el objeto ni fue necesaria limpieza. La conexion pg usada solo para inspeccion tenia TLS autorizado; no intervino en la solicitud de subida ni eludio RLS. Tarea 7 verificada; Phase 4 sigue abierta por CLI y validacion final.
+
+Ejecucion puntual con Node, fetch y pg ya disponibles, sin SDK nuevo ni script persistente. No cambia codigo de apps/packages: no hay workspaces afectados para lint/check-types/build, ni motivo para repetir la prueba Prisma que no interviene en Storage. Validacion documental: `git diff --check`. Referencias de la prueba: [publishable key sin sesion corresponde a anon](https://supabase.com/docs/guides/getting-started/api-keys) y [errores de Storage](https://supabase.com/docs/guides/storage/debugging/error-codes).
 
 Referencias contrastadas el 2026-10-23: [crear buckets](https://supabase.com/docs/guides/storage/buckets/creating-buckets), [buckets privados](https://supabase.com/docs/guides/storage/buckets/fundamentals) y [control de acceso](https://supabase.com/docs/guides/storage/security/access-control). Storage deniega subidas sin politicas RLS que las permitan; no copiar las politicas permisivas de los ejemplos para esta fase.
 
@@ -177,7 +181,7 @@ Referencias contrastadas el 2026-10-23: [crear buckets](https://supabase.com/doc
 | 4. Prueba runtime | 3 | Integrado en `d19cb94`: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
 | 5. Proyecto y entorno real | 2, 3, 4 | En curso: proyecto creado por el propietario y entorno rellenado; runtime correcto, CLI estricto pendiente en macOS |
 | 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | Preparada por confirmacion del propietario: Email, URLs exactas y SMTP incluido; sin implementar ni probar autenticacion |
-| 7. Storage | Proyecto/entorno de 5 preparados; continuacion autorizada con CLI pendiente | En curso: media aun no existe, RLS activo y cero politicas comprobados; creacion y prueba anonima pendientes |
+| 7. Storage | Proyecto/entorno de 5 preparados; continuacion autorizada con CLI pendiente | Verificada: media privado, RLS activo, cero politicas, subida anonima rechazada por RLS y objeto ausente |
 | 8. Verificacion final | 1 a 7 | Conexiones, arranque, health y mocks comprobados; registro antes del cierre |
 
 Antes de cada tarea confirmar sus archivos permitidos/excluidos. En la tarea 1 solo se modifican `AGENTS.md`, `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. No modificar el registro historico `docs/16-phase-3-validation.md`.
@@ -240,7 +244,7 @@ Phase 4 solo puede cerrarse tras registrar estas evidencias sin secretos:
 - [ ] Contratos de entorno y ejemplos alineados; ausencia de Supabase permitida para desarrollo mock.
 - [ ] CLI y runtime conectan con pruebas de solo lectura independientes y TLS verificado.
 - [ ] Email, confirmacion, URLs exactas y limites de correo preparados para Phase 5.
-- [ ] `media` existe con visibilidad documentada y sin escrituras anonimas; politicas y rechazo comprobados.
+- [x] `media` existe con visibilidad documentada y sin escrituras anonimas; politicas y rechazo comprobados.
 - [ ] Web/API arrancan con configuracion real; `/health` devuelve HTTP 200 y `{"status":"ok"}`.
 - [ ] Home, wiki, juegos y detalles conservan mocks y diseno.
 - [ ] Validaciones, limites y estado de despliegue registrados en la futura `docs/17-phase-4-validation.md`; roadmap/estado actualizados tras revision del propietario.
