@@ -3,7 +3,7 @@
 ## Entorno vigente
 
 PostgreSQL local nativo para desarrollo, Supabase PostgreSQL como destino de
-produccion; L1 instalada y validada con PostgreSQL 17.11; migracion L2 pendiente. Un unico
+produccion; L1 instalada y validada con PostgreSQL 17.11; migracion UserProfile L2 aplicada y verificada localmente. Un unico
 schema e historial Prisma; no duplicar migraciones por entorno. Las diferencias
 de roles SQL, RLS y validacion remota se detallan en
 [docs/19](19-local-development-database.md). Auth sigue remoto; no crear auth.users
@@ -79,7 +79,7 @@ enum CanonStatus {
 
 The application profile linked to Supabase Auth user id.
 
-Contrato minimo de Phase 5 (schema y SQL preparados en tarea 6; sin aplicacion local ni remota):
+Contrato minimo de Phase 5 (schema y SQL preparados en tarea 6, aplicados localmente en L2; aplicacion remota pendiente):
 
 | Campo | Contrato |
 | --- | --- |

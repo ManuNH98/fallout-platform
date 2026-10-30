@@ -7,7 +7,7 @@ macOS para desarrollo, sin Docker ni Supabase local, con coste cero de servicios
 adicionales. Auth y Storage siguen remotos; Supabase PostgreSQL se reserva para
 produccion. L1 instalada y validada: PostgreSQL 17.11 en 127.0.0.1:55432,
 DB fallout_platform_dev, rol fallout_app. Los .env reales API/DB ya apuntan
-a local; migraciones aun sin aplicar. Uso diario y copias privadas en docs/19.
+a local; migracion UserProfile aplicada/verificada en L2, sin perfiles creados. Uso diario y copias privadas en docs/19.
 Los procedimientos remotos historicos siguientes no cambian ese destino local.
 
 El contrato y pasos L1/L2, roles SQL, WARP/hosts y validacion futura se mantienen

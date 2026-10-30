@@ -25,7 +25,7 @@ Supabase se utiliza como infraestructura. NestJS sigue siendo el backend princip
 - Next.js renderiza la web publica, las pantallas de autenticacion y el panel admin.
 
 El cambio a PostgreSQL local fue aprobado el 30 de octubre de 2026 y esta
-preparado en L1: PostgreSQL 17.11 local, sin migraciones todavia. Auth y Storage siguen remotos. Antes de instalar o
+preparado en L1/L2: PostgreSQL 17.11 y migracion UserProfile aplicados localmente. Auth y Storage siguen remotos. Antes de instalar o
 migrar, consultar [la decision y el plan de continuacion](docs/19-local-development-database.md).
 
 ## Stack Tecnico

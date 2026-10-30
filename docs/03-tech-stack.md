@@ -44,7 +44,7 @@ Reason:
 ## Database
 
 - PostgreSQL
-- Native PostgreSQL 17.11 on macOS for development (L1 prepared; migrations pending)
+- Native PostgreSQL 17.11 on macOS for development (L1/L2 prepared; UserProfile migrated locally)
 - Hosted on Supabase for the planned production environment
 
 Environment contract: [local development database](19-local-development-database.md).

@@ -28,7 +28,8 @@ El propietario aprueba el cambio de entorno de desarrollo y solicita documentarl
 antes de implementar. Rige [docs/19](19-local-development-database.md): PostgreSQL
 nativo local, Supabase Auth/Storage remotos, sin coste de servicios adicionales.
 L1 instalada/validada: PostgreSQL 17.11 local y .env API/DB cambiados a loopback.
-No se ha migrado; siguiente tarea L2. Resultados y comandos en docs/19.
+L2 aplicada/verificada en local, con cero perfiles; siguiente tarea 8 tras revision.
+Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
 
@@ -921,3 +922,23 @@ Solo consulta remota SHOW server_version para compatibilidad; sin escrituras
 remotas. Instalacion y dependencias Homebrew, limites, copias y uso diario en
 docs/19. L1 pendiente de revision; siguiente tarea propuesta L2 local, requiere
 autorizacion independiente. No iniciar sincronizacion/roles hasta completar L2.
+
+
+## Entrega L2: migracion UserProfile aplicada localmente
+
+Tras 514fdb6, el propietario autoriza continuar con L2. Preflight confirma
+loopback:55432, DB fallout_platform_dev y rol fallout_app en API/Prisma; SQL
+identico a 73791bf, sin colisiones. migrate deploy correcto; migrate status
+al dia y migrate diff estructural vacio. Historial/checksum, columnas, defaults,
+enum, PK/indice unico, RLS sin politicas y permisos efectivos verificados.
+
+PUBLIC sin grants de tabla y anon/authenticated sin permisos de tabla/columna;
+lecturas por SET ROLE rechazadas con 42501. Nest compilado lee UserProfile por
+Prisma (0 filas), reutiliza cliente y cierra correctamente. DB/API lint, tipos y
+build; Prisma validate/generate correctos. No se insertan perfiles ni se repiten
+unitarias/e2e L1 sin cambios de codigo. No se acredita Data API o roles de negocio.
+
+Solo DDL/historial local y documentacion. Sin mutaciones remotas, usuarios/correos,
+.env, red o cambios al SQL aprobado. Evidencia completa y limitaciones en docs/19.
+L2 pendiente de revision; siguiente tarea 8 (sincronizacion y roles) solo despues
+de autorizacion. La tarea 7 remota sigue aplazada; Phase 5 permanece abierta.

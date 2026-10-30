@@ -141,7 +141,7 @@ Admin uploads image
 
 Decision del 30 de octubre de 2026: PostgreSQL nativo en el Mac para desarrollo,
 sin Docker ni Supabase local; Supabase Auth y Storage remotos. Supabase PostgreSQL
-se conserva para produccion. L1 prepara PostgreSQL 17.11 local; la migracion L2 sigue pendiente.
+se conserva para produccion. L1/L2 preparan PostgreSQL 17.11 y la migracion UserProfile local. La aplicacion remota sigue aplazada.
 La preparacion local, migraciones y validacion remota diferida se rigen por
 [la decision de entorno local](19-local-development-database.md).
 

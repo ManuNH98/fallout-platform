@@ -8,10 +8,11 @@ PostgreSQL se conserva como destino previsto de produccion. Supabase Auth y
 Storage siguen remotos en el plan gratuito, dentro de sus limites; no se crea
 Supabase local. Next.js, NestJS, Prisma y los packages existentes se mantienen.
 
-Estado actual: L1 implementada, pendiente de revision. PostgreSQL 17.11 local,
-base/roles dedicados y conexiones API/Prisma locales comprobados. Migraciones
-sin aplicar: siguiente tarea L2. Auth/Storage siguen remotos. Sin CI ni cambios
-a WARP, hosts, certificados o llavero. Detalles y uso diario al final.
+Estado actual: L1 integrada en 514fdb6; L2 aplicada y verificada en PostgreSQL
+17.11 local, pendiente de revision. UserProfile/UserRole existen, con cero perfiles.
+Siguiente tarea: 8 de docs/18, sincronizacion y roles. Migracion remota aplazada;
+Auth/Storage siguen remotos. Sin CI ni cambios a WARP, hosts, certificados o
+llavero. Resultados y uso diario al final.
 La decision inicial se documento en 326ee0e antes de implementar esta entrega.
 
 ## Motivo y antecedentes
@@ -243,3 +244,64 @@ La siguiente tarea es L2, aplicar el SQL aprobado exclusivamente a la base local
 tras revision y autorizacion. L1 no acredita constraints de UserProfile, RLS de
 esa tabla, roles de negocio ni Supabase Data API. WARP/hosts quedan intactos;
 limpieza eventual separada. Phase 5 permanece abierta.
+
+
+## Resultado de L2: migracion local aplicada y verificada
+
+El propietario autoriza continuar tras 514fdb6 (L1). Alcance: aplicar solo
+20261030000000_add_user_profile al cluster local y actualizar estos registros,
+AGENTS.md, README y los marcadores de estado en docs/01, 03, 04, 07, 12, 14, 15,
+18. Sin cambios de codigo, schema, SQL aprobado, dependencias o entorno.
+
+### Preflight y aplicacion
+
+- Arbol Git limpio al comenzar; una unica migracion, SQL identico byte a byte
+  al commit aprobado 73791bf. El comentario inicial sobre aplicacion remota se
+  conserva por integridad; la tarea L2 de este contrato autoriza su uso local.
+- DATABASE_URL de API/DB y DIRECT_URL de CLI iguales; hostname exactamente
+  127.0.0.1, puerto 55432, DB fallout_platform_dev y usuario fallout_app. Se
+  validaron tambien identidad DB real y listener loopback, sin fallback remoto.
+- Roles SQL locales presentes, sin SUPERUSER/CREATEDB/CREATEROLE/BYPASSRLS;
+  anon/authenticated NOLOGIN; schema public accesible al propietario fallout_app.
+- Antes de aplicar: public sin tablas; UserProfile, UserRole e historial ausentes.
+  migrate status devuelve exit 1 por la unica migracion pendiente (esperado).
+- prisma migrate deploy aplica el SQL aprobado, exit 0. No migrate dev, shadow
+  database, reset, baseline, db:push ni alteracion manual del esquema.
+
+### Verificacion realizada
+
+| Comprobacion | Resultado |
+| --- | --- |
+| migrate status despues | Exit 0, esquema al dia |
+| migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script --exit-code | Exit 0, diff estructural vacio; no verifica RLS/ACL |
+| Historial Prisma | Una migracion finalizada, sin rollback, un paso aplicado; checksum SHA-256 identico al SQL versionado |
+| Columnas | Ocho campos previstos, UUIDs, nullable solo username/displayName/avatarUrl y timestamptz(3) |
+| Defaults y enum | USER; createdAt CURRENT_TIMESTAMP; enum USER/ADMIN/EDITOR/MODERATOR en orden |
+| Identificador y fecha actualizacion | id/updatedAt sin default SQL; siguen administrados por Prisma como define el schema |
+| Constraints | PK id; indice unico supabaseUserId valido, inmediato, una columna y sin predicado |
+| RLS | Activo, sin FORCE; owner fallout_app; cero politicas cliente |
+| Permisos efectivos | PUBLIC sin grants de tabla; anon/authenticated sin SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER/MAINTAIN ni privilegios de columna |
+| Simulacion SQL | SET LOCAL ROLE anon/authenticated y SELECT LIMIT 0 rechazados con 42501 en transacciones read only, luego rollback |
+| Nest compilado / Prisma real | findMany de UserProfile consultando los ocho campos devuelve 0 filas; identidad local, cliente compartido y cierre correctos |
+| Herramientas | Prisma validate/generate; lint, check-types y build de DB/API correctos |
+| Diff | SQL, schema, web y lockfile intactos; git diff --check correcto |
+
+La unicidad/defaults se verifican en catalogos, sin intentar insertar duplicados
+ni crear perfiles de prueba. El control SET ROLE puede ser rechazado por USAGE
+de schema ademas de permisos de tabla; estos ultimos se comprobaron por separado
+con has_table_privilege y has_any_column_privilege. No se concedieron permisos
+para hacer la prueba. No se probaron endpoints ni Supabase Data API; no existe
+PostgREST en este cluster local. Tampoco se acredita autorizacion de negocio.
+
+No se crean usuarios Auth, perfiles, sesiones, correos, seeds o contenido. Las
+unicas escrituras son el DDL de la migracion y su historial Prisma local. Sin
+consultas/escrituras remotas, cambios de .env, WARP, hosts, certificados o llavero.
+Pruebas de verificacion temporales fuera del repo con salida sanitizada; consultas
+y CLI locales fuera del sandbox. Node 24.15.0. No se repiten unitarias/e2e ya
+aprobadas en L1, pues no cambia codigo; se verifica el modelo real desde Nest.
+
+L2 queda terminada, pendiente de revision. La tarea 7 remota sigue aplazada hasta
+preproduccion. Siguiente tarea propuesta: tarea 8 de docs/18, sincronizacion
+idempotente y permisos en Nest, con sus pruebas propias y autorizacion separada.
+No se inicia esa implementacion en esta entrega. El propietario crea/sube el
+commit; Phase 5 sigue abierta.
