@@ -37,8 +37,8 @@ el diseno y los mocks publicos; sustituirlos sigue siendo Phase 7.
   y sujeto a cambios. Revisar limites antes del primer envio autorizado.
 - Prisma CLI Direct requiere WARP y entrada temporal de hosts; runtime usa
   session pooler. Conservar TLS y las condiciones de docs/14 y docs/17.
-- No hay modelos de aplicacion, migraciones ni integracion NestJS/@repo/db.
-  Health solo acredita disponibilidad de la API.
+- No hay modelos de aplicacion ni migraciones. La tarea 5 integra NestJS con
+  @repo/db sin escrituras; health sigue acreditando solo disponibilidad de API.
 
 ## Contrato web y sesiones
 
@@ -147,10 +147,11 @@ ADMIN mediante tarea manual expresamente autorizada sobre un perfil existente,
 con identificador confirmado y verificacion posterior; sin seed ni endpoint
 publico de promocion. EDITOR y MODERATOR existen, sin funciones posteriores.
 
-Resolver primero consumo real de @repo/db: hoy exporta TypeScript y su build
-no emite JS; Nest arranca desde dist. Revisar formato ESM/CommonJS, exportaciones,
-generacion Prisma y Jest. Mantener una sola factoria y provider con cierre
-ordenado. No mover DB a apps/api ni actualizar versiones sin necesidad.
+La tarea 5 prepara @repo/db como package compilado ESM con declaraciones;
+Nest lo consume mediante importacion dinamica nativa y conserva su compilacion
+CommonJS. Mantener una sola factoria en packages/db y provider con cierre
+ordenado en API. No mover DB a apps/api ni actualizar versiones sin necesidad.
+Generar/compilar DB antes de los consumidores; comandos y resultados al final.
 
 Crear y revisar el artefacto de migracion separadamente de su aplicacion. No
 usar migrate dev contra Supabase como generacion inocua: usa shadow database
@@ -402,7 +403,7 @@ Phase 5 sigue abierta.
 
 ## Entrega de tarea 4: identidad JWT en NestJS
 
-Implementada el 30 de octubre de 2026; pendiente de revision del propietario.
+Implementada el 30 de octubre de 2026 e integrada por el propietario en `5a20708`.
 Se sigue nestjs-best-practices para guards, inyeccion de dependencias,
 excepciones HTTP y simulacion de servicios externos. Sin emitir JWT propios.
 
@@ -504,6 +505,126 @@ Web, mocks, diseno y paquetes DB/types/validation permanecen intactos. La
 confirmacion Current/JWKS antes pendiente en el contrato queda satisfecha con
 las dos evidencias descritas, sin afirmar una prueba funcional de usuario.
 
-Siguiente entrega propuesta: tarea 5, consumo real de @repo/db desde NestJS,
-tras revision y nueva autorizacion. No comenzar modelos ni migraciones en esa
-integracion. El propietario crea/sube el commit; Phase 5 permanece abierta.
+La tarea 5 se autorizo posteriormente y se registra a continuacion. Sin
+modelos ni migraciones en esa integracion. El propietario crea/sube los commits;
+Phase 5 permanece abierta.
+
+
+## Entrega de tarea 5: integracion DB/API
+
+Implementada el 30 de octubre de 2026; pendiente de revision del propietario.
+Skills locales nestjs-best-practices (modulos compartidos, inyeccion y lifecycle)
+y turborepo (packages compilados y dependencias de tareas). Referencias oficiales
+contrastadas: [generador Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators),
+[lifecycle Nest](https://docs.nestjs.com/fundamentals/lifecycle-events) y
+[ESM en Jest](https://jestjs.io/docs/ecmascript-modules). No se adopta una
+conversion global de modulos ni se cambia Prisma 7.9.1.
+
+### Cambios y decisiones
+
+- packages/db/package.json y tsconfig.build.json: build genera Prisma y emite
+  ESM/declaraciones en dist/src y dist/generated. Exportaciones apuntan a
+  dist/src/index.js y dist/src/index.d.ts, sin exponer TypeScript de fuente
+  como entrada de runtime. No se cambian schema, generador, factoria, cliente
+  compartido, configuracion Prisma CLI ni script de comprobacion runtime.
+- apps/api/package.json y lockfile: dependencia local @repo/db workspace:*.
+  No se anaden librerias externas ni se actualizan versiones.
+- apps/api/src/modules/database/: database.module.ts, database.service.ts,
+  prisma-client.provider.ts y database.service.spec.ts. El provider delega en
+  createPrismaClient existente mediante import('@repo/db') nativo. Importar
+  tipos no carga el cliente generado dentro de Jest ni altera el runtime ESM.
+- apps/api/src/app.module.ts importa DatabaseModule; main.ts habilita shutdown
+  hooks. DatabaseModule exporta DatabaseService para los futuros consumidores;
+  no es global ni registra endpoints. Los modulos consumidores deben importarlo,
+  sin volver a declarar sus providers.
+- packages/db/turbo.json: check-types espera a su build antes de comprobar tipos,
+  para producir los artefactos requeridos y serializar las dos generaciones
+  Prisma. apps/api/turbo.json: dev espera a ^build. Build/test mantienen las
+  dependencias ^build del pipeline raiz, que reconoce el nuevo enlace workspace.
+- docs/15 y este registro actualizan estado, limites y siguiente tarea.
+
+DatabaseService.getClient() es asincrono y perezoso: una unica promesa comparte
+cliente y creacion concurrente. Construir el modulo no crea cliente ni conecta.
+La primera solicitud necesita DATABASE_URL; si falta o el servicio esta cerrando,
+responde con excepcion 503 generica. Un fallo de factoria se sanitiza y permite
+reintento. Prisma conecta al ejecutar operaciones, no durante el bootstrap.
+El servicio no introduce consultas automaticas ni acredita conectividad en health.
+
+onModuleDestroy marca cierre, impide nuevas solicitudes, espera la creacion
+pendiente y llama $disconnect una sola vez. Si no se llego a crear cliente, no
+intenta desconectarlo. Error de cierre generico, sin URI ni excepciones del driver.
+app.close y SIGTERM utilizan el lifecycle de Nest; no se modifican red o llavero.
+La integracion conserva TLS y las opciones del adapter/factoria originales.
+
+### Comandos y requisitos de build
+
+En un checkout limpio, instalar workspaces y construir DB antes de comandos
+filtrados directos de API que necesiten sus declaraciones/artefactos:
+
+```bash
+pnpm --filter @repo/db build
+pnpm --filter api check-types
+pnpm --filter api build
+pnpm --filter api run test --runInBand
+pnpm --filter api run test:e2e --runInBand
+```
+
+Para resolver dependencias automaticamente, usar el pipeline de Turbo:
+
+```bash
+pnpm exec turbo run build --filter=api
+pnpm exec turbo run check-types --filter=api
+pnpm exec turbo run test --filter=api
+pnpm exec turbo run dev --filter=api
+```
+
+Los scripts pnpm --filter api siguen siendo tareas locales; no se les anaden
+compilaciones recursivas duplicadas de otros packages. Al editar DB durante
+watch de Nest hay que reconstruir DB/reiniciar el consumidor: no se implementa
+watch de la libreria en esta tarea. Dist y generated siguen fuera de Git.
+
+### Validacion realizada
+
+| Comando/comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter @repo/db lint | Correcto |
+| pnpm --filter @repo/db check-types | Correcto |
+| pnpm --filter @repo/db build | Correcto, JS y declaraciones generados |
+| pnpm --filter @repo/db prisma:validate | Correcto; prisma:generate tambien ejecutado por build/check-types |
+| pnpm --filter api lint | Correcto, sin warnings |
+| pnpm --filter api check-types | Correcto |
+| pnpm --filter api build | Correcto; dist/main.js mantiene su ubicacion |
+| pnpm --filter api run test --runInBand | 69 pruebas correctas, 6 suites |
+| pnpm --filter api run test:e2e --runInBand | 8 pruebas correctas, 2 suites; fuera del sandbox para puertos locales |
+| Turbo check-types --filter=api --force con DATABASE_URL/DIRECT_URL vacias en el proceso | Correcto: DB build, DB check-types y API check-types, en orden |
+| Dry run Turbo dev --filter=api | Confirma dependencia de API dev respecto de DB build |
+| API dist sin DATABASE_URL/SUPABASE_URL, puerto local temporal 3220 | health 200; cierre por SIGTERM sin timeout; servidor cerrado |
+| Provider Nest dist contra runtime existente | SELECT 1 correcto, mismo cliente en dos solicitudes y app.close correcto |
+| git diff --check | Correcto; schema, src DB y configuracion CLI/runtime-check sin cambios |
+
+Las ocho pruebas nuevas cubren ausencia de configuracion, creacion concurrente,
+cierre durante creacion, reintento, errores sanitizados, idempotencia y lifecycle
+Nest. Jest usa una factoria simulada para lifecycle; el consumo del package ESM
+real se ejecuta en un proceso Node nativo lanzado desde Jest, con conexiones de
+sockets bloqueadas. Se comprueba resolucion a dist, construccion y desconexion,
+sin loader TS ni transformacion de import.meta a CommonJS. No se afirma que
+Jest cargue directamente el grafo ESM de Prisma en su VM CommonJS.
+
+La unica consulta remota fue SELECT 1 AS ok a traves de DatabaseService del
+build API y del contexto Nest real, reutilizando DATABASE_URL del entorno API.
+Se exigio sslmode=verify-full y CA explicita antes de consultar, sin publicar
+valores. Consulta y cierre terminaron dentro del limite de 10 segundos, con
+salida generica ante errores. No se alteraron .env ni TLS. No se repiten controles
+negativos TLS o CLI Direct: siguen siendo las evidencias de Phase 4, y esta
+prueba valida el nuevo camino de consumo desde Nest por runtime/session pooler.
+
+Limites: validado con Node 24.15.0, no se repite en Node 20. Sin modelos,
+migraciones, seeds, perfiles, roles o endpoints persistentes. No se implementa
+CRUD ni se reemplazan mocks o diseno web. Health acredita disponibilidad, no DB.
+Errores de futuras consultas se trataran en sus servicios; este provider solo
+administra creacion y cierre. No hay nuevos usuarios, correos o escrituras remotas.
+
+Siguiente tarea propuesta: tarea 6, solo UserRole/UserProfile y artefacto SQL
+revisable, tras revision y autorizacion. Aplicar la migracion remota sigue siendo
+tarea 7 separada; no ejecutar migrate dev, deploy o db:push como continuacion
+implicita. El propietario crea/sube el commit y Phase 5 permanece abierta.

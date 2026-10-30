@@ -16,7 +16,7 @@ Actualizado el 30 de octubre de 2026.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
 - **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`, que incorpora `8222fb4`).
-- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge. Las factorias Supabase web, Proxy SSR y verificador JWT de NestJS estan implementados con pruebas aisladas; todavia no hay flujos Auth, sesiones/access tokens reales verificados ni modelos de aplicacion.
+- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge. Las factorias Supabase web, Proxy SSR, verificador JWT y provider DB de NestJS estan implementados. El provider ha ejecutado SELECT 1 de solo lectura; todavia no hay flujos Auth, sesiones/access tokens reales verificados ni modelos de aplicacion.
 
 ## Base completada
 
@@ -330,7 +330,7 @@ seis rutas publicas/assets con 200 sin cookies Auth; cinco rutas del matcher
 con 503 privado al no configurar Supabase. El servidor temporal fue cerrado.
 No se verifican sesiones ni renovaciones reales. Detalles en docs/18.
 
-Tarea 4 implementada, pendiente de revision: AuthModule, SupabaseJwtService y
+Tarea 4 integrada en `5a20708`: AuthModule, SupabaseJwtService y
 SupabaseAuthGuard verifican ES256/JWKS con issuer/audiencia, claims de usuario
 y sesion, caducidad y nbf. Identidad interna sin perfiles/roles. Timeout 5 s,
 cache 10 min y cooldown 30 s; token invalido 401, proveedor no disponible 503.
@@ -345,14 +345,32 @@ correctos. Validado en Node 24.15.0; condiciones ESM/runtime y limites en docs/1
 Sin DB, migraciones, usuarios, correos ni cambios web. Solo la inspeccion JWKS
 fue remota y de lectura; las pruebas usan claves/tokens y transporte simulados.
 
-Siguiente tarea propuesta: tarea 5 de docs/18, integracion @repo/db con NestJS,
-tras revision y autorizacion. Sin modelos ni migraciones todavia. El propietario
-crea y sube los commits.
+Tarea 5 implementada, pendiente de revision: @repo/db emite ESM y declaraciones
+en dist; API depende del workspace y lo importa de forma dinamica desde un
+provider perezoso. DatabaseService comparte la creacion/cliente, reintenta fallos
+sanitizados y desconecta al cerrar Nest, incluyendo SIGTERM. Health sigue publico
+y no consulta DB. Sin modelos, schema cambiado ni migraciones.
+
+Configs Turbo de API/DB ordenan el build de DB antes de dev/check-types de API;
+los comandos filtrados directos requieren construir DB primero. Sin nuevas
+librerias externas ni cambios de formato global. Lint, tipos y build de DB/API,
+Prisma validate/generate, 69 unitarias y 8 e2e correctos. Turbo check-types forzado
+pasa con URLs de DB vacias en el proceso. Jest verifica el artefacto ESM real
+mediante un proceso Node con sockets bloqueados. Detalles y comandos en docs/18.
+
+API dist arranca sin DB/Supabase y cierra por SIGTERM; el provider compilado
+comparte cliente y pasa SELECT 1 por runtime/session pooler, manteniendo
+verify-full y CA del entorno. Consulta de solo lectura y cierre correctos; no
+se cambian .env, TLS, red o llavero ni se repiten comprobaciones CLI Direct.
+
+Siguiente tarea propuesta: tarea 6 de docs/18, UserRole/UserProfile y SQL
+revisable, tras revision y autorizacion. Aplicacion remota sera tarea 7 separada.
+El propietario crea y sube los commits.
 
 ## Inicio recomendado para un chat nuevo
 
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 and local Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is complete and merged into develop through PR #7 (b324cd5). The owner authorized progression to Phase 5: Auth foundation on feature/Phase-5_auth_foundation. Follow docs/07-auth-and-permissions.md, docs/12-roadmap.md, docs/18-phase-5-auth-foundation.md and docs/14-environment-and-supabase.md; preserve the evidence and limitations in docs/17-phase-4-validation.md. CLI Direct requires WARP and a temporary hosts entry on this Mac; runtime uses the session pooler. This documentary closure is not a new infrastructure check. Supabase browser/server factories, SSR Proxy and NestJS ES256/JWKS verification are implemented; see tasks 2 to 4 in docs/18. Current ECC P-256 is owner-confirmed and public JWKS was inspected. Auth flows, real sessions/access tokens and application profiles/roles remain unimplemented or unverified as applicable. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Implement Auth, UserProfile and roles only through scoped owner-authorized tasks. Do not introduce content models, CRUD or seeds. Applying migrations, creating users, sending emails or changing remote configuration requires an expressly authorized task. Do not change networking or keychain settings automatically. Execute one task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
+Phase 0 and local Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is complete and merged into develop through PR #7 (b324cd5). The owner authorized progression to Phase 5: Auth foundation on feature/Phase-5_auth_foundation. Follow docs/07-auth-and-permissions.md, docs/12-roadmap.md, docs/18-phase-5-auth-foundation.md and docs/14-environment-and-supabase.md; preserve the evidence and limitations in docs/17-phase-4-validation.md. CLI Direct requires WARP and a temporary hosts entry on this Mac; runtime uses the session pooler. This documentary closure is not a new infrastructure check. Supabase browser/server factories, SSR Proxy, NestJS ES256/JWKS verification and lazy @repo/db integration are implemented; see tasks 2 to 5 in docs/18. Build DB before direct filtered API commands, or use Turbo to resolve dependencies. A read-only SELECT 1 through the compiled Nest provider passed; health still reports availability only. Current ECC P-256 is owner-confirmed and public JWKS was inspected. Auth flows, real sessions/access tokens and application profiles/roles remain unimplemented or unverified as applicable. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Implement Auth, UserProfile and roles only through scoped owner-authorized tasks. Do not introduce content models, CRUD or seeds. Applying migrations, creating users, sending emails or changing remote configuration requires an expressly authorized task. Do not change networking or keychain settings automatically. Execute one task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
 ```
