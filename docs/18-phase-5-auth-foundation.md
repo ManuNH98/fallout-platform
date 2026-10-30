@@ -4,10 +4,11 @@
 
 Contrato y plan de ejecucion del 23 de octubre de 2026. Phase 4 esta integrada
 mediante PR #7, merge `b324cd5`; Phase 5 trabaja en
-`feature/Phase-5_auth_foundation`. Este documento no acredita implementacion.
+`feature/Phase-5_auth_foundation`. El contrato describe el objetivo; solo las
+entregas registradas al final acreditan implementacion parcial.
 
-Entrega actual: solo docs/04, docs/05, docs/07, docs/15 y este documento.
-No cambia codigo, dependencias, entorno, Dashboard, usuarios ni datos. Las
+La tarea 1 fue documental: solo docs/04, docs/05, docs/07, docs/15 y este
+documento, sin cambios de codigo, dependencias, entorno, Dashboard, usuarios ni datos. Las
 skills locales next-best-practices y nestjs-best-practices orientan el contrato;
 prevalecen AGENTS.md y la arquitectura del proyecto. No se adopta el ejemplo
 generico de emitir JWT propios: Supabase mantiene identidad y sesiones.
@@ -208,7 +209,7 @@ cualquier runner nuevo necesita justificarlo antes de ampliar el alcance.
 
 Para cambios exclusivamente documentales: git diff --check, revisar enlaces
 relativos, coherencia con roadmap/codigo y distinguir propuestas de evidencias.
-No hay workspaces afectados para lint/check-types/build en esta entrega.
+La tarea documental 1 no tuvo workspaces afectados para lint/check-types/build.
 
 Para cada implementacion ejecutar solo los grupos afectados:
 
@@ -262,3 +263,64 @@ adoptan APIs de otra version por aparecer en una pagina latest.
 - [Proxy Next](https://nextjs.org/docs/app/api-reference/file-conventions/proxy) y [cookies](https://nextjs.org/docs/app/api-reference/functions/cookies).
 - [Autenticacion Nest](https://docs.nestjs.com/security/authentication), [autorizacion](https://docs.nestjs.com/security/authorization) y [Prisma en Nest](https://docs.nestjs.com/recipes/prisma).
 - [Migraciones Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/development-and-production).
+
+
+## Entrega de tarea 2: factorias web
+
+Implementada el 23 de octubre de 2026; pendiente de revision del propietario.
+Se ha aplicado la skill local next-best-practices, en particular cookies
+asincronas y aislamiento servidor/cliente. Archivos cambiados: client.ts,
+server.ts y tests/factories.test.mjs en apps/web/lib/supabase, apps/web/lib/env.ts,
+apps/web/package.json, pnpm-lock.yaml, docs/15 y este registro.
+
+- Dependencias exactas @supabase/ssr 0.10.3 y @supabase/supabase-js 2.108.0.
+  Se verificaron metadata npm y codigo instalado: peer compatible y engines
+  Node >=20. Las versiones latest consultadas (SSR 0.12.7 con peer >=2.114 y
+  supabase-js 2.118.0) requieren Node >=22 en el SDK; no se eleva el minimo
+  Node 20.19 del monorepo. La validacion se ejecuto con Node 24.15.0/pnpm 9.0.0;
+  compatibilidad declarada no equivale a una ejecucion en Node 20.
+- getSupabaseEnvironment exige configuracion solo al invocar Auth y devuelve
+  URL/publishable key; importar sin configuracion sigue permitiendo mocks.
+  Se conserva el rechazo previo de configuracion parcial y los mensajes sin
+  valores sensibles. No se valida autenticidad de claves ni conectividad.
+- Client Component usa createBrowserClient, sin cliente creado al importar.
+  Servidor usa server-only, await cookies y createServerClient por peticion.
+  Lectura por defecto mediante getAll. Actions/Handlers deben usar
+  createClient({ writableCookies: true }); setAll preserva opciones, chunks y
+  borrados. No se capturan ni silencian errores de escritura. En lectura se
+  omite setAll; el SDK advertira si se intenta una operacion que requiera escribir.
+- No se llama a Auth ni se cargan sesiones desde las paginas existentes.
+  No se modifican layouts, rutas, mocks, API, DB, archivos reales de entorno,
+  configuracion remota, red ni llavero. Sin usuarios, correos o migraciones.
+
+Validacion realizada:
+
+| Comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter web lint | Correcto, sin warnings |
+| pnpm --filter web check-types | Correcto |
+| pnpm --filter web build con entorno local existente | Correcto |
+| Build con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY sobrescritas a vacio en el proceso | Correcto; sin editar .env.local |
+| node --experimental-vm-modules --test apps/web/lib/supabase/tests/factories.test.mjs | 6 pruebas correctas, sin conexiones externas |
+| Fixture Next temporal fuera del repo: importacion desde Client Component | Rechazo esperado por server-only y next/headers |
+| Mismo fixture como Server Component | Build correcto; solo comprueba frontera/importacion, no Auth ni tipos del fixture |
+| git diff --check | Correcto |
+
+El build sin Supabase no avanzo dentro del sandbox y se interrumpio; termino
+correctamente fuera del sandbox. El fixture de frontera usa webpack y omite
+solo su comprobacion de tipos; el proyecto real supera su check-types y build
+normales. No se cambia la configuracion del repositorio para esos controles.
+
+El harness usa node:test, VM Modules y TypeScript existentes; sin runner nuevo.
+Cubre importacion sin clientes ni cookies, configuracion ausente/parcial/invalida,
+argumentos publicos, aislamiento por peticion, cookies de lectura/escritura y
+propagacion de errores. VM Modules requiere la bandera experimental indicada.
+
+Limites: no se acredita login, confirmacion, sesion o renovacion real. Proxy,
+propagacion de cabeceras de cache y validacion de identidad siguen para tarea 3
+y posteriores. Los futuros Route Handlers que escriban sesiones deben asegurar
+respuesta privada/no-store y conservar cabeceras correspondientes; esta factoria
+adapta cookies, no construye respuestas HTTP. No usarla como proteccion de rutas.
+
+Siguiente entrega propuesta: tarea 3, renovacion SSR, solo tras revision y nueva
+autorizacion. El propietario crea y sube los commits.
