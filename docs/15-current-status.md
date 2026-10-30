@@ -363,7 +363,7 @@ comparte cliente y pasa SELECT 1 por runtime/session pooler, manteniendo
 verify-full y CA del entorno. Consulta de solo lectura y cierre correctos; no
 se cambian .env, TLS, red o llavero ni se repiten comprobaciones CLI Direct.
 
-Tarea 6 implementada, pendiente de revision: UserRole y UserProfile en Prisma,
+Tarea 6 integrada en 73791bf: UserRole y UserProfile en Prisma,
 con UUIDs, supabaseUserId unico, role USER por defecto y fechas timestamptz(3).
 SQL generado offline, con transaccion, RLS sin politicas cliente y revocacion de
 privilegios de PUBLIC/anon/authenticated limitada a UserProfile. Sin cambios en
@@ -373,9 +373,17 @@ Prisma format/validate/generate, lint/tipos/build DB y API, 69 unitarias y 8 e2e
 correctos. El SQL estructural coincide con migrate diff de Prisma 7.9.1; RLS/ACL
 son adiciones manuales revisadas, aun sin ejecutar. Detalles en docs/18.
 
-Siguiente tarea propuesta: tarea 7 de docs/18, aplicar y verificar la migracion
-solo despues de revision del SQL y autorizacion remota expresa. Confirmar destino,
-rol runtime, permisos efectivos y rechazo Data API antes de darla por validada.
+Tarea 7 autorizada e iniciada, bloqueada antes de aplicar: preflight por session
+pooler correcto, mismo proyecto, runtime postgres con BYPASSRLS/CREATE, sin tablas
+en public ni UserProfile/UserRole/historial de migraciones. TLS cliente validado.
+Prisma migrate status falla por Direct; TCP:5432 agota timeout aunque WARP figura
+conectado en modo trafico/DNS y hosts coincide con AAAA actual. Causa sin determinar.
+No se ejecuto deploy ni hubo escrituras remotas; no se cambio red, hosts o TLS.
+
+Siguiente paso: propietario revisa acceso Direct; despues repetir preflight,
+aplicar el SQL aprobado y verificar estructura, permisos efectivos, acceso Nest,
+rechazo Data API y estado. La tarea 7 sigue incompleta; no iniciar tarea 8.
+Diagnostico y limites en docs/18.
 El propietario crea y sube los commits. Phase 5 sigue abierta.
 
 ## Inicio recomendado para un chat nuevo
@@ -383,5 +391,5 @@ El propietario crea y sube los commits. Phase 5 sigue abierta.
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 and local Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is complete and merged into develop through PR #7 (b324cd5). The owner authorized progression to Phase 5: Auth foundation on feature/Phase-5_auth_foundation. Follow docs/07-auth-and-permissions.md, docs/12-roadmap.md, docs/18-phase-5-auth-foundation.md and docs/14-environment-and-supabase.md; preserve the evidence and limitations in docs/17-phase-4-validation.md. CLI Direct requires WARP and a temporary hosts entry on this Mac; runtime uses the session pooler. This documentary closure is not a new infrastructure check. Supabase browser/server factories, SSR Proxy, NestJS ES256/JWKS verification and lazy @repo/db integration are implemented; see tasks 2 to 6 in docs/18. UserRole/UserProfile and offline migration SQL are prepared but have not been applied; task 7 requires explicit remote authorization. Build DB before direct filtered API commands, or use Turbo to resolve dependencies. A read-only SELECT 1 through the compiled Nest provider passed; health still reports availability only. Current ECC P-256 is owner-confirmed and public JWKS was inspected. Auth flows, profile synchronization and business role enforcement remain unimplemented. Real sessions/access tokens, database structure and RLS/ACL remain unverified remotely. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Implement Auth, UserProfile and roles only through scoped owner-authorized tasks. Do not introduce content models, CRUD or seeds. Applying migrations, creating users, sending emails or changing remote configuration requires an expressly authorized task. Do not change networking or keychain settings automatically. Execute one task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
+Phase 0 and local Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was merged through PR #6 (4cf28bd). Phase 4 is complete and merged into develop through PR #7 (b324cd5). The owner authorized progression to Phase 5: Auth foundation on feature/Phase-5_auth_foundation. Follow docs/07-auth-and-permissions.md, docs/12-roadmap.md, docs/18-phase-5-auth-foundation.md and docs/14-environment-and-supabase.md; preserve the evidence and limitations in docs/17-phase-4-validation.md. CLI Direct requires WARP and a temporary hosts entry on this Mac; runtime uses the session pooler. This documentary closure is not a new infrastructure check. Supabase browser/server factories, SSR Proxy, NestJS ES256/JWKS verification and lazy @repo/db integration are implemented; see tasks 2 to 6 in docs/18. UserRole/UserProfile and offline migration SQL are prepared but have not been applied; task 7 was explicitly authorized but is blocked: Direct TCP port 5432 times out despite connected WARP and matching hosts/AAAA; session-pooler preflight passed. No deploy or remote writes occurred. Restore Direct access and repeat preflight before applying; do not change networking automatically. Build DB before direct filtered API commands, or use Turbo to resolve dependencies. A read-only SELECT 1 through the compiled Nest provider passed; health still reports availability only. Current ECC P-256 is owner-confirmed and public JWKS was inspected. Auth flows, profile synchronization and business role enforcement remain unimplemented. Real sessions/access tokens, database structure and RLS/ACL remain unverified remotely. App Router lives in apps/web/app/ without src/. Keep the Spanish-first public UI and mocks unchanged. Implement Auth, UserProfile and roles only through scoped owner-authorized tasks. Do not introduce content models, CRUD or seeds. Applying migrations, creating users, sending emails or changing remote configuration requires an expressly authorized task. Do not change networking or keychain settings automatically. Execute one task at a time, validate affected workspaces, provide an English commit title and description, and stop for owner review. The owner creates and pushes commits.
 ```

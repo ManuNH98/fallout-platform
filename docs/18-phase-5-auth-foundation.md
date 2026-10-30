@@ -705,3 +705,52 @@ baseline improvisado. Despues verificar estructura, unicidad/defaults, RLS/ACL,
 acceso runtime, rechazo Data API y estado Prisma sin crear usuarios/perfiles.
 La autorizacion de tarea 6 no se extiende a la tarea 7. El propietario crea y
 sube el commit; Phase 5 permanece abierta.
+
+
+## Tarea 7: preflight remoto bloqueado por Direct
+
+Fecha: 2026-10-30. Tras el commit 73791bf, el propietario autorizo la siguiente
+tarea: aplicar la migracion de tarea 6 y verificar estructura, permisos y acceso.
+La autorizacion se limita a esa migracion; no incluye usuarios, perfiles de
+prueba, correos ni cambios de red. Se comprobo arbol Git limpio y SQL identico
+al commit aprobado antes de consultar Prisma.
+
+### Comprobaciones realizadas
+
+- Coherencia del proyecto entre URL publica web, SUPABASE_URL API, Direct y
+  usuario runtime del session pooler, sin publicar host, IP o credenciales.
+- Opciones TLS existentes conservadas: runtime verify-full con CA; Direct
+  sslaccept=strict y sslcert. Socket TLS cliente/session pooler cifrado y
+  certificado autorizado. pg_stat_ssl devuelve false para el tramo del pooler
+  a PostgreSQL; ese dato no mide el TLS entre el cliente y el pooler.
+- Inspeccion mediante pg con BEGIN READ ONLY/ROLLBACK: runtime postgres con
+  BYPASSRLS y CREATE sobre public; base esperada. Existen anon y authenticated.
+- Cero tablas en public; UserProfile, UserRole y _prisma_migrations ausentes.
+  No se detectan colisiones ni necesidad de baseline para el estado inspeccionado.
+- prisma migrate status por Direct falla (exit 1, Schema engine error sin
+  codigo P). Segundo intento diagnostico reproduce el error. No se ejecuta
+  migrate deploy, migrate dev, resolve, reset, db:push ni SQL de migracion.
+- Direct resuelve a IPv6; la entrada existente de hosts coincide con el AAAA
+  actual. TCP al puerto 5432 agota el tiempo en dos comprobaciones de 5 s.
+- warp-cli status informa Connected/Network healthy; modo WarpWithDnsOverHttps.
+  Son lecturas de estado; no se modifica WARP, hosts, red, TLS ni llavero.
+
+El sandbox no resolvia el host runtime (ENOTFOUND); las comprobaciones remotas
+se ejecutaron despues con permiso de red. El fallo TCP Direct persiste fuera
+del sandbox. No se ha determinado su causa; no atribuirlo a WARP desactivado,
+a una IP desactualizada o a credenciales incorrectas sin evidencia.
+
+### Resultado y siguiente paso
+
+Tarea 7 incompleta: migracion sin aplicar, ninguna escritura remota realizada.
+El propietario debe revisar/restablecer el acceso de este Mac a Direct:5432;
+AGENTS.md y docs/14 impiden cambiar automaticamente la red. Con Direct accesible,
+repetir preflight y migrate status; aplicar exclusivamente el SQL aprobado con
+migrate deploy y verificar despues estructura, checksum/estado, RLS/privilegios,
+lectura mediante Nest y rechazo Data API. No avanzar a tarea 8 ni declarar
+verificados constraints/permisos de una tabla que aun no existe.
+
+Solo cambian docs/15 y este registro. git diff --check correcto; no se repiten
+lint/tipos/build o tests porque no cambia codigo, schema ni artefactos. Scripts
+diagnosticos temporales fuera del repositorio; sin secretos versionados.
+Referencia del comando de aplicacion: [Prisma Migrate v7](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/development-and-production).
