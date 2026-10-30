@@ -24,11 +24,11 @@ el diseno y los mocks publicos; sustituirlos sigue siendo Phase 7.
 
 ## Evidencias y decisiones pendientes
 
-- El propietario indica en Dashboard `ECC (P-256)`, equivalente a ES256.
-  Es evidencia declarada, no inspeccion remota del agente ni prueba de un
-  access token. Antes de implementar JWT, confirmar que corresponde a Current,
-  no Standby, e inspeccionar JWKS de solo lectura. Una clave publicada no prueba
-  por si sola que sea la activa. No crear usuarios para obtener este dato.
+- El propietario confirma que `ECC (P-256)` aparece como Current el 30 de
+  octubre de 2026. Una consulta GET de solo lectura al JWKS publico confirma
+  una clave ES256/EC/P-256. El estado activo es evidencia del propietario; la
+  publicacion de la clave es inspeccion del agente. No se han creado usuarios,
+  obtenido secretos ni probado access tokens reales para esta comprobacion.
 - Email, confirmacion, Site URL `http://localhost:3000` y redirects exactos
   `/auth/confirmar` y `/restablecer-contrasena` estaban preparados por
   confirmacion del propietario. Plantilla SSR y entrega siguen pendientes.
@@ -94,7 +94,7 @@ mediante verificacion JWT local ni anadir listas de revocacion en esta fase.
 
 ## Identidad y autorizacion API
 
-Propuesta para ES256, condicionada a confirmar Current: jose con
+Contrato ES256, con Current confirmado por el propietario y JWKS inspeccionado: jose con
 createRemoteJWKSet y jwtVerify. JWKS en
 `SUPABASE_URL/auth/v1/.well-known/jwks.json`, issuer
 `SUPABASE_URL/auth/v1`, audiencia authenticated y algoritmo admitido ES256.
@@ -328,7 +328,7 @@ El propietario crea y sube los commits.
 
 ## Entrega de tarea 3: renovacion SSR mediante Proxy
 
-Implementada el 30 de octubre de 2026; pendiente de revision del propietario.
+Implementada el 30 de octubre de 2026 e integrada por el propietario en `e5b3573`.
 Archivos permitidos/modificados: apps/web/proxy.ts,
 apps/web/lib/supabase/proxy.ts, tests/proxy.test.mjs en esa misma carpeta,
 docs/15 y este registro. Sin dependencias nuevas ni cambios en factorias,
@@ -395,6 +395,115 @@ con configuracion completa y sin sesion podran llegar al 404 existente hasta
 su implementacion. Sin configuracion, las rutas del matcher devuelven 503;
 la navegacion publica sigue disponible con mocks.
 
-Siguiente entrega: tarea 4, verificador API, solo tras revision/autorizacion y
-confirmacion de Current mas inspeccion JWKS de solo lectura. No crear cuentas
-ni enviar correos como preparacion. Phase 5 sigue abierta.
+La tarea 4 se autorizo despues de esta entrega y de la confirmacion de Current;
+su resultado se registra a continuacion. Sin cuentas ni correos como preparacion.
+Phase 5 sigue abierta.
+
+
+## Entrega de tarea 4: identidad JWT en NestJS
+
+Implementada el 30 de octubre de 2026; pendiente de revision del propietario.
+Se sigue nestjs-best-practices para guards, inyeccion de dependencias,
+excepciones HTTP y simulacion de servicios externos. Sin emitir JWT propios.
+
+### Requisitos previos y fuentes
+
+El propietario confirma Current para ECC P-256. Inspeccion GET del JWKS derivado
+de la SUPABASE_URL local de API: una clave ES256, EC, P-256. No se imprimen URL
+real, referencia de proyecto, kid ni componentes de clave. Sin Authorization,
+API key, cookies o cambios remotos; fetch HTTPS con validacion TLS por defecto.
+El intento dentro del sandbox fallo por acceso de red; fuera termino correctamente.
+Esto acredita publicacion de clave, no verificacion de un token de usuario.
+
+Contrastados el 30 de octubre de 2026: [verificacion Supabase](https://supabase.com/docs/guides/auth/jwts),
+[autenticacion Nest](https://docs.nestjs.com/security/authentication),
+[opciones JWKS jose 6.2.14](https://github.com/panva/jose/blob/v6.2.14/docs/jwks/remote/interfaces/RemoteJWKSetOptions.md)
+y [runtimes de jose](https://github.com/panva/jose#supported-runtimes).
+Dependencia exacta jose 6.2.14; no Passport, emisor JWT ni nuevas claves.
+
+### Archivos y comportamiento
+
+- apps/api/src/modules/auth/: auth.module.ts, jwks-fetch.provider.ts,
+  supabase-identity.ts, supabase-jwt.service.ts y sus pruebas unitarias.
+- apps/api/src/common/guards/: supabase-auth.guard.ts y sus pruebas.
+- apps/api/src/app.module.ts registra/exporta las dependencias mediante AuthModule;
+  no registra guard global ni nuevos endpoints de produccion.
+- apps/api/src/config/environment.ts y sus pruebas, apps/api/.env.example,
+  apps/api/package.json, apps/api/test/jest-e2e.json, test/auth.e2e-spec.ts,
+  pnpm-lock.yaml, docs/15 y este documento.
+
+SupabaseJwtService crea un resolvedor JWKS reutilizable y perezoso. Verifica
+firma ES256, typ JWT, kid no vacio, issuer del proyecto, audiencia authenticated,
+exp y nbf cuando existe; exige iat, sub UUID, session_id UUID y role authenticated.
+Rechaza usuarios anonimos y un indicador is_anonymous presente que no sea false.
+Ignora roles de user_metadata. Devuelve solo supabaseUserId y sessionId, como
+tipo interno de API, sin perfil ni permisos de negocio. Ningun consumidor web
+requiere ese tipo aun; los contratos compartidos futuros iran a packages/types.
+
+Guard exige una sola cabecera Bearer compacta, con maximo 16 KiB; rechaza
+Authorization duplicada, sintaxis extra y claves API. Borra cualquier identidad
+previa antes de verificar y adjunta authIdentity solo despues del exito. No
+adjunta un UserProfile ficticio. Los endpoints futuros deben aplicar el guard;
+health y endpoints existentes conservan su comportamiento publico.
+
+Errores de token, claims, firma o kid desconocido: 401 generico en espanol.
+Error de red, timeout, respuesta/JWKS invalido o configuracion ausente: 503
+generico. No incluir excepciones originales, JWTs o credenciales en logs/respuestas.
+No conceder acceso ante errores. El endpoint /privado-prueba existe solo dentro
+del fixture e2e, sin rutas Auth/perfil/admin prematuras en la API real.
+
+JWKS usa destino fijo derivado del origen configurado, sin seguir jku del token,
+sin API keys ni bearer, con redirects manuales (redireccion rechazada), timeout
+5 segundos, cache local 10 minutos y cooldown 30 segundos para kid nuevo.
+Una clave nueva puede rechazarse durante ese cooldown. Con cache vigente no se
+consulta Auth en cada peticion. La cache Edge de Supabase puede sumar otros
+10 minutos a la ventana local: no prometer revocacion instantanea. Reiniciar
+el proceso elimina cache local, pero no la Edge; rotaciones/revocaciones son
+operaciones del propietario fuera de esta tarea.
+
+El contrato de SUPABASE_URL se endurece: origen HTTPS remoto sin userinfo,
+ruta, query ni fragmento; HTTP solo en loopback para pruebas. La variable sigue
+opcional al arrancar con mocks; verificar identidad sin ella devuelve 503.
+WEB_URL y DATABASE_URL conservan sus contratos. Sin JWT secret, API key o nueva
+variable; Turbo ya declara SUPABASE_URL en build/dev. El ejemplo actualizado no
+modifica los .env reales. No se introduce Supabase local.
+
+jose 6 es ESM. Produccion mantiene la compilacion actual de Nest; require(esm)
+esta disponible por defecto en Node ^20.19, ^22.12 o >=23 segun el proveedor.
+Validado con Node 24.15.0; no se ha ejecutado en Node 20 y no se cambia engines.
+Jest transforma solo la dependencia JS jose mediante ts-jest existente, con
+configuracion CommonJS para ese JS. Los tests TS conservan su transformacion y
+check-types valida el codigo propio; diagnostics=false se limita a ese transform
+JS externo. Sin nuevo runner ni cambio del formato de modulos de produccion.
+
+### Validacion
+
+| Comando/comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter api lint | Correcto, sin warnings |
+| pnpm --filter api check-types | Correcto |
+| pnpm --filter api build | Correcto |
+| pnpm --filter api run test --runInBand | 61 pruebas correctas en 5 suites |
+| pnpm --filter api run test:e2e --runInBand | 8 pruebas correctas en 2 suites |
+| Smoke del verificador dist con require de jose ESM | Firma real ES256 y JWKS simulado correctos, sin conexion externa |
+| API dist en puerto local temporal 3219 sin SUPABASE_URL/DATABASE_URL | health 200; /privado-prueba y /auth/me 404; proceso cerrado |
+| git diff --check | Correcto |
+
+Las e2e fallaron inicialmente con listen EPERM en el sandbox y terminaron fuera
+de el. Claves criptograficas y tokens se generan solo en memoria para tests,
+con fetch JWKS simulado; no se conecta a Supabase desde las suites. Cubren
+manipulacion, firma ajena, algoritmos/tipo/claims invalidos o ausentes, caducidad,
+nbf, origen fijo, cache, cooldown, rotacion, retirada de clave, fallos HTTP/JSON/
+JWKS/red y timeout real de cinco segundos. Guard cubre cabeceras, limites y
+propagacion de errores. E2e comprueba identidad adjunta y respuestas 401/503 sin
+secretos, mas regresion del health publico. No se llama a PostgreSQL.
+
+Limites: sin perfiles, roles, persistencia, sesiones o access tokens reales
+verificados; sin nuevos usuarios, correos, migraciones o escrituras remotas.
+Web, mocks, diseno y paquetes DB/types/validation permanecen intactos. La
+confirmacion Current/JWKS antes pendiente en el contrato queda satisfecha con
+las dos evidencias descritas, sin afirmar una prueba funcional de usuario.
+
+Siguiente entrega propuesta: tarea 5, consumo real de @repo/db desde NestJS,
+tras revision y nueva autorizacion. No comenzar modelos ni migraciones en esa
+integracion. El propietario crea/sube el commit; Phase 5 permanece abierta.

@@ -85,3 +85,26 @@ describe('validateEnvironment', () => {
     );
   });
 });
+
+describe('origen confiable de Supabase para JWKS', () => {
+  it.each([
+    'http://project.example',
+    'https://user:password@project.example',
+    'https://project.example/ruta',
+    'https://project.example?token=privado',
+    'https://project.example#fragmento',
+  ])(
+    'rechaza origen inseguro o ambiguo sin publicar su valor (%s)',
+    (value) => {
+      expect(() => validateEnvironment({ SUPABASE_URL: value })).toThrow(
+        /^SUPABASE_URL debe ser un origen HTTPS sin credenciales, ruta, query ni fragmento; HTTP solo se admite en loopback\.$/,
+      );
+    },
+  );
+
+  it('admite loopback HTTP para pruebas aisladas', () => {
+    expect(
+      validateEnvironment({ SUPABASE_URL: 'http://127.0.0.1:3219' }),
+    ).toMatchObject({ SUPABASE_URL: 'http://127.0.0.1:3219' });
+  });
+});
