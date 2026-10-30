@@ -8,10 +8,11 @@ PostgreSQL se conserva como destino previsto de produccion. Supabase Auth y
 Storage siguen remotos en el plan gratuito, dentro de sus limites; no se crea
 Supabase local. Next.js, NestJS, Prisma y los packages existentes se mantienen.
 
-Esta entrega solo documenta el cambio. No se ha instalado PostgreSQL, creado
-una base/roles, cambiado .env, aplicado migraciones, configurado CI ni alterado
-WARP, hosts, certificados o llavero. La configuracion real anterior sigue
-apuntando a Supabase hasta que una tarea posterior la cambie y valide.
+Estado actual: L1 implementada, pendiente de revision. PostgreSQL 17.11 local,
+base/roles dedicados y conexiones API/Prisma locales comprobados. Migraciones
+sin aplicar: siguiente tarea L2. Auth/Storage siguen remotos. Sin CI ni cambios
+a WARP, hosts, certificados o llavero. Detalles y uso diario al final.
+La decision inicial se documento en 326ee0e antes de implementar esta entrega.
 
 ## Motivo y antecedentes
 
@@ -123,3 +124,122 @@ por si solos conectividad ni TLS. El despliegue debe aplicar las migraciones,
 configurar secretos/URLs y validar acceso de API, RLS/ACL/Data API, Auth/correo,
 Storage y datos iniciales autorizados. No basta con subir el codigo. El Mac no
 tendra que acceder a la DB remota si el entorno de despliegue puede hacerlo.
+
+
+## L1: alcance autorizado para preparacion
+
+El propietario autoriza continuar con L1 tras el commit documental 326ee0e.
+Archivos permitidos: packages/db/.gitignore, package.json, .env.example y
+scripts/local-postgres.mjs; apps/api/.env.example; entornos reales ignorados de
+DB/API y estado local ignorado .local-postgres; AGENTS.md y docs/14, 15, 18, 19
+para registrar resultados; README y docs/01, 03, 04, 07, 12 para actualizar
+marcadores de estado relacionados. Instalacion Homebrew de PostgreSQL 17 y cluster
+exclusivo del proyecto autorizados en esta tarea; no servicio global/autoinicio.
+No cambios en schema/migracion, web, Auth, dependencias JS, red o Supabase.
+
+## Resultado de L1: preparado, sin migraciones
+
+Entrega del 30 de octubre de 2026, pendiente de revision del propietario.
+Se verifico por SHOW server_version remoto (solo lectura, TLS autorizado) que
+Supabase usa PostgreSQL 17.11. Se instalo postgresql@17 17.11_1 con Homebrew.
+El catalogo antiguo no reconocia la formula: se actualizo Homebrew/catalogo,
+sin brew upgrade general. Homebrew instalo las dependencias necesarias y
+actualizo gettext de 0.22.4 a 1.0 como dependencia. No hay nuevas dependencias
+JavaScript ni cambio del lockfile del monorepo.
+
+### Estado local y acceso
+
+- Cluster exclusivo: packages/db/.local-postgres/data, ignorado por Git; version
+  17.11, UTF-8, locale en_US.UTF-8 y checksums de datos activados.
+- Escucha solo 127.0.0.1:55432. Sockets Unix en .local-postgres/socket con permisos
+  0700. Sin listener LAN/IPv6 ni autoinicio; no se uso brew services start.
+- Base fallout_platform_dev y schema public propiedad de fallout_app. LOGIN con
+  contrasena aleatoria local, sin SUPERUSER, CREATEDB, CREATEROLE, REPLICATION ni
+  BYPASSRLS. Puede migrar y usar sus propias tablas; RLS sin FORCE permite al
+  owner operar, y Nest conserva la autorizacion de negocio.
+- anon/authenticated son roles SQL NOLOGIN y sin privilegios especiales. No
+  crear identidades Auth ni confundirlos con los roles USER/ADMIN del modelo.
+- fallout_local_admin administra exclusivamente este cluster; no usarlo en las
+  URLs de API/Prisma. Las reglas pg_hba solo admiten al administrador y al rol
+  de aplicacion en su DB por loopback, con scram-sha-256 y sin trust. Acceso
+  PUBLIC revocado sobre la DB y schema public.
+- Transporte sin TLS solo en este loopback local (sslmode=disable, ssl=off en
+  este cluster). SCRAM verifica contrasenas, no cifra el trafico de aplicacion.
+  No reutilizar esa configuracion en redes/remoto. TLS remoto sigue estricto;
+  no se modifican verificaciones globales, CA, llavero o WARP.
+
+Homebrew creo tambien su cluster predeterminado en /opt/homebrew/var/postgresql@17
+como parte de postinstall. No esta arrancado ni se usa; no ejecutar brew services
+start postgresql@17 para iniciar el cluster del proyecto. No se modificaron otros
+servicios. Los comandos siguientes controlan solo el cluster dedicado.
+
+### Uso diario desde la raiz del repositorio
+
+```bash
+pnpm --filter @repo/db db:local:start
+pnpm --filter @repo/db db:local:status
+pnpm dev
+```
+
+Para detener la DB al terminar:
+
+```bash
+pnpm --filter @repo/db db:local:stop
+```
+
+Start/stop son idempotentes. Despues de reiniciar el Mac hay que ejecutar start;
+no se instalo LaunchAgent/autoinicio. No se necesita WARP para esta DB local.
+Los scripts usan Homebrew postgresql@17 y un cluster ya preparado; no instalan,
+inicializan, modifican URLs ni ejecutan migraciones. Status devuelve un mensaje
+activo/detenido; si falta PG_VERSION o no es 17, rechaza la operacion. No usar
+estos scripts con un cluster distinto ni cambiar su directorio de datos.
+
+### Entorno real y copias privadas
+
+DATABASE_URL de API y DATABASE_URL/DIRECT_URL de packages/db apuntan a la misma
+DB/rol local. URL, clave publica, bucket y configuracion Auth de Supabase se
+conservan; apps/web/.env.local no cambio. Ejemplos publicos usan PASSWORD como
+placeholder; las contrasenas reales aleatorias solo estan en archivos ignorados.
+
+Antes del cambio se guardaron copias exactas del entorno anterior en
+packages/db/.local-postgres/previous-env/api.env y db.env, con modo 0600. Son
+copias sensibles: no versionar, publicar ni restaurar automaticamente. La
+contrasena del administrador esta en .local-postgres/admin-password (0600);
+los .env reales tambien tienen modo 0600 y el directorio local modo 0700.
+No copiar credenciales aqui. Nunca usar esos backups como fallback remoto.
+
+El cluster, logs, sockets y copias de entorno no estan en Git y no se recrean
+con pnpm install o con los scripts start/stop. No borrar .local-postgres ni
+usar git clean -fdx sin revisar/preservar primero datos y copias. Para preparar
+otro checkout/equipo, repetir una tarea L1 revisada: instalar major compatible,
+initdb con SCRAM y administrador separado, configurar loopback/puerto, crear
+roles/base/schema y generar nuevas credenciales locales. No copiar el directorio
+de datos de un servidor activo. No se anade provision automatico en esta entrega.
+
+### Validaciones ejecutadas
+
+| Comprobacion | Resultado |
+| --- | --- |
+| Version remota y local | 17.11 ambas; remoto solo SHOW server_version |
+| Lint, check-types y build DB/API | Correcto |
+| Prisma validate/generate | Correcto |
+| pnpm --filter @repo/db db:check | SELECT 1 correcto por Prisma CLI local |
+| pnpm --filter @repo/db db:check:runtime | SELECT 1 correcto por factoria/adapter local |
+| Provider Nest compilado | SELECT 1, identidad local, reutilizacion y cierre correctos |
+| Stop/start repetidos y status | Correcto; cluster queda activo |
+| HBA y roles | Sin trust; SCRAM; contrasena incorrecta rechazada con 28P01; roles sin privilegios especiales |
+| Listener efectivo | Solo 127.0.0.1:55432 |
+| Destino y entorno | URLs iguales; resto de variables API/DB identicas a sus copias previas |
+| Estado DB | Public sin tablas, sin UserProfile, UserRole ni _prisma_migrations |
+| Pruebas API existentes | 69 unitarias (6 suites), 8 e2e (2 suites) correctas; DB simulada en tests |
+| Secretos y diff | Archivos locales ignorados, permisos 0600; git diff --check correcto |
+
+Las pruebas con sockets se ejecutaron con permiso fuera del sandbox. Runtime
+Node 24.15.0; no se repiten con Node 20. No se modifico web ni se probaron usuarios,
+sesiones o correos reales. No hubo escrituras remotas: solo provision local de
+cluster/base/roles. Schema y migracion aprobados siguen intactos.
+
+La siguiente tarea es L2, aplicar el SQL aprobado exclusivamente a la base local
+tras revision y autorizacion. L1 no acredita constraints de UserProfile, RLS de
+esa tabla, roles de negocio ni Supabase Data API. WARP/hosts quedan intactos;
+limpieza eventual separada. Phase 5 permanece abierta.

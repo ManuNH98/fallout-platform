@@ -8,7 +8,7 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La configuracion local de **Phase 1: Infrastructure and configuration** esta completada y sus pendientes externos se verificaron en Phase 4. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`). El propietario confirmo la integracion y autorizo continuar con **Phase 5: Auth foundation** el 23 de octubre de 2026, en la rama `feature/Phase-5_auth_foundation`. El acceso remoto de Phase 4 se verifico con WARP/hosts; evidencias historicas en `docs/17-phase-4-validation.md`. Desde el 30 de octubre de 2026, desarrollo con PostgreSQL local aprobado, aun sin preparar; contrato y continuacion en `docs/19-local-development-database.md`. El frontend conserva los mocks y el diseno durante Phase 5.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada y sus pendientes externos se verificaron en Phase 4. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`). El propietario confirmo la integracion y autorizo continuar con **Phase 5: Auth foundation** el 23 de octubre de 2026, en la rama `feature/Phase-5_auth_foundation`. El acceso remoto de Phase 4 se verifico con WARP/hosts; evidencias historicas en `docs/17-phase-4-validation.md`. Desde el 30 de octubre de 2026, desarrollo con PostgreSQL local aprobado; L1 preparada, migracion L2 pendiente; contrato y continuacion en `docs/19-local-development-database.md`. El frontend conserva los mocks y el diseno durante Phase 5.
 
 **Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
@@ -226,8 +226,8 @@ Secuencia, responsabilidades, configuracion objetivo y comandos en `docs/14-envi
 Factorias Supabase, Proxy SSR, JWT API, provider DB y schema/SQL UserProfile
 preparados (tareas 2 a 6 de docs/18). Migracion remota sin aplicar.
 El 30 de octubre de 2026 se aprueba PostgreSQL nativo local para desarrollo;
-primero documentacion (esta entrega), despues L1 preparacion y L2 migracion
-local revisadas, antes de tarea 8 y flujos Auth. Auth/Storage siguen remotos.
+documentacion integrada en 326ee0e, L1 preparacion implementada y L2 migracion
+local pendiente de autorizacion/revision, antes de tarea 8 y flujos Auth. Auth/Storage siguen remotos.
 [Decision y criterios por entorno](19-local-development-database.md).
 Cada implementacion requiere autorizacion y revision independientes.
 

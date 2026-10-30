@@ -27,7 +27,8 @@ el diseno y los mocks publicos; sustituirlos sigue siendo Phase 7.
 El propietario aprueba el cambio de entorno de desarrollo y solicita documentarlo
 antes de implementar. Rige [docs/19](19-local-development-database.md): PostgreSQL
 nativo local, Supabase Auth/Storage remotos, sin coste de servicios adicionales.
-No se ha instalado ni migrado; .env reales conservan sus destinos anteriores.
+L1 instalada/validada: PostgreSQL 17.11 local y .env API/DB cambiados a loopback.
+No se ha migrado; siguiente tarea L2. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
 
@@ -903,3 +904,20 @@ Sin instalaciones, scripts de provisioning, nuevos ejemplos activos o cambios en
 .env, codigo, dependencias, schema, SQL, red, Dashboard o datos. Revision de enlaces,
 coherencia del contrato y git diff --check; no corresponden builds/tests de codigo.
 El propietario crea/sube el commit y autoriza la siguiente tarea.
+
+
+## Entrega L1: PostgreSQL nativo preparado
+
+El propietario autoriza continuar tras 326ee0e. PostgreSQL 17.11 instalado con
+Homebrew; cluster dedicado en loopback:55432, SCRAM, rol de aplicacion sin
+superusuario/BYPASSRLS y roles SQL anon/authenticated NOLOGIN. API y Prisma
+usan la DB local; Auth/Storage y web intactos. Comandos start/stop/status y
+archivos privados ignorados. SQL de tarea 6 sin cambios y sin aplicar.
+
+SELECT 1 pasa por CLI, adapter y provider Nest compilado; parada/arranque,
+identidad, contrasena incorrecta, permisos y ausencia de tablas verificados.
+DB/API lint, tipos, build, Prisma validate/generate, 69 unitarias y 8 e2e pasan.
+Solo consulta remota SHOW server_version para compatibilidad; sin escrituras
+remotas. Instalacion y dependencias Homebrew, limites, copias y uso diario en
+docs/19. L1 pendiente de revision; siguiente tarea propuesta L2 local, requiere
+autorizacion independiente. No iniciar sincronizacion/roles hasta completar L2.

@@ -12,11 +12,11 @@ Actualizado el 30 de octubre de 2026.
 
 - **Phase 0: Repository foundation** esta completada.
 - La parte local de **Phase 1: Infrastructure and configuration** esta preparada.
-- Phase 4 verifico Supabase remoto; el acceso Direct falla actualmente y el motor Prisma rechaza TLS del session pooler en este Mac. Desarrollo con PostgreSQL local aprobado el 30 de octubre de 2026, aun sin preparar; Auth/Storage siguen remotos. Contrato vigente en docs/19.
+- Phase 4 verifico Supabase remoto; el acceso Direct falla actualmente y el motor Prisma rechaza TLS del session pooler en este Mac. Desarrollo con PostgreSQL local aprobado el 30 de octubre de 2026; L1 preparada, sin migraciones; Auth/Storage siguen remotos. Contrato vigente en docs/19.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
 - **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`, que incorpora `8222fb4`).
-- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge. Las factorias Supabase web, Proxy SSR, verificador JWT y provider DB de NestJS estan implementados. El provider ha ejecutado SELECT 1 de solo lectura; UserRole/UserProfile y su SQL estan preparados sin aplicacion remota. Todavia no hay flujos Auth ni sesiones/access tokens reales verificados. La tarea 7 remota se aplaza: primero L1 preparacion local y L2 migracion local de docs/19, despues tarea 8 de docs/18.
+- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge. Las factorias Supabase web, Proxy SSR, verificador JWT y provider DB de NestJS estan implementados. El provider ha ejecutado SELECT 1 de solo lectura; UserRole/UserProfile y su SQL estan preparados sin aplicacion remota. Todavia no hay flujos Auth ni sesiones/access tokens reales verificados. La tarea 7 remota se aplaza: L1 preparacion local implementada, siguiente L2 migracion local de docs/19 y despues tarea 8 de docs/18.
 
 ## Base completada
 
@@ -55,7 +55,7 @@ Actualizado el 30 de octubre de 2026.
 - Phase 4 preparo infraestructura, Email Auth, URLs y Storage; su cierre no acredita login, registro, sesiones, roles ni validacion JWT. Esos flujos, UserProfile y su migracion corresponden a tareas autorizadas de Phase 5; el contenido persistente sigue reservado a Phase 6.
 - El frontend conserva los mocks y el diseno durante Phase 5; no se sustituyen por llamadas de contenido a la API.
 - Se ejecuta una tarea por revision; el propietario crea/sube los commits y autoriza la siguiente. Cada entrega incluye titulo y descripcion de commit en ingles.
-- PostgreSQL nativo local para desarrollo; Supabase PostgreSQL para produccion mas adelante. No Supabase local, Docker, root .env o gasto adicional. Decision aprobada, sin implementacion; docs/19 define el siguiente paso.
+- PostgreSQL nativo local para desarrollo; Supabase PostgreSQL para produccion mas adelante. No Supabase local, Docker, root .env o gasto adicional. L1 preparada, sin migraciones; docs/19 define uso diario y siguiente tarea L2.
 - Next.js, NestJS, Prisma y Supabase mantienen las responsabilidades descritas en `docs/01-architecture.md`.
 
 ## Cierre e integracion de Phase 4
@@ -398,13 +398,31 @@ entornos hay que revisar y actualizar el contrato de desarrollo. Sin software nu
 workflows, credenciales trasladadas o migracion aplicada.
 
 Decision vigente aprobada el 30 de octubre de 2026: PostgreSQL nativo local para
-desarrollo. Esta entrega documenta primero el cambio en docs/19 y contratos
-relacionados. No se ha instalado PostgreSQL ni cambiado .env; no hay migracion
-aplicada en ningun destino. El historico anterior conserva propuestas previas.
+desarrollo. La decision se documento primero en 326ee0e; L1 implementada despues, como
+se detalla a continuacion. No hay migracion aplicada en ningun destino. El
+historico anterior conserva propuestas y estados previos.
 
-Siguiente tarea propuesta: L1 de docs/19 (preparacion local sin migracion), tras
-revision y autorizacion. Despues L2 aplica/verifica el SQL aprobado en local,
-con roles SQL compatibles y destino confirmado. Solo entonces tarea 8.
+L1 implementada, pendiente de revision: PostgreSQL 17.11 via Homebrew, cluster
+exclusivo en packages/db/.local-postgres, solo 127.0.0.1:55432 con SCRAM. Base
+fallout_platform_dev, rol fallout_app propietario sin privilegios especiales;
+anon/authenticated NOLOGIN preparados. URLs reales API/DB locales y coherentes;
+Auth/Storage preservados. Copias sensibles anteriores ignoradas con modo 0600.
+
+Uso: pnpm --filter @repo/db db:local:start|stop|status. No servicio global ni
+autoinicio; iniciar manualmente despues de reiniciar. TLS deshabilitado solo en
+este loopback; remoto sigue estricto. Homebrew actualizo catalogo y dependencias
+necesarias (incluido gettext); detalles en docs/19. Sin cambios al schema/SQL,
+web, lockfile JS, WARP/hosts o llavero. Sin migraciones ni tablas de aplicacion.
+
+Validado: SELECT 1 por CLI, runtime y Nest compilado; parada/arranque repetidos,
+SCRAM/rechazo de contrasena incorrecta, listener, roles minimos y DB vacia.
+Lint/tipos/build de DB/API, Prisma validate/generate, 69 unitarias y 8 e2e pasan.
+Unica consulta remota: SHOW server_version con TLS para elegir PostgreSQL 17.11;
+sin escrituras remotas. Entrega detallada en docs/19.
+
+Siguiente tarea propuesta: L2 de docs/19, tras revision y autorizacion: preflight
+local, aplicar/verificar SQL aprobado, unicidad/defaults, RLS/ACL y acceso Nest.
+Solo entonces tarea 8. El propietario crea y sube los commits.
 La tarea 7 remota se aplaza, no se completa. Su verificacion y Data API pasan
 a ser requisitos de produccion; no es necesario recuperar Direct para continuar
 desarrollo local. WARP no sera dependencia del entorno local; aun sin desinstalar
@@ -417,5 +435,5 @@ El propietario crea y sube los commits. Phase 5 sigue abierta.
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
 
-Phase 0 and local Phase 1 are complete; Phase 4 verified the deferred infrastructure. Phases 2/3 are complete; PR #6 merged Phase 3 (4cf28bd), PR #7 merged Phase 4 (b324cd5). Phase 5 is active on feature/Phase-5_auth_foundation. Read docs/19-local-development-database.md first for the owner-approved 30 October 2026 environment decision: native PostgreSQL on the Mac for development, remote Supabase Auth/Storage, planned Supabase PostgreSQL for production, zero additional service cost. Documentation is done; local installation, roles/DB, environment switch and migrations have NOT been performed. Real .env files still point to their previous remote targets. No Docker, local Supabase, root .env, CI setup or paid services. Next proposed task is L1 local setup without migration, then separately authorized L2 local application of the approved SQL, then Phase 5 task 8. One Prisma schema/history; preserve migration 20261030000000_add_user_profile from 73791bf and account for anon/authenticated SQL roles locally. Remote task 7 is deferred, not complete; do not implicitly resume deployment attempts. Remote TLS/migrations/RLS/ACL/Data API and deployed Auth/Storage checks are required before production. WARP/hosts cleanup is separate and not performed; no automatic networking/keychain changes. Preserve docs/17 Phase 4 evidence and docs/18 diagnostics. Supabase factories, SSR Proxy, ES256/JWKS verification, lazy @repo/db integration and UserProfile schema/SQL exist. Profiles/role enforcement and real Auth flows remain pending. Build DB before direct filtered API commands or use Turbo dependencies. App Router is apps/web/app/ without src/. Preserve Spanish public design and typed mocks; no content models, CRUD or seeds. Never request secrets in chat. Applying migrations, creating Auth users, sending emails and changing remote configuration require scoped explicit authorization. Work one task at a time, validate affected workspaces, provide an English commit title/body and stop for owner review; owner commits/pushes. Phase 5 remains open until its revised development criteria pass and the owner authorizes closure.
+Phase 0 and local Phase 1 are complete; Phase 4 verified the deferred infrastructure. Phases 2/3 are complete; PR #6 merged Phase 3 (4cf28bd), PR #7 merged Phase 4 (b324cd5). Phase 5 is active on feature/Phase-5_auth_foundation. Read docs/19-local-development-database.md first for the owner-approved 30 October 2026 environment decision: native PostgreSQL on the Mac for development, remote Supabase Auth/Storage, planned Supabase PostgreSQL for production, zero additional service cost. Documentation was committed in 326ee0e. L1 local setup is now implemented, pending review: PostgreSQL 17.11, dedicated ignored cluster packages/db/.local-postgres on 127.0.0.1:55432, SCRAM, DB fallout_platform_dev and owner fallout_app without superuser/CREATEDB/CREATEROLE/BYPASSRLS. SQL roles anon/authenticated are NOLOGIN. API/DB .env files now target local; prior sensitive copies are ignored under .local-postgres/previous-env. No migrations or app tables yet. Use pnpm --filter @repo/db db:local:start|stop|status; manual start after reboot, no global service. Local loopback only uses sslmode=disable; remote TLS remains strict. L1 SELECT 1 CLI/runtime/Nest, credentials and lifecycle passed; DB/API lint/types/build, 69 unit and 8 e2e tests passed. No Docker, local Supabase, root .env, CI setup or paid services. Next proposed task is separately authorized L2 local application of the approved SQL, then Phase 5 task 8 after review. One Prisma schema/history; preserve migration 20261030000000_add_user_profile from 73791bf and account for anon/authenticated SQL roles locally. Remote task 7 is deferred, not complete; do not implicitly resume deployment attempts. Remote TLS/migrations/RLS/ACL/Data API and deployed Auth/Storage checks are required before production. WARP/hosts cleanup is separate and not performed; no automatic networking/keychain changes. Preserve docs/17 Phase 4 evidence and docs/18 diagnostics. Supabase factories, SSR Proxy, ES256/JWKS verification, lazy @repo/db integration and UserProfile schema/SQL exist. Profiles/role enforcement and real Auth flows remain pending. Build DB before direct filtered API commands or use Turbo dependencies. App Router is apps/web/app/ without src/. Preserve Spanish public design and typed mocks; no content models, CRUD or seeds. Never request secrets in chat. Applying migrations, creating Auth users, sending emails and changing remote configuration require scoped explicit authorization. Work one task at a time, validate affected workspaces, provide an English commit title/body and stop for owner review; owner commits/pushes. Phase 5 remains open until its revised development criteria pass and the owner authorizes closure.
 ```

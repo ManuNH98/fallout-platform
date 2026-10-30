@@ -3,7 +3,7 @@
 ## Entorno vigente
 
 PostgreSQL local nativo para desarrollo, Supabase PostgreSQL como destino de
-produccion; decision aprobada, instalacion y aplicacion aun pendientes. Un unico
+produccion; L1 instalada y validada con PostgreSQL 17.11; migracion L2 pendiente. Un unico
 schema e historial Prisma; no duplicar migraciones por entorno. Las diferencias
 de roles SQL, RLS y validacion remota se detallan en
 [docs/19](19-local-development-database.md). Auth sigue remoto; no crear auth.users
