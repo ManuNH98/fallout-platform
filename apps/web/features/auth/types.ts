@@ -1,4 +1,5 @@
 export interface AuthActionState {
   message?: string;
-  fieldErrors?: { email?: string; password?: string };
+  submitted?: boolean;
+  fieldErrors?: { email?: string; password?: string; passwordConfirmation?: string };
 }

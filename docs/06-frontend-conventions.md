@@ -304,3 +304,12 @@ sesion pero falla el perfil, la pagina ofrece reintentar sincronizacion o cerrar
 sesion; GET solo lee. Auth y sesion no se consultan en layouts publicos o raiz.
 Contrato completo, estados y limites en docs/18 (entrega tarea 9). Registro y
 confirmacion se implementaran por separado, sin envios reales implicitos.
+
+
+Registro de tarea 10: /registro reutiliza el layout Auth y metadata noindex;
+useActionState con password y repeticion sin devolver valores sensibles. Schemas
+en @repo/validation, operacion signUp sin persistencia y verifyOtp en Route
+Handler /auth/confirmar con SSR escribible, redirects relativos fijos y
+no-referrer. Next omite logs de esta ruta y argumentos de Server Functions.
+Artefacto de plantilla en features/auth/email-templates; no aplicado a Supabase.
+Checks y limitaciones reales en docs/18; no cambios de diseno/mocks publicos.

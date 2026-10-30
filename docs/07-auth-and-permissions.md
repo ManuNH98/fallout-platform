@@ -3,13 +3,14 @@
 ## Estado y responsabilidades
 
 Phase 5 en curso: identidad JWT, perfil local y guards de roles implementados
-en tareas 4 y 8; login/logout web implementados en tarea 9. Registro/confirmacion
-y pruebas con usuarios/sesiones reales siguen pendientes. Supabase Auth identifica
+en tareas 4 y 8; login/logout web integrados en 2ec4a8c. Registro/confirmacion
+implementados en tarea 10 con simulaciones; plantilla remota y pruebas con
+usuarios/sesiones reales siguen pendientes. Supabase Auth identifica
 usuarios y mantiene passwords, sesiones, access tokens y refresh tokens.
 NestJS aplica autorizacion de negocio con perfiles y roles en PostgreSQL.
 Desde la decision del 30 de octubre de 2026, la DB de desarrollo sera local;
 Supabase Auth sigue remoto y su UUID enlaza UserProfile sin FK a auth.users.
-Preparacion L1/L2 validadas; sincronizacion y roles de negocio implementados en tarea 8, pendientes de revision. [Contrato de entorno](19-local-development-database.md).
+Preparacion L1/L2 validadas; sincronizacion y roles de negocio integrados en 9a2c3ef. [Contrato de entorno](19-local-development-database.md).
 Los roles/promociones y datos de desarrollo no se trasladan automaticamente a produccion.
 Next.js presenta flujos Auth y llama a Nest mediante Bearer access token.
 No se emiten tokens propios ni se gestiona password hashing en la API.
@@ -142,3 +143,25 @@ conserva sesion y muestra perfil pendiente, con retry o cierre. El GET nunca cre
 perfil. Logout usa scope local y cookies SSR escribibles; no afirmar exito si
 falla ni revocacion instantanea. Pruebas simuladas y smoke sin credenciales;
 integracion con cuentas reales pendiente. Registro/confirmacion siguen en tarea 10.
+
+
+## Registro y confirmacion implementados en tarea 10
+
+/registro valida email, password minimo 8/maximo 4096 y repeticion igual en
+servidor con @repo/validation. signUp se ejecuta en un cliente servidor sin
+persistencia/cookies y no crea perfiles ni acepta metadata de autorizacion.
+Respuesta condicional identica para cuenta nueva/existente; sin reintentos o
+reenvios automaticos. Sesion inesperada del proveedor no se persiste.
+
+/auth/confirmar solo admite TokenHash y type=email, llama verifyOtp con SSR
+escribible y redirige a destinos relativos fijos sin query sensible. /login
+permite Continuar para sincronizar el perfil. Respuestas privadas/no-store y
+no-referrer. Next excluye esta ruta del logger entrante y no registra argumentos
+de Server Functions; futuros proxies/analitica tambien deben evitar estas queries.
+
+Plantilla local revisable: apps/web/features/auth/email-templates/confirm-signup.html.
+Confirm email y Site URL local reconfirmados por el propietario. No se ha aplicado
+la plantilla remota ni creado cuentas/enviado correos. 60 pruebas web simuladas,
+checks y smoke HTTP documentados en docs/18; la tarea 10 sigue abierta hasta
+revision y prueba real autorizada. No confundir estas simulaciones con entrega
+real de correo o verificacion real de enlaces caducados/reutilizados.

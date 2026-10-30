@@ -26,3 +26,25 @@ export const userProfileResponseSchema = z.object({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
+
+export const registrationSchema = z
+  .object({
+    email: loginSchema.shape.email,
+    password: loginSchema.shape.password.min(
+      8,
+      "Usa una contraseña de al menos 8 caracteres.",
+    ),
+    passwordConfirmation: z
+      .string({ error: "Repite tu contraseña." })
+      .max(4096, "La contraseña es demasiado larga."),
+  })
+  .refine((value) => value.password === value.passwordConfirmation, {
+    path: ["passwordConfirmation"],
+    message: "Las contraseñas no coinciden.",
+  });
+export type RegistrationInput = z.infer<typeof registrationSchema>;
+
+export const confirmationSchema = z.object({
+  token_hash: z.string().min(20).max(1024).regex(/^[A-Za-z0-9_-]+$/),
+  type: z.literal("email"),
+});

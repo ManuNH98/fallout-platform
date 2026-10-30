@@ -1,5 +1,7 @@
 "use server";
 
+import { createRegistrationClient } from "./registration-client";
+import { register } from "./registration";
 import { redirect } from "next/navigation";
 import { continueSession, login, logout } from "./core";
 import { authDependencies } from "./server";
@@ -28,4 +30,11 @@ export async function logoutAction(
   const result = await logout(authDependencies(true));
   if (result.kind === "error") return result.state;
   redirect(result.destination);
+}
+
+export async function registerAction(
+  _previous: AuthActionState,
+  form: FormData,
+): Promise<AuthActionState> {
+  return register(form, createRegistrationClient);
 }

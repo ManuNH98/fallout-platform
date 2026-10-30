@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { continueAction, loginAction, logoutAction } from "../actions";
 import type { AuthActionState } from "../types";
@@ -70,6 +71,7 @@ export function LoginForm() {
       <button className={button} disabled={pending} type="submit">
         {pending ? "Iniciando sesión…" : "Iniciar sesión"}
       </button>
+      <p className="text-center text-sm text-muted">¿Aún no tienes cuenta? <Link href="/registro" className="text-link inline-flex min-h-11 items-center text-phosphor">Crear cuenta</Link></p>
     </form>
   );
 }

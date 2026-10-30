@@ -29,8 +29,9 @@ antes de implementar. Rige [docs/19](19-local-development-database.md): PostgreS
 nativo local, Supabase Auth/Storage remotos, sin coste de servicios adicionales.
 L1 instalada/validada: PostgreSQL 17.11 local y .env API/DB cambiados a loopback.
 L2 aplicada/verificada en local, con cero perfiles reales. Tarea 8 implementada,
-integrada en 9a2c3ef. Tarea 9 (login/logout) implementada, pendiente de revision;
-siguiente tarea 10 (registro/confirmacion) tras autorizacion.
+integrada en 9a2c3ef. Tarea 9 (login/logout) integrada en 2ec4a8c.
+Tarea 10 (registro/confirmacion): codigo y pruebas simuladas implementados,
+pendientes de revision; plantilla remota y prueba real aun sin aplicar/autorizar.
 Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
@@ -213,7 +214,7 @@ Las mutaciones remotas de 7, 10 y 11 requieren autorizacion expresa; las lectura
 | 7. Aplicacion migracion remota (aplazada) | 6 revisada y nueva tarea de produccion autorizada | Migracion aprobada y registro; destino remoto confirmado | Prisma Migrate con SQL aprobado, sin resets; verificar estructura, acceso runtime, rechazo Data API y estado. Sin usuarios ni perfiles de prueba. |
 | 8. Sincronizacion y roles | 4, 5, L1 y L2 de docs/19 revisadas | modules/auth y users API; guards/decorators/pipes, modulo endpoint admin de prueba; packages/types; manifests/lockfile si necesario; pruebas | Upsert concurrente, USER por defecto, conservacion de ADMIN, 401/403/404/503 y matriz de roles; tests unitarios/e2e simulados y checks afectados. |
 | 9. Login/logout | 3, 8 | apps/web/app/(auth)/login/** y layout Auth; features/auth/**; helper privado API; packages/validation; manifests/lockfile | Zod en package compartido y dependencias workspace justificadas; formularios espanoles, validacion servidor, errores, sincronizacion y logout local; checks web/packages y pruebas simuladas. Sin registros ni envios. |
-| 10. Registro/confirmacion | 9; plantilla y destinatario autorizados | app/(auth)/registro/** y auth/confirmar/route.ts; features/auth/**, schemas/tests; plantilla remota solo autorizada | Sin sesion prematura, enlace correcto/invalido/caducado/reutilizado, sin redireccion abierta ni logs sensibles; simulaciones primero, unico registro/envio real autorizado despues. |
+| 10. Registro/confirmacion | 9; plantilla y destinatario autorizados antes de la operacion remota | app/(auth)/registro/** y auth/confirmar/route.ts; features/auth/**, schemas/tests; next.config.js solo para impedir logs de credenciales; plantilla remota solo autorizada | Sin sesion prematura, enlace correcto/invalido/caducado/reutilizado, sin redireccion abierta ni logs sensibles; simulaciones primero, unico registro/envio real autorizado despues. |
 | 11. Integracion/cierre | 2 a 10 revisadas | Pruebas Auth y documentacion de estado; operacion ADMIN solo autorizada | Registro-confirmacion-login-renovacion-perfil-API-logout, aislamiento entre usuarios, USER denegado y ADMIN admitido; mocks sin regresion; evidencias con limites y cierre del propietario. |
 
 No instalar dependencias en la tarea 1. No hacen falta bcrypt, Passport ni un
@@ -1112,3 +1113,90 @@ Siguiente entrega propuesta: tarea 10, registro y confirmacion, previa revision
 y autorizacion. La plantilla y primer envio/usuario real requieren su alcance
 expreso; no se ejecutan por continuacion implicita. El propietario crea/sube el
 commit. Phase 5 sigue abierta; integracion real y cierre siguen pendientes.
+
+
+## Entrega de tarea 10: registro y confirmacion (implementacion local)
+
+Continuacion autorizada tras commit 2ec4a8c de tarea 9. El propietario reconfirma
+Confirm email activado y Site URL http://localhost:3000. Es evidencia del
+propietario, sin inspeccion ni cambios remotos por el agente. Se entrega codigo
+revisable y simulaciones; la tarea 10 sigue abierta por plantilla y prueba real.
+
+### Archivos y decisiones
+
+- app/(auth)/registro/page.tsx: pagina dinamica, metadata espanola y noindex
+  heredado; formulario, aviso de revisar correo y errores de enlace. Enlace
+  desde LoginForm; sin tocar nav, mocks, estilos o layout publico.
+- features/auth/components/registration-form.tsx: useActionState, email/password
+  y repeticion, labels y errores accesibles, pending y sin devolver credenciales.
+  Tras respuesta aceptada se oculta el formulario; no reenvio automatico.
+- packages/validation/src/index.ts: email reutilizado de login, password minimo
+  8/maximo 4096 sin trim y repeticion igual/maximo 4096. Minimo 8 es una regla
+  del formulario; Supabase sigue aplicando su politica y puede ser mas estricto.
+  TokenHash URL-safe entre 20 y 1024 caracteres y type literal email; duplicados
+  de estos parametros se rechazan antes de crear el cliente.
+- features/auth/registration.ts y actions.ts: signUp solo recibe email/password.
+  No metadata, roles, identificadores, callbacks libres ni llamadas a Nest.
+  Cuenta nueva, respuesta ofuscada y codigos de cuenta existente reciben el mismo
+  mensaje condicional, sin confirmar existencia ni entrega del correo. Errores
+  genericos y 429 sin retry automatico. No sincroniza perfiles antes de confirmar.
+- features/auth/registration-client.ts: cliente SDK servidor nuevo por intento,
+  sin persistencia, auto-refresh o deteccion de URL. Excepcion deliberada a la
+  factoria SSR para esta operacion sin sesion: no lee ni escribe cookies y
+  conserva una sesion previa del navegador. Si signUp devuelve sesion inesperada
+  se muestra indisponibilidad y no se persiste. No anade dependencias ni obliga
+  a desactivar la confirmacion; no puede deshacer un cambio remoto de configuracion.
+- app/(auth)/auth/confirmar/route.ts: GET dinamico, verifyOtp con tipo email fijo
+  y factoria SSR escribible. Solo redirige con 303 a /login o errores fijos de
+  /registro; Location relativo independiente de Host/next/redirect_to. Sin query
+  sensible en destino ni cuerpo. Respuesta private/no-store, Referrer-Policy
+  no-referrer y X-Robots-Tag noindex/nofollow. Cookies del SDK escritas con el
+  adaptador existente; perfil se prepara con Continuar de tarea 9, no desde GET.
+- next.config.js: ampliacion minima de alcance para cumplir el contrato de no
+  registrar credenciales: excluye /auth/confirmar del logger entrante de Next y
+  desactiva logs de argumentos de Server Functions. Verificado contra el logger
+  instalado. No configura futuros proxies, hosting o analitica: antes de desplegar
+  tambien deben excluir/redactar esta ruta y sus queries.
+- features/auth/email-templates/confirm-signup.html: artefacto local revisable
+  para Confirm sign up, asunto propuesto Confirma tu cuenta de Refugio. Link
+  {{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&amp;type=email.
+  Se aplica manualmente en Supabase solo tras autorizacion/revision; no se cambia
+  Site URL, Redirect URLs, SMTP ni plantillas de otros flujos.
+
+Referencias revisadas: [signUp](https://supabase.com/docs/reference/javascript/auth-signup),
+[plantillas](https://supabase.com/docs/guides/auth/auth-email-templates) y
+[configuracion](https://supabase.com/docs/guides/auth/general-configuration).
+Se sigue next-best-practices (RSC/Route Handlers y redirects); no PKCE callback
+alternativo, recuperacion de password, OAuth, reenvio o panel nuevo.
+
+### Validacion y limites
+
+Web y validation lint/check-types correctos. 60 tests web pasan (13 nuevos,
+47 previos), con SDK y API simulados y adaptador cookies SSR real: validacion,
+normalizacion, aislamiento, cuenta existente, sesion prematura, 429/errores,
+confirmacion correcta/incorrecta/caducada/reutilizada, parametros duplicados,
+redirect seguro, cache, cookies y exclusion de logs. No acreditan una entrega
+real de correo ni el consumo real del token; errores OTP simulados.
+
+Build web correcto, con /registro y /auth/confirmar dinamicos y publico sin
+cambios de prerender. Ejecucion fuera del sandbox por el puerto interno de
+Turbopack, igual que tarea 9. Smoke HTTP del build en puerto temporal 3199:
+/registro 200, formulario y noindex, cache privada; enlaces ausentes, cortos o
+tipo recovery reciben 303 a error fijo sin Set-Cookie; error espanol visible.
+CSRF de registerAction abortado con Origin ajeno (500 nativo de Next, como
+tarea 9); login y /, /wiki, /juegos 200. Proceso temporal cerrado. Sin prueba
+visual nueva en Safari ni mobile; no se usaron credenciales reales. No se
+repitieron pruebas API/DB porque no hay cambios en esos workspaces.
+
+Pendientes para completar esta tarea: revisar/aplicar la plantilla exacta y
+realizar un unico registro/envio a un miembro del equipo expresamente autorizado,
+tras comprobar limite vigente del SMTP incluido. El propietario introduce las
+credenciales directamente en la web; no se solicitan passwords/tokens en chat ni
+se registran direcciones personales en docs. Comprobar recepcion, confirmacion,
+Continuar y perfil USER; contemplar scanners/prefetch de correo que consuman el
+enlace antes del click. No reintentar envios ni cambiar SMTP implicitamente.
+
+Sin usuarios, correos, perfiles reales, mutaciones remotas, DB/migraciones,
+.env, WARP/hosts o llavero nuevos. Sin nuevas dependencias. No se cierran tarea
+10 ni Phase 5 por simulaciones; integracion/cierre (tarea 11) requiere autorizacion
+separada despues de revisar estas evidencias. El propietario crea/sube los commits.

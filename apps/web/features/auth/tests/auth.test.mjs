@@ -34,6 +34,9 @@ async function load(options = {}) {
   const calls = {
     clients: 0,
     signIn: [],
+    signUp: [],
+    verifyOtp: [],
+    registrationClients: [],
     claims: [],
     signOut: [],
     fetch: [],
@@ -60,6 +63,9 @@ async function load(options = {}) {
   };
   const context = vm.createContext({
     URL,
+    URLSearchParams,
+    Request,
+    Response,
     FormData,
     AbortSignal,
     fetch: fetcher,
@@ -83,6 +89,18 @@ async function load(options = {}) {
         throw Object.assign(new Error("NEXT_REDIRECT"), { destination });
       },
     }),
+    "@supabase/supabase-js": synthetic({
+      createClient(url, key, config) {
+        calls.registrationClients.push({ url, key, config });
+        return { auth: {
+          async signUp(input) {
+            calls.signUp.push(input);
+            if (options.signUpThrow) throw new Error("password-secreto");
+            return { data: { user: options.signUpUser ?? { id: subject }, session: options.signUpSession ?? null }, error: options.signUpError ?? null };
+          },
+        } };
+      },
+    }),
     "@supabase/ssr": synthetic({
       createServerClient(_url, _key, { cookies }) {
         calls.clients++;
@@ -90,6 +108,15 @@ async function load(options = {}) {
           throw new Error("configuracion-sensible");
         return {
           auth: {
+            async verifyOtp(input) {
+              calls.verifyOtp.push(input);
+              if (options.otpThrow) throw new Error("token-hash-secreto");
+              if (options.otpError) return { data: { session: null }, error: options.otpError };
+              if (options.otpMissingSession) return { data: { session: null }, error: null };
+              cookies.setAll([{ name: "sb-test-auth-token", value: "confirmada", options: { path: "/", sameSite: "lax" } }]);
+              session = { access_token: token };
+              return { data: { session }, error: null };
+            },
             async signInWithPassword(input) {
               calls.signIn.push(input);
               if (options.signInThrow) throw new Error("password-secreto");
@@ -160,6 +187,9 @@ async function load(options = {}) {
     ["core", "../core.ts"],
     ["server", "../server.ts"],
     ["actions", "../actions.ts"],
+    ["registration", "../registration.ts"],
+    ["registration-client", "../registration-client.ts"],
+    ["confirm-route", "../../../app/(auth)/auth/confirmar/route.ts"],
   ]) {
     const source = await readFile(new URL(sourcePath, import.meta.url), "utf8");
     modules.set(
@@ -181,24 +211,31 @@ async function load(options = {}) {
     "../../lib/supabase/server": "client",
     "../../lib/env": "env",
     "../env": "env",
+    "./registration": "registration",
+    "./registration-client": "registration-client",
+    "@/features/auth/registration": "registration",
+    "@/lib/supabase/server": "client",
     "./core": "core",
     "./server": "server",
   };
-  await modules.get("actions").link(
-    (specifier) =>
+  const linker = (specifier) =>
       externals[specifier] ??
       modules.get(imports[specifier]) ??
       externals[imports[specifier]] ??
       (() => {
         throw new Error(`Import inesperado: ${specifier}`);
-      })(),
-  );
+      })();
+  await modules.get("actions").link(linker);
+  await modules.get("confirm-route").link(linker);
   await modules.get("actions").evaluate();
+  await modules.get("confirm-route").evaluate();
   return {
     calls,
     jar,
     actions: modules.get("actions").namespace,
     core: modules.get("core").namespace,
+    registration: modules.get("registration").namespace,
+    confirmRoute: modules.get("confirm-route").namespace,
     schema: modules.get("validation").namespace,
     api: modules.get("api").namespace,
     dependencies: modules.get("server").namespace.authDependencies,
@@ -464,4 +501,144 @@ test("datos extra del formulario no cambian identidad ni destino y errores de ti
   const missing = await x.actions.loginAction({}, new FormData());
   assert.equal(missing.fieldErrors.email, "Introduce tu correo electrónico.");
   assert.equal(missing.fieldErrors.password, "Introduce tu contraseña.");
+});
+
+function registrationForm(email = " habitante@example.com ", password = " clave privada ", confirmation = password) {
+  const data = form(email, password);
+  data.set("passwordConfirmation", confirmation);
+  return data;
+}
+const tokenHash = "a".repeat(64);
+const confirmationUrl = `https://host-no-fiable.example/auth/confirmar?token_hash=${tokenHash}&type=email`;
+
+test("registro valida email, minimo y confirmacion en servidor sin usar SDK", async () => {
+  const x = await load();
+  for (const data of [registrationForm("incorrecto"), registrationForm(undefined, "corta"), registrationForm(undefined, undefined, "otra"), new FormData()]) {
+    const state = await x.actions.registerAction({}, data);
+    assert.ok(state.fieldErrors);
+    assert.equal(state.submitted, undefined);
+    assert.ok(!JSON.stringify(state).includes("clave privada"));
+  }
+  const file = registrationForm();
+  file.set("password", new Blob(["secreto"]), "password.txt");
+  assert.ok((await x.actions.registerAction({}, file)).fieldErrors.password);
+  assert.equal(x.calls.signUp.length, 0);
+  assert.equal(x.calls.registrationClients.length, 0);
+});
+
+test("registro solo envia email normalizado/password intacto, sin metadata ni API/cookies", async () => {
+  const x = await load({ session: true });
+  const data = registrationForm();
+  data.set("role", "ADMIN");
+  data.set("next", "https://hostil.example");
+  data.set("supabaseUserId", subject);
+  const state = await x.actions.registerAction({ submitted: true }, data);
+  assert.equal(state.submitted, true);
+  assert.match(state.message, /recibirás un correo/);
+  assert.deepEqual(plain(x.calls.signUp), [{ email: "habitante@example.com", password: " clave privada " }]);
+  assert.deepEqual(plain(x.calls.registrationClients[0].config.auth), { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false });
+  assert.equal(x.calls.clients, 0);
+  assert.equal(x.calls.cookies.length, 0);
+  assert.equal(x.jar.get("sb-test-auth-token"), "sesion");
+  assert.equal(x.calls.fetch.length, 0);
+});
+
+test("cuenta existente y nueva producen el mismo estado sin enumeracion", async () => {
+  const fresh = await load();
+  const expected = await fresh.actions.registerAction({}, registrationForm());
+  for (const code of ["user_already_exists", "email_exists"]) {
+    const x = await load({ signUpError: { status: 422, code, message: "identidad-secreta" } });
+    assert.deepEqual(plain(await x.actions.registerAction({}, registrationForm())), plain(expected));
+  }
+  const obfuscated = await load({ signUpUser: { identities: [] } });
+  assert.deepEqual(plain(await obfuscated.actions.registerAction({}, registrationForm())), plain(expected));
+});
+
+test("registro rechaza sesion prematura sin persistirla ni anunciar confirmacion", async () => {
+  const x = await load({ signUpSession: { access_token: "secreto" } });
+  const state = await x.actions.registerAction({}, registrationForm());
+  assert.equal(state.submitted, undefined);
+  assert.match(state.message, /no está disponible/);
+  assert.equal(x.calls.cookies.length, 0);
+  assert.equal(x.calls.fetch.length, 0);
+});
+
+test("limite de correo, error de proveedor y excepcion no exponen secretos ni reintentan", async () => {
+  for (const options of [{ signUpError: { status: 429, message: "secreto" } }, { signUpError: { status: 500, message: "secreto" } }, { signUpThrow: true }]) {
+    const x = await load(options);
+    const state = await x.actions.registerAction({}, registrationForm());
+    assert.equal(state.submitted, undefined);
+    assert.ok(!JSON.stringify(state).includes("secreto"));
+    assert.equal(x.calls.signUp.length, 1);
+    assert.equal(x.calls.cookies.length, 0);
+  }
+});
+
+test("confirmacion valida escribe cookies SSR y redirige sin token ni Host/next", async () => {
+  const x = await load();
+  const response = await x.confirmRoute.GET(new Request(`${confirmationUrl}&next=https://hostil.example&redirect_to=//hostil.example`));
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("location"), "/login");
+  assert.match(response.headers.get("cache-control"), /private.*no-store/);
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
+  assert.equal(await response.text(), "");
+  assert.deepEqual(plain(x.calls.verifyOtp), [{ token_hash: tokenHash, type: "email" }]);
+  assert.equal(x.jar.get("sb-test-auth-token"), "confirmada");
+  assert.equal(x.calls.fetch.length, 0);
+});
+
+test("parametros ausentes, repetidos, enormes o tipo recovery no usan verifyOtp", async () => {
+  const x = await load();
+  for (const query of ["", "type=email", `token_hash=${tokenHash}`, `token_hash=${tokenHash}&type=recovery`, `token_hash=${tokenHash}&type=email&type=email`, `token_hash=${tokenHash}&token_hash=${tokenHash}&type=email`, "token_hash=corto&type=email", `token_hash=${"a".repeat(1025)}&type=email`, `token_hash=${encodeURIComponent("<script>".repeat(8))}&type=email`]) {
+    const response = await x.confirmRoute.GET(new Request(`http://localhost/auth/confirmar?${query}`));
+    assert.equal(response.headers.get("location"), "/registro?confirmacion=invalida");
+    assert.equal(response.status, 303);
+  }
+  assert.equal(x.calls.clients, 0);
+  assert.equal(x.calls.verifyOtp.length, 0);
+  assert.equal(x.calls.cookies.length, 0);
+});
+
+for (const [name, otpError] of [
+  ["incorrecto", { status: 400, code: "otp_expired" }],
+  ["caducado", { status: 403, code: "otp_expired" }],
+  ["reutilizado", { status: 403, code: "otp_expired" }],
+]) {
+  test(`enlace ${name} no inicia sesion ni llama a Nest`, async () => {
+    const x = await load({ otpError });
+    const response = await x.confirmRoute.GET(new Request(confirmationUrl));
+    assert.equal(response.headers.get("location"), "/registro?confirmacion=invalida");
+    assert.equal(x.calls.cookies.length, 0);
+    assert.equal(x.calls.fetch.length, 0);
+    assert.ok(!(await response.text()).includes(tokenHash));
+  });
+}
+
+test("fallos de confirmacion y respuesta sin sesion se sanitizan", async () => {
+  for (const options of [{ otpError: { status: 500, message: tokenHash } }, { otpThrow: true }, { otpMissingSession: true }]) {
+    const x = await load(options);
+    const response = await x.confirmRoute.GET(new Request(confirmationUrl));
+    assert.equal(response.headers.get("location"), options.otpMissingSession ? "/registro?confirmacion=invalida" : "/registro?confirmacion=no-disponible");
+    assert.equal(x.calls.cookies.length, 0);
+    assert.equal(x.calls.fetch.length, 0);
+    assert.equal(x.calls.verifyOtp.length, 1);
+  }
+});
+
+test("confirmaciones concurrentes mantienen cookies independientes", async () => {
+  const [a, b] = await Promise.all([load(), load({ otpError: { status: 403 } })]);
+  await Promise.all([a.confirmRoute.GET(new Request(confirmationUrl)), b.confirmRoute.GET(new Request(confirmationUrl))]);
+  assert.equal(a.jar.get("sb-test-auth-token"), "confirmada");
+  assert.equal(b.jar.size, 0);
+});
+
+test("Next excluye queries de confirmacion del logger de peticiones y desactiva argumentos de acciones", async () => {
+  const { default: config } = await import("../../../next.config.js");
+  const { ignoreLoggingIncomingRequests } = require("next/dist/server/dev/log-requests.js");
+  assert.equal(config.logging.serverFunctions, false);
+  for (const path of ["/auth/confirmar", `/auth/confirmar?token_hash=${tokenHash}&type=email`, "/auth/confirmar/?type=email"])
+    assert.equal(ignoreLoggingIncomingRequests({ url: path }, config.logging), true);
+  for (const path of ["/", "/wiki", "/login", "/registro", "/auth/confirmar-otra"])
+    assert.equal(ignoreLoggingIncomingRequests({ url: path }, config.logging), false);
 });
