@@ -28,7 +28,8 @@ El propietario aprueba el cambio de entorno de desarrollo y solicita documentarl
 antes de implementar. Rige [docs/19](19-local-development-database.md): PostgreSQL
 nativo local, Supabase Auth/Storage remotos, sin coste de servicios adicionales.
 L1 instalada/validada: PostgreSQL 17.11 local y .env API/DB cambiados a loopback.
-L2 aplicada/verificada en local, con cero perfiles; siguiente tarea 8 tras revision.
+L2 aplicada/verificada en local, con cero perfiles reales. Tarea 8 implementada,
+pendiente de revision; siguiente tarea 9 (login/logout) tras autorizacion.
 Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
@@ -209,7 +210,7 @@ Las mutaciones remotas de 7, 10 y 11 requieren autorizacion expresa; las lectura
 | 5. Integracion DB/API | 1 | packages/db configuracion de build/exports y manifests; provider DB y configuracion compilacion/tests API; lockfile | Dependencia @repo/db workspace; consumo desde dist y Jest, generacion/cierre correctos; checks DB/API y prueba de solo lectura cuando se autorice. Sin modelos. |
 | 6. Modelo y SQL revisable | 5 | packages/db/prisma/schema.prisma y artefactos de migracion | Solo UserRole/UserProfile; SQL, unicidad, RLS y permisos revisados; validate/generate y checks DB. Sin aplicacion remota. |
 | 7. Aplicacion migracion remota (aplazada) | 6 revisada y nueva tarea de produccion autorizada | Migracion aprobada y registro; destino remoto confirmado | Prisma Migrate con SQL aprobado, sin resets; verificar estructura, acceso runtime, rechazo Data API y estado. Sin usuarios ni perfiles de prueba. |
-| 8. Sincronizacion y roles | 4, 5, L1 y L2 de docs/19 revisadas | modules/auth y users API; guards/decorators, modulo endpoint admin de prueba; packages/types; manifests/lockfile si necesario; pruebas | Upsert concurrente, USER por defecto, conservacion de ADMIN, 401/403/404/503 y matriz de roles; tests unitarios/e2e simulados y checks afectados. |
+| 8. Sincronizacion y roles | 4, 5, L1 y L2 de docs/19 revisadas | modules/auth y users API; guards/decorators/pipes, modulo endpoint admin de prueba; packages/types; manifests/lockfile si necesario; pruebas | Upsert concurrente, USER por defecto, conservacion de ADMIN, 401/403/404/503 y matriz de roles; tests unitarios/e2e simulados y checks afectados. |
 | 9. Login/logout | 3, 8 | apps/web/app/(auth)/login/** y layout Auth; features/auth/**; helper privado API; packages/validation; manifests/lockfile | Zod en package compartido y dependencias workspace justificadas; formularios espanoles, validacion servidor, errores, sincronizacion y logout local; checks web/packages y pruebas simuladas. Sin registros ni envios. |
 | 10. Registro/confirmacion | 9; plantilla y destinatario autorizados | app/(auth)/registro/** y auth/confirmar/route.ts; features/auth/**, schemas/tests; plantilla remota solo autorizada | Sin sesion prematura, enlace correcto/invalido/caducado/reutilizado, sin redireccion abierta ni logs sensibles; simulaciones primero, unico registro/envio real autorizado despues. |
 | 11. Integracion/cierre | 2 a 10 revisadas | Pruebas Auth y documentacion de estado; operacion ADMIN solo autorizada | Registro-confirmacion-login-renovacion-perfil-API-logout, aislamiento entre usuarios, USER denegado y ADMIN admitido; mocks sin regresion; evidencias con limites y cierre del propietario. |
@@ -942,3 +943,79 @@ Solo DDL/historial local y documentacion. Sin mutaciones remotas, usuarios/corre
 .env, red o cambios al SQL aprobado. Evidencia completa y limitaciones en docs/19.
 L2 pendiente de revision; siguiente tarea 8 (sincronizacion y roles) solo despues
 de autorizacion. La tarea 7 remota sigue aplazada; Phase 5 permanece abierta.
+
+
+## Entrega tarea 8: sincronizacion y autorizacion por roles
+
+El propietario autoriza esta tarea despues de L2, commit ffee55a. Alcance:
+modulos auth/users/admin de API, guards/decorators y pipe de cuerpo vacio,
+AppModule, pruebas; tipos compartidos @repo/types, manifest API/lockfile y
+registros/contratos documentales. No frontend, schema o migraciones.
+
+### Implementacion y decisiones
+
+- UsersModule usa DatabaseService existente; no otro cliente ni DB en controller.
+  SupabaseAuthGuard valida el JWT antes de buscar perfil por su sub verificado.
+  Limpia estado previo de peticion; solo adjunta identidad/perfil tras exito.
+  Cada llamada privada carga el perfil actual, sin cache de rol entre peticiones.
+- POST /auth/perfil: HTTP 200 para creacion o perfil existente; cuerpo ausente o
+  {}. EmptyBodyPipe rechaza campos, arrays y payload no vacio sin parser (400).
+  Validacion exclusivamente API, sin reglas de formulario duplicadas ni Zod nuevo.
+- UsersService usa upsert por supabaseUserId, create solo con ese UUID y update
+  vacio; defaults USER/id/createdAt y manejo updatedAt de Prisma/DB existentes.
+  No acepta metadata o campos del cliente. P2002 por carrera recupera la fila
+  ganadora sin actualizar; si falta o falla la lectura, 503. No retry ilimitado.
+- GET /auth/me usa @CurrentUser: 404 si no hay perfil, sin crearlo. RolesGuard
+  exige coincidencia explicita con @Roles, deniega declaracion ausente/vacia y
+  responde 403 para perfil ausente o rol distinto; sin identidad, 401.
+- GET /admin/comprobacion exige ADMIN y solo devuelve mensaje espanol. Sin panel,
+  promociones, seed, endpoint de gestion o jerarquia implicita de roles.
+- UserRole, UserProfileResponse y AdminCheckResponse compartidos en packages/types;
+  dependencias API @repo/types workspace:* y lockfile. Solo imports type en API:
+  no exigir loader TS para el package ESM en runtime CommonJS de Nest.
+- Seleccion y serializacion explicitas de ocho campos; fechas ISO, opcionales
+  nullables. Sin email, sessionId, tokens o metadata. Cabecera private, no-store
+  en respuestas de perfil, 404 de me y ADMIN autorizado. Errores DB sanitizados.
+- AuthModule reexporta UsersModule para resolver las dependencias del guard en
+  modulos consumidores, sin providers globales ni dependencias circulares.
+  Health sigue publico y no consulta DB. Verificador ES256/JWKS sin cambios.
+
+El manejo P2002 responde al comportamiento documentado de upserts concurrentes:
+[Prisma Client v7](https://www.prisma.io/docs/orm/v7/reference/prisma-client-reference#unique-key-constraint-errors-on-upserts).
+Roles/decorators siguen los mecanismos Nest existentes:
+[autorizacion](https://docs.nestjs.com/security/authorization) y
+[decoradores](https://docs.nestjs.com/custom-decorators).
+Se aplican reglas locales nestjs-best-practices de guards y servicios externos
+simulados; prevalecen el contrato Supabase y la autorizacion de negocio en Nest.
+
+### Verificacion
+
+| Comprobacion | Resultado |
+| --- | --- |
+| API lint, check-types y build | Correcto |
+| @repo/types lint y check-types | Correcto |
+| Build @repo/db requerido por consumidor | Correcto; schema/SQL intactos |
+| Web check-types | Correcto; ningun archivo web cambiado |
+| Unitarias API | 105 correctas, 8 suites |
+| E2e API | 32 correctas, 3 suites; permiso para puertos locales |
+| API compilada sin DATABASE_URL/SUPABASE_URL | Health 200; GET me/admin y POST perfil sin token 401; cierre correcto |
+| git diff --check | Correcto |
+
+Las pruebas nuevas cubren upserts concurrentes con P2002, defaults pedidos,
+conservacion de ADMIN y campos/fechas, lectura sin creacion, 400/401/403/404/503,
+matriz de roles, perdida de ADMIN en la siguiente peticion, aislamiento de dos
+identidades, metadata maliciosa y sanitizacion. E2e usa firma real ES256 con
+claves sinteticas, transporte JWKS y Prisma/DB simulados; no se anula el guard.
+La concurrencia HTTP usa un servidor local unico para evitar la apertura/cierre
+por peticion de Supertest. Fixtures no se registran como endpoints de produccion.
+
+Limitaciones: Node 24.15.0; sin cuentas/tokens Supabase reales ni inserciones en
+PostgreSQL local/remoto. No se acredita concurrencia real de PostgreSQL ni el
+recorrido web completo: la unicidad SQL se verifico en L2 y la integracion real
+queda para cierre autorizado. No consultas/mutaciones remotas, usuarios, correos,
+.env, TLS, WARP, hosts o contenido. Unica dependencia anadida: workspace types;
+sin bibliotecas externas nuevas. Sesiones, email y primer ADMIN real pendientes.
+
+Siguiente tarea propuesta: 9, login/logout web con sincronizacion, tras revision
+y autorizacion. El propietario crea/sube el commit; no se avanza automaticamente.
+Phase 5 permanece abierta; DB remota/Data API siguen aplazadas a preproduccion.

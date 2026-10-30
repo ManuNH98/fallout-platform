@@ -2,19 +2,20 @@
 
 ## Estado y responsabilidades
 
-Contrato de Phase 5, pendiente de implementacion. Supabase Auth identifica
+Phase 5 en curso: identidad JWT, perfil local y guards de roles implementados
+en tareas 4 y 8; formularios y flujos web reales todavia pendientes. Supabase Auth identifica
 usuarios y mantiene passwords, sesiones, access tokens y refresh tokens.
 NestJS aplica autorizacion de negocio con perfiles y roles en PostgreSQL.
 Desde la decision del 30 de octubre de 2026, la DB de desarrollo sera local;
 Supabase Auth sigue remoto y su UUID enlaza UserProfile sin FK a auth.users.
-Preparacion L1 y migracion local L2 validadas; sincronizacion y roles de negocio pendientes. [Contrato de entorno](19-local-development-database.md).
+Preparacion L1/L2 validadas; sincronizacion y roles de negocio implementados en tarea 8, pendientes de revision. [Contrato de entorno](19-local-development-database.md).
 Los roles/promociones y datos de desarrollo no se trasladan automaticamente a produccion.
 Next.js presenta flujos Auth y llama a Nest mediante Bearer access token.
 No se emiten tokens propios ni se gestiona password hashing en la API.
 
-El propietario indica ECC (P-256) en Dashboard, equivalente a ES256. Falta
-confirmar que es Current e inspeccionar JWKS antes del verificador; no se
-acredita una prueba funcional ni inspeccion remota por el agente.
+El propietario confirmo ECC (P-256) Current y se inspecciono el JWKS publico
+ES256 en tarea 4. Las pruebas de tarea 8 usan tokens sinteticos ES256 y DB
+simulada; no acreditan cuentas, sesiones o correos reales.
 
 ## Alcance de Phase 5
 
@@ -62,8 +63,9 @@ role del formulario ni user_metadata. GET /auth/me no crea filas y responde
 404 cuando falta perfil. Error de DB no equivale a perfil ausente.
 
 SupabaseAuthGuard valida identidad y carga el perfil existente cuando procede;
-el POST de sincronizacion permite identidad sin perfil. RolesGuard consulta
-el rol de aplicacion. @CurrentUser() expone perfil existente y @Roles() declara
+el POST de sincronizacion permite identidad sin perfil. RolesGuard comprueba
+el perfil consultado en PostgreSQL por el guard de identidad en esa peticion,
+sin cache de roles entre llamadas; sin declaracion @Roles deniega por defecto. @CurrentUser() expone perfil existente y @Roles() declara
 los roles permitidos. No confiar en rol Supabase authenticated como rol de
 negocio ni en controles visuales. Toda llamada privada directa se valida.
 
@@ -106,3 +108,24 @@ permisos de Storage para probar Auth. Infraestructura y TLS: docs/14 y docs/17.
 
 Las fuentes oficiales y fecha de contraste, tareas, dependencias y pruebas se
 mantienen en [el contrato de Phase 5](18-phase-5-auth-foundation.md#fuentes-oficiales).
+
+
+## Contrato de respuesta implementado en tarea 8
+
+POST /auth/perfil y GET /auth/me devuelven UserProfileResponse de @repo/types:
+id, supabaseUserId, username, displayName, avatarUrl, role, createdAt y updatedAt.
+Los tres campos descriptivos pueden ser null; fechas ISO 8601 en JSON. No se
+incluyen sesion, email, metadata, tokens o campos Prisma futuros. Respuestas
+normales y 404 de GET /auth/me llevan Cache-Control: private, no-store.
+
+La sincronizacion acepta ausencia de cuerpo o {} y rechaza campos/arrays con
+400. No acepta supabaseUserId o role del cliente. Upsert con update vacio conserva
+campos/roles/fecha; ante P2002 recupera la fila ganadora por identidad. Si no puede
+recuperarla, responde 503 sanitizado. No reintentar sin limite ni promover ADMIN.
+El guard lee perfiles sin crear filas tambien antes del POST; solo su servicio
+de sincronizacion puede crearlos. Las respuestas GET y ADMIN nunca crean perfiles.
+
+GET /admin/comprobacion devuelve {"message":"Acceso administrativo autorizado."}
+con 200 solo para ADMIN. USER/EDITOR/MODERATOR o perfil ausente: 403. Identidad
+invalida: 401; dependencia no disponible: 503. La matriz se verifica en pruebas
+simuladas; falta integracion con usuarios reales en la tarea de cierre.

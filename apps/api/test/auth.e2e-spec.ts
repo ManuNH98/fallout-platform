@@ -22,6 +22,7 @@ import {
 } from '../src/common/guards/supabase-auth.guard';
 import { AuthModule } from '../src/modules/auth/auth.module';
 import { JWKS_FETCH } from '../src/modules/auth/jwks-fetch.provider';
+import { UsersService } from '../src/modules/users/users.service';
 import { HealthModule } from '../src/modules/health/health.module';
 
 // Endpoint exclusivo del fixture: no se registra en la API de produccion.
@@ -91,6 +92,8 @@ describe('Identidad Supabase (e2e aislada)', () => {
       ],
       controllers: [ProbeController],
     })
+      .overrideProvider(UsersService)
+      .useValue({ findBySupabaseUserId: jest.fn().mockResolvedValue(null) })
       .overrideProvider(JWKS_FETCH)
       .useValue(transport)
       .compile();

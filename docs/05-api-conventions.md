@@ -144,14 +144,15 @@ Protected requests from Next.js should include:
 Authorization: Bearer <supabase_access_token>
 ```
 
-Contrato de Phase 5, pendiente de implementacion:
+Contrato API de Phase 5 implementado en tareas 4 y 8 (flujos web pendientes):
 
-1. SupabaseAuthGuard verifica identidad; para la firma ECC P-256 indicada por
-   el propietario se propone ES256/JWKS, condicionado a confirmar Current.
+1. SupabaseAuthGuard verifica identidad ES256/JWKS; Current confirmado por el
+   propietario y JWKS inspeccionado en tarea 4.
 2. Carga el perfil existente cuando proceda, sin crearlo durante GET.
 3. Adjunta identidad y perfil disponible al contexto de peticion; @CurrentUser
    expone el perfil local, nunca un perfil ficticio derivado del token.
-4. RolesGuard comprueba el rol actual de PostgreSQL cuando se exige.
+4. RolesGuard comprueba el rol leido de PostgreSQL en esta peticion cuando se
+   exige; sin @Roles explicito deniega y no hay jerarquia implicita.
 
 | Endpoint | Contrato |
 | --- | --- |
@@ -163,6 +164,14 @@ Rol inicial USER. La sincronizacion no acepta supabaseUserId/role del cliente
 ni cambia privilegios existentes. Sin perfil, los endpoints por rol deniegan
 acceso. Error de proveedor/JWKS/DB: 503 generico, sin permitir acceso ni filtrar
 secretos. Health continua publico y no acredita Auth o PostgreSQL.
+
+Tipos JSON compartidos en @repo/types: UserRole, UserProfileResponse y
+AdminCheckResponse. Perfil con ocho campos documentados en docs/07, fechas ISO
+y campos descriptivos nullables; seleccion explicita sin exponer Prisma ni sesion.
+POST acepta sin cuerpo o {}; rechaza campos con 400. POST/GET de perfil y ADMIN
+200 llevan Cache-Control: private, no-store; GET sin perfil conserva esa cabecera.
+Un upsert con update vacio y recuperacion por P2002 resuelve la concurrencia sin
+sobrescribir perfiles. El guard consulta DB en cada llamada privada.
 
 Los claims role=authenticated de Supabase no son los roles de la aplicacion.
 JWT secret, refresh tokens y claves privilegiadas no forman parte de este

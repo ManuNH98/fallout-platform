@@ -227,7 +227,8 @@ Factorias Supabase, Proxy SSR, JWT API, provider DB y schema/SQL UserProfile
 preparados (tareas 2 a 6 de docs/18). Migracion remota sin aplicar.
 El 30 de octubre de 2026 se aprueba PostgreSQL nativo local para desarrollo;
 documentacion integrada en 326ee0e, L1 integrada en 514fdb6 y L2 migracion
-local aplicada/verificada, pendiente de revision; siguiente tarea 8 y flujos Auth. Auth/Storage siguen remotos.
+local aplicada/verificada e integrada en ffee55a. Tarea 8 de sincronizacion y
+roles implementada, pendiente de revision; siguiente tarea 9 (login/logout). Auth/Storage siguen remotos.
 [Decision y criterios por entorno](19-local-development-database.md).
 Cada implementacion requiere autorizacion y revision independientes.
 

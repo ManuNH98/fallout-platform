@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { SupabaseJwtService } from '../../modules/auth/supabase-jwt.service';
 import { SupabaseAuthGuard } from './supabase-auth.guard';
+import { UsersService } from '../../modules/users/users.service';
+import { wireProfile } from '../../../test/helpers/auth-profile';
 
 const identity = {
   supabaseUserId: 'usuario-verificado',
@@ -16,15 +18,18 @@ function setup(authorization?: string, rawHeaders?: string[]) {
     rawHeaders:
       rawHeaders ?? (authorization ? ['Authorization', authorization] : []),
     authIdentity: identity,
+    userProfile: wireProfile(),
   };
   const verify = jest.fn().mockResolvedValue(identity);
-  const guard = new SupabaseAuthGuard({
-    verify,
-  } as unknown as SupabaseJwtService);
+  const findBySupabaseUserId = jest.fn().mockResolvedValue(null);
+  const guard = new SupabaseAuthGuard(
+    { verify } as unknown as SupabaseJwtService,
+    { findBySupabaseUserId } as unknown as UsersService,
+  );
   const context = {
     switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
-  return { request, verify, guard, context };
+  return { request, verify, findBySupabaseUserId, guard, context };
 }
 
 it.each([
@@ -42,6 +47,7 @@ it.each([
   );
   expect(verify).not.toHaveBeenCalled();
   expect(request.authIdentity).toBeUndefined();
+  expect(request.userProfile).toBeUndefined();
 });
 
 it('rechaza Authorization duplicado aunque Node conserve un unico valor', async () => {
@@ -71,5 +77,25 @@ it.each([new UnauthorizedException(), new ServiceUnavailableException()])(
     verify.mockRejectedValue(error);
     await expect(guard.canActivate(context)).rejects.toBe(error);
     expect(request.authIdentity).toBeUndefined();
+    expect(request.userProfile).toBeUndefined();
   },
 );
+
+it('adjunta solo el perfil consultado tras verificar identidad', async () => {
+  const { guard, context, request, findBySupabaseUserId } =
+    setup('Bearer a.b.c');
+  findBySupabaseUserId.mockResolvedValue(wireProfile('ADMIN'));
+  await guard.canActivate(context);
+  expect(findBySupabaseUserId).toHaveBeenCalledWith(identity.supabaseUserId);
+  expect(request.userProfile?.role).toBe('ADMIN');
+});
+it('un fallo DB limpia identidad y perfil previos y propaga 503', async () => {
+  const { guard, context, request, findBySupabaseUserId } =
+    setup('Bearer a.b.c');
+  findBySupabaseUserId.mockRejectedValue(new ServiceUnavailableException());
+  await expect(guard.canActivate(context)).rejects.toThrow(
+    ServiceUnavailableException,
+  );
+  expect(request.authIdentity).toBeUndefined();
+  expect(request.userProfile).toBeUndefined();
+});
