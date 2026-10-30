@@ -1,5 +1,14 @@
 # 04. Database model
 
+## Entorno vigente
+
+PostgreSQL local nativo para desarrollo, Supabase PostgreSQL como destino de
+produccion; decision aprobada, instalacion y aplicacion aun pendientes. Un unico
+schema e historial Prisma; no duplicar migraciones por entorno. Las diferencias
+de roles SQL, RLS y validacion remota se detallan en
+[docs/19](19-local-development-database.md). Auth sigue remoto; no crear auth.users
+ni relaciones a schemas Supabase en la DB local.
+
 ## Principles
 
 The database should support:
@@ -70,7 +79,7 @@ enum CanonStatus {
 
 The application profile linked to Supabase Auth user id.
 
-Contrato minimo de Phase 5 (planificado, aun sin schema ni migracion):
+Contrato minimo de Phase 5 (schema y SQL preparados en tarea 6; sin aplicacion local ni remota):
 
 | Campo | Contrato |
 | --- | --- |

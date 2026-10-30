@@ -44,7 +44,10 @@ Reason:
 ## Database
 
 - PostgreSQL
-- Hosted on Supabase
+- Native macOS server for development (decision approved; setup pending)
+- Hosted on Supabase for the planned production environment
+
+Environment contract: [local development database](19-local-development-database.md).
 
 Reason:
 

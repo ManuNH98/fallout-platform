@@ -22,6 +22,31 @@ usuarios, panel admin, contenido, CRUD y seeds. La ruta reservada
 `/restablecer-contrasena` no obliga a implementarla en esta fase. Se mantienen
 el diseno y los mocks publicos; sustituirlos sigue siendo Phase 7.
 
+## Revision del contrato: PostgreSQL local (30 de octubre de 2026)
+
+El propietario aprueba el cambio de entorno de desarrollo y solicita documentarlo
+antes de implementar. Rige [docs/19](19-local-development-database.md): PostgreSQL
+nativo local, Supabase Auth/Storage remotos, sin coste de servicios adicionales.
+No se ha instalado ni migrado; .env reales conservan sus destinos anteriores.
+El registro cronologico inferior conserva propuestas previas, incluidas las
+alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
+
+La tarea 7 remota se aplaza y conserva sus evidencias de bloqueo; no se marca
+completada ni se continua automaticamente con su autorizacion anterior. Se
+insertan L1 (preparacion local sin migrar) y L2 (migracion local autorizada del
+SQL aprobado) antes de tarea 8. No se exige recuperar Direct desde este Mac
+para continuar. RLS/ACL siguen vigentes; no suprimir REVOKE o crear otro schema
+para eludir roles SQL faltantes. El alcance de esta entrega se amplia solo a
+AGENTS.md, README.md y docs afectados para reconciliar el contrato documental.
+
+La aceptacion de tarea 8 dependera de tareas 4, 5 y L1/L2 revisadas. Tareas 9,
+10 y 11 conservan su orden; integracion/cierre de Phase 5 se comprueban sobre
+API/DB locales con identidad Supabase remota. Phase 5 sigue abierta hasta pruebas
+y cierre expreso del propietario. La validacion DB remota y Data API aplazada
+sera requisito antes de produccion; nunca acreditarla mediante pruebas locales.
+Crear usuarios, enviar correos o cambiar Supabase sigue necesitando autorizacion
+expresa. No hay CI contratado/configurado ni instalacion de Supabase local.
+
 ## Evidencias y decisiones pendientes
 
 - El propietario confirma que `ECC (P-256)` aparece como Current el 30 de
@@ -35,8 +60,9 @@ el diseno y los mocks publicos; sustituirlos sigue siendo Phase 7.
 - SMTP incluido: la documentacion consultada limita destinatarios a miembros
   del equipo de la organizacion y permite actualmente 2 mensajes/hora, sin SLA
   y sujeto a cambios. Revisar limites antes del primer envio autorizado.
-- Prisma CLI Direct requiere WARP y entrada temporal de hosts; runtime usa
-  session pooler. Conservar TLS y las condiciones de docs/14 y docs/17.
+- El destino previo remoto usaba Direct con WARP/hosts y runtime por session
+  pooler. Desarrollo pasa a PostgreSQL local segun docs/19, aun sin preparar.
+  Conservar TLS para remoto y evidencias historicas de docs/14 y docs/17.
 - UserRole/UserProfile y SQL preparados en tarea 6, sin aplicacion remota. La tarea 5 integra NestJS con
   @repo/db sin escrituras; health sigue acreditando solo disponibilidad de API.
 
@@ -169,6 +195,7 @@ documento. Cada fila permite ademas actualizar docs/15 y este registro para
 resultados reales. Todo archivo no listado queda excluido; pnpm-lock.yaml
 solo cambia al modificar dependencias autorizadas. Excluidos comunes: mocks,
 diseno publico, secretos, entorno real, contenido, seeds y mutaciones de recursos externos.
+La fila 7 remota queda aplazada por la revision local; L1/L2 se definen en docs/19.
 Las mutaciones remotas de 7, 10 y 11 requieren autorizacion expresa; las lecturas JWKS/conectividad se acotan en su propia tarea.
 
 | Tarea | Depende de | Archivos permitidos y dependencias | Aceptacion y pruebas |
@@ -179,8 +206,8 @@ Las mutaciones remotas de 7, 10 y 11 requieren autorizacion expresa; las lectura
 | 4. Verificador API | 1, Current confirmado y JWKS inspeccionado | apps/api/src/modules/auth/**, common/guards de identidad, config y pruebas, app.module.ts, manifest API/lockfile; ejemplo/Turbo solo si contrato cambia | jose justificado por JWKS. Tokens sinteticos ES256, exp/iss/aud/sub invalidos, otro algoritmo, kid desconocido, rotacion y timeout; checks y tests API. Sin DB/perfiles. |
 | 5. Integracion DB/API | 1 | packages/db configuracion de build/exports y manifests; provider DB y configuracion compilacion/tests API; lockfile | Dependencia @repo/db workspace; consumo desde dist y Jest, generacion/cierre correctos; checks DB/API y prueba de solo lectura cuando se autorice. Sin modelos. |
 | 6. Modelo y SQL revisable | 5 | packages/db/prisma/schema.prisma y artefactos de migracion | Solo UserRole/UserProfile; SQL, unicidad, RLS y permisos revisados; validate/generate y checks DB. Sin aplicacion remota. |
-| 7. Aplicacion migracion | 6 revisada y autorizacion remota | Migracion aprobada y registro; destino remoto confirmado | Prisma Migrate con SQL aprobado, sin resets; verificar estructura, acceso runtime, rechazo Data API y estado. Sin usuarios ni perfiles de prueba. |
-| 8. Sincronizacion y roles | 4, 5, 7 | modules/auth y users API; guards/decorators, modulo endpoint admin de prueba; packages/types; manifests/lockfile si necesario; pruebas | Upsert concurrente, USER por defecto, conservacion de ADMIN, 401/403/404/503 y matriz de roles; tests unitarios/e2e simulados y checks afectados. |
+| 7. Aplicacion migracion remota (aplazada) | 6 revisada y nueva tarea de produccion autorizada | Migracion aprobada y registro; destino remoto confirmado | Prisma Migrate con SQL aprobado, sin resets; verificar estructura, acceso runtime, rechazo Data API y estado. Sin usuarios ni perfiles de prueba. |
+| 8. Sincronizacion y roles | 4, 5, L1 y L2 de docs/19 revisadas | modules/auth y users API; guards/decorators, modulo endpoint admin de prueba; packages/types; manifests/lockfile si necesario; pruebas | Upsert concurrente, USER por defecto, conservacion de ADMIN, 401/403/404/503 y matriz de roles; tests unitarios/e2e simulados y checks afectados. |
 | 9. Login/logout | 3, 8 | apps/web/app/(auth)/login/** y layout Auth; features/auth/**; helper privado API; packages/validation; manifests/lockfile | Zod en package compartido y dependencias workspace justificadas; formularios espanoles, validacion servidor, errores, sincronizacion y logout local; checks web/packages y pruebas simuladas. Sin registros ni envios. |
 | 10. Registro/confirmacion | 9; plantilla y destinatario autorizados | app/(auth)/registro/** y auth/confirmar/route.ts; features/auth/**, schemas/tests; plantilla remota solo autorizada | Sin sesion prematura, enlace correcto/invalido/caducado/reutilizado, sin redireccion abierta ni logs sensibles; simulaciones primero, unico registro/envio real autorizado despues. |
 | 11. Integracion/cierre | 2 a 10 revisadas | Pruebas Auth y documentacion de estado; operacion ADMIN solo autorizada | Registro-confirmacion-login-renovacion-perfil-API-logout, aislamiento entre usuarios, USER denegado y ADMIN admitido; mocks sin regresion; evidencias con limites y cierre del propietario. |
@@ -754,3 +781,125 @@ Solo cambian docs/15 y este registro. git diff --check correcto; no se repiten
 lint/tipos/build o tests porque no cambia codigo, schema ni artefactos. Scripts
 diagnosticos temporales fuera del repositorio; sin secretos versionados.
 Referencia del comando de aplicacion: [Prisma Migrate v7](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/development-and-production).
+
+
+### Reintento tras reconectar WARP
+
+El propietario confirma reconexion de WARP y solicita repetir la comprobacion.
+Direct vuelve a resolver a IPv6, con hosts coincidente con AAAA actual, pero
+TCP:5432 sigue agotando timeout (5 s). WARP informa Connected/Network healthy y
+modo WarpWithDnsOverHttps. Controles TCP a www.cloudflare.com:443 por IPv4 e
+IPv6 pasan: no se demuestra un fallo general de IPv6. Estos controles no prueban
+acceso al puerto PostgreSQL de Supabase ni determinan la causa del bloqueo.
+No se ejecutan Prisma deploy ni cambios remotos; migracion sigue sin aplicar.
+Solo se actualizan registros; git diff --check correcto.
+
+
+### Alternativa session pooler evaluada
+
+El propietario informa que Dashboard indica acceso desde todas las IPs, sin
+restricciones de red configuradas. Es confirmacion del propietario, no lectura
+del Dashboard por el agente. La guia oficial de Supabase admite session pooler
+puerto 5432 para migraciones Prisma:
+https://supabase.com/docs/guides/database/prisma.
+
+Se repite preflight de solo lectura: destino coherente, public sin tablas,
+UserProfile/UserRole/historial ausentes, rol runtime y TLS de Node correctos.
+Se prueba migrate status por session pooler con override DIRECT_URL unicamente
+en el proceso: mismo proyecto/base, puerto 5432, CA existente, sslmode=require,
+sslaccept=strict. No se cambia .env ni el SQL aprobado. CLI falla con error
+Schema engine error; invocar el motor instalado con can-connect-to-database
+revela P1011: certificado no confiable. Sin timeout en esta alternativa.
+
+Node pg verifica la cadena TLS con rejectUnauthorized y CA configurada, socket
+autorizado; la cadena recibida termina en la CA Supabase Root 2021 configurada.
+security verify-cert sobre la CA local con politica basic devuelve exit 1; esa
+prueba de CA no determina por si sola la causa del rechazo SSL del servidor.
+El rechazo nativo del session pooler ya se diagnostico en Phase 4 (docs/14),
+incluidos los requisitos de certificado de macOS; no repetir cambios de llavero
+que entonces no resolvieron el problema. No se relaja TLS ni se instala CA.
+
+Resultado: session pooler es compatible en principio, pero no operativo para el
+motor Prisma nativo en este Mac con el certificado actual. La aplicacion sigue
+pendiente. Siguiente opcion operativa: probar Direct desde otra red con IPv6 y
+WARP, manteniendo hostname/TLS, y repetir preflight antes de deploy. La causa
+del timeout Direct sigue sin determinarse. Ejecutar desde otro sistema requeriria
+preparar y revisar por separado su acceso seguro; no trasladar credenciales al chat.
+Sin deploy, cambios remotos, usuarios, perfiles o correos. Solo docs/15 y este
+registro modificados; git diff --check correcto.
+
+
+### Descartes adicionales y alternativa pendiente
+
+El propietario confirma Dashboard: no hay IPs bloqueadas (Banned IPs) ni
+restricciones de IP; ademas ya habia probado red movil sin resolver el acceso.
+Inspeccion local de rutas de solo lectura: Direct y un destino publico IPv6
+usan la misma interfaz utun6. WARP funciona en modo trafico/DNS; esto no garantiza
+que el destino Direct:5432 sea alcanzable ni demuestra la causa del timeout.
+No se han modificado rutas, reglas de red, configuracion remota o certificados.
+
+No repetir red movil o reconexion WARP como siguiente paso sin nueva evidencia.
+El repositorio no contiene .github ni workflows Linux existentes. Se consulta
+al propietario si dispone de Linux/WSL para evaluar el session pooler con Prisma
+y CA estricta fuera del verificador nativo de macOS. No se garantiza resultado:
+primero validar TLS y migrate status; solo despues, preflight y migracion aprobada.
+Crear un runner/CI, instalar herramientas o trasladar credenciales requiere una
+tarea acordada, como establece docs/14. No se preparan workflows ni se usan
+servicios externos en esta comprobacion. La tarea 7 permanece incompleta.
+
+
+El propietario confirma que solo dispone del Mac. Alternativa propuesta, aun
+sin autorizar: preparar una tarea separada para workflow manual Linux en GitHub
+Actions sobre el repositorio existente. Primero chequeos TLS, destino y estado;
+la aplicacion del SQL aprobado solo tras verificacion y ejecucion autorizada.
+Credenciales/CA mediante secretos gestionados por el propietario, nunca por chat.
+Sin workflow creado, secretos enviados, ejecuciones o promesa de exito en Linux.
+
+
+### Restriccion de coste y propuesta de desarrollo local
+
+El propietario exige coste cero durante desarrollo, dispone solo de Mac y usa
+Safari. No autoriza GitHub Actions, gastos ni recursos adicionales de pago.
+La propuesta de runner queda descartada para esta continuacion.
+
+Alternativa propuesta, pendiente de acordar una tarea acotada: PostgreSQL nativo
+en macOS para datos de desarrollo con Prisma/Nest, conservando Supabase Auth y
+Storage remotos gratuitos dentro de sus limites. No implica Docker ni Supabase
+local. Homebrew existe; no se encontro psql/postgres en PATH ni instalaciones
+Homebrew de postgresql, postgresql@16/17/18 o libpq. No se instalo software.
+
+Esta alternativa cambia el contrato actual de DB remota de desarrollo: antes de
+implementarla revisar docs/01, 04, 14 y contrato Phase 5, definir destino local
+separado, version compatible, roles SQL necesarios y comprobaciones locales.
+No aplicar automaticamente una migracion al destino equivocado ni considerar
+cerrada la tarea 7 remota por validar una DB local. Supabase Auth seguiria
+requiriendo Internet; los perfiles de aplicacion se guardarian en PostgreSQL local.
+
+Una comprobacion adicional de DNS mediante resolutores HTTPS independientes fue
+rechazada por revision automatica porque transmitiria el hostname de proyecto a
+Google/Cloudflare. No se ejecuto ni se intento eludir la decision. Se descarta ese
+paso para evaluar la alternativa local; no se cambian red, CA o llavero.
+
+
+### Comprobacion tras reiniciar el Mac
+
+El propietario reinicia y confirma WARP conectado en Trafico y DNS con HTTPS.
+Lectura local confirma Connected y WarpWithDnsOverHttps; Direct resuelve a IPv6
+con entrada de hosts presente. TCP:5432 vuelve a agotar timeout de 5 s. El
+reinicio no resuelve el bloqueo observado. Los helpers temporales desaparecieron
+tras el reinicio; se reconstruye solo el de lectura WARP/DNS efectivo/TCP. Sin
+consultas DNS HTTPS independientes, cambios de red o ejecucion de migraciones.
+La alternativa PostgreSQL local permanece propuesta, sin autorizacion ni instalacion.
+
+
+## Decision aprobada: documentar PostgreSQL local antes de implementar
+
+El propietario autoriza el cambio de desarrollo a PostgreSQL local y pide primero
+registrarlo para retomarlo. docs/19 pasa a ser el contrato del cambio; se actualizan
+arquitectura, stack, modelo, Auth, entorno, roadmap, estado, README y AGENTS.md.
+Se conservan historico de Phase 4 y diagnosticos de tarea 7 sin reinterpretarlos.
+Proximo paso propuesto: L1, preparacion nativa local, una vez revisada esta entrega.
+Sin instalaciones, scripts de provisioning, nuevos ejemplos activos o cambios en
+.env, codigo, dependencias, schema, SQL, red, Dashboard o datos. Revision de enlaces,
+coherencia del contrato y git diff --check; no corresponden builds/tests de codigo.
+El propietario crea/sube el commit y autoriza la siguiente tarea.

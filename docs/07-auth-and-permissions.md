@@ -5,6 +5,10 @@
 Contrato de Phase 5, pendiente de implementacion. Supabase Auth identifica
 usuarios y mantiene passwords, sesiones, access tokens y refresh tokens.
 NestJS aplica autorizacion de negocio con perfiles y roles en PostgreSQL.
+Desde la decision del 30 de octubre de 2026, la DB de desarrollo sera local;
+Supabase Auth sigue remoto y su UUID enlaza UserProfile sin FK a auth.users.
+Preparacion aun pendiente; [contrato de entorno](19-local-development-database.md).
+Los roles/promociones y datos de desarrollo no se trasladan automaticamente a produccion.
 Next.js presenta flujos Auth y llama a Nest mediante Bearer access token.
 No se emiten tokens propios ni se gestiona password hashing en la API.
 

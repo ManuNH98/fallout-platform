@@ -21,7 +21,7 @@ All user-facing copy, routes, labels, validation messages, admin labels, and see
 - Backend framework: NestJS
 - Language: TypeScript
 - UI: TailwindCSS + shadcn/ui
-- Database: PostgreSQL hosted in Supabase
+- Database: native local PostgreSQL for development (approved, setup pending); Supabase PostgreSQL for production
 - Auth: Supabase Auth
 - Storage: Supabase Storage
 - ORM: Prisma
@@ -288,7 +288,7 @@ pnpm --filter @repo/ui check-types
 
 ## Current priority
 
-Phase 0 and the local part of Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was integrated through PR #6 (merge commit `4cf28bd`). Phase 4 is complete and integrated into develop through PR #7 (merge commit `b324cd5`). The owner confirmed the merge and authorized progression to Phase 5 on 23 October 2026. Phase 5: Auth foundation is active on `feature/Phase-5_auth_foundation`, initially for scoped planning and preparation. Public pages must retain typed mock data and the existing design throughout Phase 5.
+Phase 0 and the local part of Phase 1 are complete; the external infrastructure deferred from Phase 1 was verified in Phase 4. Phases 2 and 3 are complete; Phase 3 was integrated through PR #6 (merge commit `4cf28bd`). Phase 4 is complete and integrated into develop through PR #7 (merge commit `b324cd5`). The owner confirmed the merge and authorized progression to Phase 5 on 23 October 2026. Phase 5: Auth foundation is active on `feature/Phase-5_auth_foundation`; tasks 2 to 6 are implemented and the approved local PostgreSQL development setup is the next scoped preparation task. Public pages must retain typed mock data and the existing design throughout Phase 5.
 
 Current implementation order:
 
@@ -302,8 +302,10 @@ Current implementation order:
 
 The complete phase definitions are maintained in `docs/12-roadmap.md`.
 
+On 30 October 2026 the owner approved documenting a move to native local PostgreSQL for development at zero additional service cost. Follow docs/19-local-development-database.md: documentation first, then separately authorized L1 local setup and L2 local migration before Phase 5 task 8. No installation, environment switch or local migration has been performed yet; real .env files still retain their previous targets. Supabase Auth and Storage stay remote. Keep one Prisma schema/migration history; account for SQL roles anon/authenticated locally without installing Supabase or editing the approved migration. Remote task 7 is deferred, not completed; remote deployment checks are required before production. Do not resume remote deploy or create CI as an implicit next step. GitHub Actions and local Supabase/Docker are not authorized by this decision.
+
 For Phase 5, follow `docs/07-auth-and-permissions.md`, `docs/12-roadmap.md` and the environment requirements in `docs/14-environment-and-supabase.md`. Auth flows, sessions, JWT validation, UserProfile and application roles belong to Phase 5; implement them only in separately authorized scoped tasks. Do not introduce content models, CRUD, seeds, replace public mocks or change the public design. Do not introduce Docker, local Supabase, or a root `.env` file. Never request secrets in chat or use migrations or `db:push` as connectivity checks. Applying migrations, creating users, sending test emails or changing remote configuration requires an expressly authorized task.
 
-Phase 4 evidence remains in `docs/17-phase-4-validation.md`; this documentation update is not a new infrastructure verification. Prisma CLI Direct on this Mac requires WARP and a temporary hostname entry in `/etc/hosts`; runtime uses the session pooler. Preserve TLS verification and review the temporary entry with the owner if the project IPv6 changes. Do not change networking or keychain settings automatically. Email/URLs were prepared by owner confirmation; Auth flows, email delivery and the active JWT signing algorithm remain unverified. `/health` reports API availability, not PostgreSQL connectivity.
+Phase 4 evidence remains in `docs/17-phase-4-validation.md`; this documentation update is not a new infrastructure verification. Direct previously worked on this Mac with WARP and a temporary hosts entry; Phase 5 attempts now time out, and native Prisma rejects session-pooler TLS while Node runtime validates it. The target local development environment does not require WARP; do not remove WARP or hosts automatically. Any cleanup is a separate owner-reviewed task after local validation. Preserve strict TLS for remote connections. Do not change networking or keychain settings automatically. Current ECC P-256 is owner-confirmed and public ES256 JWKS was inspected; real Auth flows, sessions and email delivery remain unverified. `/health` reports API availability, not PostgreSQL connectivity.
 
 Execute one scoped task at a time. After each implementation, validate affected workspaces, report changes and limitations, and provide an English commit title and description. Stop for owner review; the owner creates and pushes commits and authorizes the next task. Phase 5 stays open until all its acceptance criteria have been verified and the owner authorizes its closure.

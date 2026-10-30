@@ -11,7 +11,7 @@ Usuario
   -> Next.js web app
   -> NestJS REST API con Supabase access token
   -> Prisma
-  -> Supabase PostgreSQL
+  -> PostgreSQL (local en desarrollo; Supabase en produccion)
 
 Supabase tambien proporciona Auth y Storage.
 ```
@@ -19,10 +19,14 @@ Supabase tambien proporciona Auth y Storage.
 Supabase se utiliza como infraestructura. NestJS sigue siendo el backend principal de negocio y autorizacion:
 
 - Supabase Auth identifica al usuario y gestiona sesiones.
-- Supabase PostgreSQL almacena los datos de la aplicacion.
+- PostgreSQL almacena los datos de la aplicacion: local en desarrollo y Supabase como destino previsto de produccion.
 - Supabase Storage almacena imagenes y archivos.
 - NestJS valida tokens, aplica permisos y contiene las reglas de negocio.
 - Next.js renderiza la web publica, las pantallas de autenticacion y el panel admin.
+
+El cambio a PostgreSQL local fue aprobado el 30 de octubre de 2026 y esta
+pendiente de implementar. Auth y Storage siguen remotos. Antes de instalar o
+migrar, consultar [la decision y el plan de continuacion](docs/19-local-development-database.md).
 
 ## Stack Tecnico
 
@@ -32,7 +36,7 @@ Supabase se utiliza como infraestructura. NestJS sigue siendo el backend princip
 - API: REST first
 - UI: TailwindCSS + shadcn/ui
 - Formularios: react-hook-form + Zod
-- Base de datos: PostgreSQL alojado en Supabase
+- Base de datos: PostgreSQL nativo local para desarrollo; Supabase para produccion
 - ORM: Prisma
 - Auth: Supabase Auth
 - Storage: Supabase Storage

@@ -14,7 +14,7 @@ NestJS API
   |
   | Prisma
   v
-Supabase PostgreSQL
+PostgreSQL (local en desarrollo; Supabase en produccion)
 
 Supabase also provides:
 - Auth
@@ -30,7 +30,7 @@ NestJS remains the main business backend.
 This means:
 
 - Supabase Auth handles identity.
-- Supabase PostgreSQL stores application data.
+- PostgreSQL stores application data: native local server for development; Supabase hosting remains the production target.
 - Supabase Storage stores images and files.
 - NestJS validates tokens and applies business rules.
 - Next.js renders the public site, auth pages and admin panel.
@@ -94,7 +94,7 @@ Responsible for:
 - PostgreSQL hosting
 - Auth identity provider
 - Storage for images/files
-- Optional local development support
+- Auth and Storage remain remote during local application development
 
 ### Prisma
 
@@ -136,6 +136,14 @@ Admin uploads image
   -> Supabase Storage stores file
   -> NestJS stores media metadata
 ```
+
+## Entornos de desarrollo y produccion
+
+Decision del 30 de octubre de 2026: PostgreSQL nativo en el Mac para desarrollo,
+sin Docker ni Supabase local; Supabase Auth y Storage remotos. Supabase PostgreSQL
+se conserva para produccion. El cambio esta documentado, aun sin implementar.
+La preparacion local, migraciones y validacion remota diferida se rigen por
+[la decision de entorno local](19-local-development-database.md).
 
 ## Deployment target
 

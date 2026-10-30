@@ -1,5 +1,20 @@
 # 14. Environment and Supabase
 
+## Decision vigente: desarrollo con PostgreSQL local
+
+El 30 de octubre de 2026 el propietario aprueba documentar PostgreSQL nativo en
+macOS para desarrollo, sin Docker ni Supabase local, con coste cero de servicios
+adicionales. Auth y Storage siguen remotos; Supabase PostgreSQL se reserva para
+produccion. Instalacion, .env y migraciones locales siguen pendientes; los
+archivos reales aun conservan sus destinos previos. No ejecutar los checks o
+migraciones siguientes suponiendo que ya apuntan a localhost.
+
+El contrato y pasos L1/L2, roles SQL, WARP/hosts y validacion futura se mantienen
+en [docs/19](19-local-development-database.md). Ese contrato prevalece para el
+entorno de desarrollo sobre los procedimientos historicos de Phase 4 que siguen
+abajo. No es necesario resolver Direct para continuar una vez validada la DB
+local. Mantener TLS estricto para cualquier conexion remota. Sin root .env.
+
 ## Objetivo y alcance
 
 Preparar y verificar Supabase remoto en Phase 4, manteniendo las responsabilidades de `docs/01-architecture.md`. El frontend conserva los mocks y el diseno publico. No crear `.env` en la raiz del monorepo: cada aplicacion/package mantiene su entorno.
