@@ -29,7 +29,8 @@ antes de implementar. Rige [docs/19](19-local-development-database.md): PostgreS
 nativo local, Supabase Auth/Storage remotos, sin coste de servicios adicionales.
 L1 instalada/validada: PostgreSQL 17.11 local y .env API/DB cambiados a loopback.
 L2 aplicada/verificada en local, con cero perfiles reales. Tarea 8 implementada,
-pendiente de revision; siguiente tarea 9 (login/logout) tras autorizacion.
+integrada en 9a2c3ef. Tarea 9 (login/logout) implementada, pendiente de revision;
+siguiente tarea 10 (registro/confirmacion) tras autorizacion.
 Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
@@ -64,7 +65,7 @@ expresa. No hay CI contratado/configurado ni instalacion de Supabase local.
   del equipo de la organizacion y permite actualmente 2 mensajes/hora, sin SLA
   y sujeto a cambios. Revisar limites antes del primer envio autorizado.
 - El destino previo remoto usaba Direct con WARP/hosts y runtime por session
-  pooler. Desarrollo pasa a PostgreSQL local segun docs/19, aun sin preparar.
+  pooler. Desarrollo usa PostgreSQL local segun docs/19, con L1/L2 verificadas.
   Conservar TLS para remoto y evidencias historicas de docs/14 y docs/17.
 - UserRole/UserProfile y SQL preparados en tarea 6, sin aplicacion remota. La tarea 5 integra NestJS con
   @repo/db sin escrituras; health sigue acreditando solo disponibilidad de API.
@@ -1019,3 +1020,95 @@ sin bibliotecas externas nuevas. Sesiones, email y primer ADMIN real pendientes.
 Siguiente tarea propuesta: 9, login/logout web con sincronizacion, tras revision
 y autorizacion. El propietario crea/sube el commit; no se avanza automaticamente.
 Phase 5 permanece abierta; DB remota/Data API siguen aplazadas a preproduccion.
+
+
+## Entrega tarea 9: login/logout web y perfil sincronizado
+
+Autorizada por el propietario despues de 9a2c3ef (tarea 8). Archivos: route group
+Auth (layout y /login), features/auth, helper API privado, packages/validation,
+manifest web/validation, lockfile, pruebas y contratos/estado documentales.
+Sin cambios en API, schema/migracion, mocks, paginas/header/diseno publicos,
+Proxy, factorias Supabase, entorno real o servicios externos.
+
+### Comportamiento y decisiones
+
+- /login es Server Component dinamico dentro de (auth), con layout propio que
+  reutiliza tokens visuales existentes. Solo los formularios son componentes
+  cliente con useActionState, labels, mensajes aria-live y estados pendientes.
+  No se instala react-hook-form ni primitivas nuevas: formulario pequeno con
+  HTML nativo, validacion servidor y React 19; sin nuevas necesidades de UI global.
+- Server Actions de login, continuar y logout crean cliente SSR por peticion con
+  writableCookies:true. Los redirects estan fuera del manejo de errores y solo
+  usan /login o /login?perfil=pendiente. No hay destino next libre o rutas admin.
+- loginSchema compartido en @repo/validation, con Zod 4.6.7 fijado (unica libreria
+  externa nueva) y dependencia workspace web. Email recortado, limite 254 y
+  formato valido; password requerido, maximo 4096 y sin trim/minimo de registro.
+  Validacion en servidor incluso sin JS; errores espanoles sin echo de valores.
+- signInWithPassword recibe email/password; Nest nunca recibe password. Antes
+  de usar el bearer se verifica ESE access token con getClaims. getSession solo
+  lo obtiene en lecturas/continuar; no acredita identidad. Se rechazan claims
+  anonimos, sin sub o con rol Supabase distinto de authenticated.
+- Login valido intenta POST /auth/perfil. Si falla, conserva la sesion Supabase
+  y redirige al estado perfil pendiente, sin afirmar que hay perfil disponible.
+  /login autenticado permite continuar (POST de sincronizacion) o cerrar sesion.
+  El GET de la pagina solo lee GET /auth/me; no crea perfiles ni cierra sesiones.
+- /login muestra el perfil disponible y acceso al archivo cuando la sincronizacion
+  esta confirmada; no implementa cuenta privada nueva ni panel. Falta de perfil
+  (404) y API no disponible se distinguen; identidad invalida no presenta perfil.
+- Helper server-only con rutas privadas fijas, bearer, no-store, credentials omit,
+  redirects rechazados y timeout de 5 s. Solo HTTPS o HTTP loopback; sin URL con
+  credenciales/query/fragmento. Respuestas HTTP/JSON malformadas son sanitizadas;
+  userProfileResponseSchema valida/selecciona campos del contrato de tarea 8.
+  Se comprueba supabaseUserId contra el sub verificado antes de presentar exito.
+- Tokens/refresh tokens/passwords no pasan a props, estados de formulario, URL
+  o logs. La pagina devuelve solo modelo de vista/perfil JSON validado. No se
+  confia en metadata para permisos; Nest conserva la autorizacion final.
+- Logout solo Server Action POST: signOut con scope local explicito, SDK borra
+  cookies por el adaptador existente y redirect /login. Si falla no anuncia cierre.
+  No promete revocacion inmediata de access tokens emitidos ni afecta otras sesiones.
+- Next conserva su proteccion de Server Actions por POST/Origin frente a Host;
+  no se amplian allowedOrigins. Cache privada desde Proxy existente; /login tiene
+  robots noindex/nofollow y render por peticion. Publico sigue sin lecturas Auth.
+
+Zod se reviso en el registro antes de fijar 4.6.7; sin actualizaciones generales
+ni nuevas dependencias de tests. Se reutiliza node:test, vm y TypeScript del
+harness de tareas 2/3; pnpm --filter web test:auth ejecuta las pruebas Auth.
+Referencias: [Next forms](https://nextjs.org/docs/app/guides/forms),
+[signInWithPassword](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
+[signOut](https://supabase.com/docs/reference/javascript/auth-signout),
+[getClaims](https://supabase.com/docs/reference/javascript/auth-getclaims) y
+[Zod](https://zod.dev/basics). Reglas locales next-best-practices sobre limites
+RSC, APIs asincronas y redirects; prevalece el contrato del proyecto.
+
+### Validacion y limites
+
+| Comprobacion | Resultado |
+| --- | --- |
+| Web lint, check-types y build | Correcto; /login dinamico, home/juegos/detalles conservan prerender |
+| @repo/validation lint y check-types | Correcto |
+| pnpm --filter web test:auth | 47 pruebas correctas: 31 nuevas y 16 previas |
+| Importaciones | Sin crear clientes/fetch al importar; factories por peticion y writable explicito |
+| Acciones simuladas | Credenciales invalidas, tipos ausentes/File, password sin trim, login+cookies+perfil, DB/API caida y retry, claims invalidos, aislamiento, logout y errores sanitizados |
+| Helper privado | Bearer sin cookies, rutas fijas, no-store, timeout, redirect error, respuesta valida y rechazo de perfil ajeno/malformado |
+| API Next de produccion en puerto temporal 3198 | GET /login 200, formulario espanol, noindex y private/no-store; /, /wiki, /juegos 200 |
+| CSRF real de Server Actions | Origin ajeno abortado antes de ejecutar accion; Next 16.2 responde HTTP 500 en esta rama, con diagnostico de aborto comprobado |
+| Safari | /login observado sin sesion: labels, campos y boton legibles; captura desktop revisada. Sin introducir credenciales |
+| git diff --check | Correcto; publico, API, DB, Proxy y factorias intactos |
+
+El primer build aislado fallo con EPERM por el puerto interno de Turbopack/CSS;
+se completo con permiso fuera del sandbox. El servidor temporal de produccion
+se cerro; no se detuvo el dev server del propietario. Safari queda con una nueva
+pestana /login para revision. No se alteraron preferencias del navegador.
+
+Pruebas con SDK/JWKS/API simulados y el adaptador cookies real del helper; no
+acreditan login/logout de una cuenta Supabase real. El smoke HTTP uso peticiones
+sin cookies/credenciales y un cuerpo vacio para CSRF, sin login ni escrituras en
+Nest. No registro, usuarios, emails, perfiles reales, migraciones o mutaciones
+remotas; sin cambios de .env, WARP, hosts, CA o llavero. Node 24.15.0, TS 5.9.2;
+no se repite en Node 20. Revision visual desktop, sin prueba mobile automatizada.
+No se repiten tests API porque no hay codigo backend modificado.
+
+Siguiente entrega propuesta: tarea 10, registro y confirmacion, previa revision
+y autorizacion. La plantilla y primer envio/usuario real requieren su alcance
+expreso; no se ejecutan por continuacion implicita. El propietario crea/sube el
+commit. Phase 5 sigue abierta; integracion real y cierre siguen pendientes.

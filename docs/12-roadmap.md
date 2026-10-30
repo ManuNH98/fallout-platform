@@ -228,7 +228,9 @@ preparados (tareas 2 a 6 de docs/18). Migracion remota sin aplicar.
 El 30 de octubre de 2026 se aprueba PostgreSQL nativo local para desarrollo;
 documentacion integrada en 326ee0e, L1 integrada en 514fdb6 y L2 migracion
 local aplicada/verificada e integrada en ffee55a. Tarea 8 de sincronizacion y
-roles implementada, pendiente de revision; siguiente tarea 9 (login/logout). Auth/Storage siguen remotos.
+roles integrada en 9a2c3ef. Tarea 9 login/logout implementada, pendiente de revision;
+siguiente tarea 10 (registro/confirmacion). Auth/Storage siguen remotos y los
+flujos con usuarios reales siguen pendientes de verificacion.
 [Decision y criterios por entorno](19-local-development-database.md).
 Cada implementacion requiere autorizacion y revision independientes.
 

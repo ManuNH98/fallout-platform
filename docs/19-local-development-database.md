@@ -10,7 +10,8 @@ Supabase local. Next.js, NestJS, Prisma y los packages existentes se mantienen.
 
 Estado actual: L1 integrada en 514fdb6; L2 aplicada y verificada en PostgreSQL
 17.11 local, pendiente de revision. UserProfile/UserRole existen, con cero perfiles.
-Tarea 8 implementada (pendiente de revision); siguiente tarea: 9 de docs/18, login/logout. Migracion remota aplazada;
+Tarea 8 integrada en 9a2c3ef; tarea 9 login/logout implementada, pendiente de revision.
+Siguiente tarea: 10 de docs/18, registro/confirmacion. Migracion remota aplazada;
 Auth/Storage siguen remotos. Sin CI ni cambios a WARP, hosts, certificados o
 llavero. Resultados y uso diario al final.
 La decision inicial se documento en 326ee0e antes de implementar esta entrega.
@@ -312,5 +313,8 @@ commit; Phase 5 sigue abierta.
 L2 integrada en ffee55a. La tarea 8 implementa sincronizacion y autorizacion en
 Nest con DB/JWKS simulados en pruebas, sin crear perfiles reales ni cambiar el
 cluster. No modifica la preparacion local ni aplica otro SQL. Contratos,
-resultados y limitaciones en la entrega de tarea 8 de docs/18. Siguiente tarea
-propuesta: 9, login/logout web, tras revision y autorizacion; Phase 5 sigue abierta.
+resultados y limitaciones en la entrega de tarea 8 de docs/18, integrada en
+9a2c3ef. Tarea 9 implementa login/logout web y reintento de sincronizacion,
+verificados con SDK/API simulados, sin usuarios ni escrituras reales de DB.
+Siguiente tarea propuesta: 10, registro/confirmacion, tras revision y autorizacion.
+Los flujos reales siguen pendientes; Phase 5 sigue abierta.

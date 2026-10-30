@@ -3,7 +3,8 @@
 ## Estado y responsabilidades
 
 Phase 5 en curso: identidad JWT, perfil local y guards de roles implementados
-en tareas 4 y 8; formularios y flujos web reales todavia pendientes. Supabase Auth identifica
+en tareas 4 y 8; login/logout web implementados en tarea 9. Registro/confirmacion
+y pruebas con usuarios/sesiones reales siguen pendientes. Supabase Auth identifica
 usuarios y mantiene passwords, sesiones, access tokens y refresh tokens.
 NestJS aplica autorizacion de negocio con perfiles y roles en PostgreSQL.
 Desde la decision del 30 de octubre de 2026, la DB de desarrollo sera local;
@@ -129,3 +130,15 @@ GET /admin/comprobacion devuelve {"message":"Acceso administrativo autorizado."}
 con 200 solo para ADMIN. USER/EDITOR/MODERATOR o perfil ausente: 403. Identidad
 invalida: 401; dependencia no disponible: 503. La matriz se verifica en pruebas
 simuladas; falta integracion con usuarios reales en la tarea de cierre.
+
+
+## Login/logout web de tarea 9
+
+/login presenta formulario o estado de sesion verificada con perfil/continuar y
+logout. Server Actions validan con loginSchema compartido; solo credenciales a
+Supabase y bearer a Nest. getClaims verifica el mismo token obtenido por sesion;
+getSession por si solo no autoriza. Exito de Auth con fallo de sincronizacion
+conserva sesion y muestra perfil pendiente, con retry o cierre. El GET nunca crea
+perfil. Logout usa scope local y cookies SSR escribibles; no afirmar exito si
+falla ni revocacion instantanea. Pruebas simuladas y smoke sin credenciales;
+integracion con cuentas reales pendiente. Registro/confirmacion siguen en tarea 10.
