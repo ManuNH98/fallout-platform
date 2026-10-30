@@ -267,7 +267,7 @@ adoptan APIs de otra version por aparecer en una pagina latest.
 
 ## Entrega de tarea 2: factorias web
 
-Implementada el 23 de octubre de 2026; pendiente de revision del propietario.
+Implementada el 23 de octubre de 2026 e integrada por el propietario en `587adfc`.
 Se ha aplicado la skill local next-best-practices, en particular cookies
 asincronas y aislamiento servidor/cliente. Archivos cambiados: client.ts,
 server.ts y tests/factories.test.mjs en apps/web/lib/supabase, apps/web/lib/env.ts,
@@ -322,5 +322,79 @@ y posteriores. Los futuros Route Handlers que escriban sesiones deben asegurar
 respuesta privada/no-store y conservar cabeceras correspondientes; esta factoria
 adapta cookies, no construye respuestas HTTP. No usarla como proteccion de rutas.
 
-Siguiente entrega propuesta: tarea 3, renovacion SSR, solo tras revision y nueva
-autorizacion. El propietario crea y sube los commits.
+La tarea 3 se autorizo posteriormente y su entrega se registra a continuacion.
+El propietario crea y sube los commits.
+
+
+## Entrega de tarea 3: renovacion SSR mediante Proxy
+
+Implementada el 30 de octubre de 2026; pendiente de revision del propietario.
+Archivos permitidos/modificados: apps/web/proxy.ts,
+apps/web/lib/supabase/proxy.ts, tests/proxy.test.mjs en esa misma carpeta,
+docs/15 y este registro. Sin dependencias nuevas ni cambios en factorias,
+layouts, paginas, mocks, API, DB, entorno, Dashboard, red o llavero.
+
+Se aplica next-best-practices (convencion Proxy de Next 16, runtime Node por
+defecto y separacion servidor/cliente). Contrastados el 30 de octubre de 2026
+[SSR Supabase](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs)
+y [Proxy Next](https://nextjs.org/docs/app/api-reference/file-conventions/proxy),
+ademas del contrato getClaims y setAll del SDK instalado. No se actualizan SDKs.
+
+- Matcher estatico: /login, /registro, /auth/confirmar y /admin/:path*.
+  Quedan fuera home, wiki, juegos, assets y recuperacion de contrasena.
+  Los route groups no forman parte de las URLs. No se crean paginas Auth/admin.
+- createServerClient por peticion, getAll/setAll y getClaims, sin confiar en
+  getSession. Al renovar, actualizar cookies de request y reconstruir la
+  respuesta Next para propagar Cookie al render servidor. Conservar cookies
+  previas entre multiples escrituras, incluidos chunks, opciones y borrados.
+- Trasladar cabeceras de cache del SDK. Todas las respuestas del Proxy son
+  privadas/no-store, con Expires y Pragma; las respuestas de redireccion/error
+  conservan las cookies finales. No copiar cabeceras internas de override de
+  request a una redireccion o respuesta de error.
+- Sin identidad, /admin redirige 303 a /login en el mismo origen, quitando query
+  y sin aceptar un destino next del cliente. Auth/confirmacion pueden continuar
+  sin sesion. Una identidad valida permite continuar, pero NO acredita ADMIN:
+  los roles y datos privados se autorizaran en NestJS y en sus futuros consumidores.
+- Errores Auth 400/401/403 equivalen a identidad no valida. Otros errores,
+  excepciones o configuracion ausente producen 503 con mensaje espanol generico,
+  sin filtrar detalles del proveedor ni registrar tokens. No conceder acceso
+  si no se ha podido verificar. Conservar cookies aunque el error ocurra despues
+  de una renovacion o limpieza efectuada por el SDK.
+
+Validaciones ejecutadas:
+
+| Comando/comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter web lint | Correcto, sin warnings |
+| pnpm --filter web check-types | Correcto |
+| NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= pnpm --filter web build | Correcto, incluye Proxy y conserva rutas publicas/prerender |
+| node --experimental-vm-modules --test apps/web/lib/supabase/tests/*.test.mjs | 16 pruebas correctas: 10 Proxy y las 6 previas de factorias |
+| Smoke del build en 127.0.0.1:3218 sin configuracion Supabase | 6 respuestas publicas 200 sin Set-Cookie; 5 respuestas de matcher 503 con private/no-store |
+| git diff --check | Correcto |
+
+El intento de build no avanzo en el sandbox y se interrumpio; el mismo comando
+termino fuera de el. Variables vacias solo en los procesos de build/arranque,
+sin editar .env.local. Se cerro el servidor temporal al terminar. Las seis URLs
+publicas fueron /, /wiki, /wiki/mr-house, /juegos, /juegos/fallout-4 y /favicon.ico;
+las cinco del matcher fueron /login, /registro, /auth/confirmar, /admin y
+/admin/wiki. Se enviaron solo cookies sinteticas, sin credenciales reales.
+
+Pruebas usan node:test/VM/TypeScript existentes, NextRequest/NextResponse reales
+y el matcher de Next instalado (utilidad unstable_doesMiddlewareMatch).
+Supabase esta simulado: renovacion, limpieza, cookies al render/navegador,
+conservacion en redireccion/503, claims invalidos, proveedor no disponible,
+configuracion ausente e aislamiento concurrente. El matcher excluye tambien
+prefijos parecidos, paths publicos interiores y recursos _next. Sin runner nuevo.
+
+Limitaciones: no hay usuarios/correos nuevos ni sesiones reales probadas; no se
+acreditan conectividad Auth, entrega de correo o validacion JWT en NestJS. El
+SDK getClaims verifica segun la firma del proyecto; esta tarea no implementa
+un verificador JWT propio ni confirma Current/JWKS. No protege por rol un panel
+que aun no existe. Login/registro/confirmacion aun no tienen paginas/handlers;
+con configuracion completa y sin sesion podran llegar al 404 existente hasta
+su implementacion. Sin configuracion, las rutas del matcher devuelven 503;
+la navegacion publica sigue disponible con mocks.
+
+Siguiente entrega: tarea 4, verificador API, solo tras revision/autorizacion y
+confirmacion de Current mas inspeccion JWKS de solo lectura. No crear cuentas
+ni enviar correos como preparacion. Phase 5 sigue abierta.
