@@ -37,7 +37,7 @@ el diseno y los mocks publicos; sustituirlos sigue siendo Phase 7.
   y sujeto a cambios. Revisar limites antes del primer envio autorizado.
 - Prisma CLI Direct requiere WARP y entrada temporal de hosts; runtime usa
   session pooler. Conservar TLS y las condiciones de docs/14 y docs/17.
-- No hay modelos de aplicacion ni migraciones. La tarea 5 integra NestJS con
+- UserRole/UserProfile y SQL preparados en tarea 6, sin aplicacion remota. La tarea 5 integra NestJS con
   @repo/db sin escrituras; health sigue acreditando solo disponibilidad de API.
 
 ## Contrato web y sesiones
@@ -628,3 +628,80 @@ Siguiente tarea propuesta: tarea 6, solo UserRole/UserProfile y artefacto SQL
 revisable, tras revision y autorizacion. Aplicar la migracion remota sigue siendo
 tarea 7 separada; no ejecutar migrate dev, deploy o db:push como continuacion
 implicita. El propietario crea/sube el commit y Phase 5 permanece abierta.
+
+
+## Entrega de tarea 6: modelo y SQL revisable
+
+Fecha: 2026-10-30. El propietario autorizo continuar tras el commit 6a4e187
+(tarea 5). Esta entrega se limita al schema, artefactos de migracion y registros
+de estado; no autoriza aplicar SQL ni crear perfiles.
+
+### Modelo y decisiones
+
+- UserRole: USER, ADMIN, EDITOR y MODERATOR.
+- UserProfile: id UUID local y supabaseUserId UUID obligatorio con indice unico;
+  username, displayName y avatarUrl opcionales, sin unicidad adicional.
+- role obligatorio con default USER en PostgreSQL. Fechas timestamptz(3):
+  createdAt con CURRENT_TIMESTAMP y updatedAt administrado por Prisma.
+- uuid() genera id en Prisma, no instala extensiones ni un default SQL. Las
+  escrituras SQL directas futuras deben proporcionar id y updatedAt.
+- Sin FK a auth.users, passwords, sesiones, email duplicado, triggers ni contenido.
+  Sin sincronizacion ni guards de roles: corresponden a tarea 8.
+
+### Artefacto y seguridad
+
+Migracion: packages/db/prisma/migrations/20261030000000_add_user_profile/migration.sql.
+Se versiona migration_lock.toml con provider postgresql. El bloque estructural
+procede de Prisma 7.9.1 migrate diff --from-empty --to-schema, sin datasource
+remoto ni shadow database. CLI sin datasource no emitio SQL; se repitio usando
+una URL ficticia loopback en puerto 1 solo para configurar el provider. No se
+uso --from-config-datasource ni --to-config-datasource, migrate dev o db:push.
+
+Se anade BEGIN/COMMIT y search_path local public: creacion, RLS y retirada de
+privilegios quedan en una sola transaccion. RLS habilitado sin politicas cliente;
+REVOKE ALL PRIVILEGES de PUBLIC, anon y authenticated solo sobre UserProfile.
+No se alteran permisos globales, default privileges, otros schemas/tablas ni roles.
+Los roles anon/authenticated deben existir en el destino Supabase confirmado.
+No se revoca USAGE del enum: no concede acceso a filas de la tabla.
+
+RLS/ACL no se representan en el schema Prisma: conservar y revisar el bloque
+manual al preparar migraciones posteriores. RLS sin FORCE no restringe al owner
+ni a roles BYPASSRLS; Nest conserva la autorizacion de negocio. No se anaden
+politicas permisivas ni grants runtime por suposicion. La tarea 7 debe confirmar
+identidad y acceso efectivo del rol de Nest (owner/BYPASSRLS y privilegios),
+privilegios heredados de anon/authenticated, ausencia de politicas cliente y
+rechazo desde Data API. Si el rol runtime no tiene acceso, revisar una solucion
+acotada antes de aplicar; no abrir la tabla al navegador para resolverlo.
+
+Esta combinacion de RLS y retirada de grants sigue la documentacion oficial de
+[Supabase sobre RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+La sintaxis CLI se verifico con --help de la version instalada 7.9.1; no se
+adopta el flujo de migraciones de versiones mayores de Prisma.
+
+### Validacion y limites
+
+| Comprobacion | Resultado |
+| --- | --- |
+| Prisma format y validate | Correcto |
+| Prisma generate y build @repo/db | Correcto, cliente y declaraciones regenerados |
+| lint y check-types @repo/db | Correcto |
+| lint, check-types y build API | Correcto |
+| Unitarias API | 69 correctas, 6 suites |
+| E2e API con DB simulada | 8 correctas, 2 suites; permiso para puertos locales |
+| SQL estructural frente a migrate diff offline | Coincide; RLS/ACL y transaccion revisados aparte |
+| git diff --check | Correcto |
+
+No se ejecuta DDL, SELECT remoto, migrate deploy, db:push, seeds ni pruebas con
+usuarios/correos reales. Las pruebas comprueban compatibilidad del cliente
+regenerado con Nest, no constraints ni permisos de PostgreSQL real. No se
+verifican todavia RLS/ACL o acceso runtime sobre la nueva tabla. Node 24.15.0;
+sin dependencias nuevas, cambios de entorno/red o modificaciones de la web.
+
+Siguiente entrega: tarea 7, solo tras revision y autorizacion expresa para
+aplicar esta migracion al destino confirmado. Antes de aplicar, revisar estado
+de migraciones y objetos existentes, roles/permisos y ausencia de colisiones;
+no asumir que --from-empty describe todo el proyecto Supabase. No reset ni
+baseline improvisado. Despues verificar estructura, unicidad/defaults, RLS/ACL,
+acceso runtime, rechazo Data API y estado Prisma sin crear usuarios/perfiles.
+La autorizacion de tarea 6 no se extiende a la tarea 7. El propietario crea y
+sube el commit; Phase 5 permanece abierta.

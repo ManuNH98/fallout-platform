@@ -1,0 +1,2 @@
+# No editar manualmente el proveedor de las migraciones.
+provider = "postgresql"
