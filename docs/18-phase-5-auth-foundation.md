@@ -5,7 +5,9 @@
 Contrato y plan de ejecucion del 23 de octubre de 2026. Phase 4 esta integrada
 mediante PR #7, merge `b324cd5`; Phase 5 trabaja en
 `feature/Phase-5_auth_foundation`. El contrato describe el objetivo; solo las
-entregas registradas al final acreditan implementacion parcial.
+entregas registradas al final acreditan implementacion. Phase 5 cerrada por
+autorizacion expresa del propietario el 31 de octubre de 2026, tras revisar
+y subir b3aeb6d. Matriz aceptada y limites en docs/20; PR abierta, merge pendiente.
 
 La tarea 1 fue documental: solo docs/04, docs/05, docs/07, docs/15 y este
 documento, sin cambios de codigo, dependencias, entorno, Dashboard, usuarios ni datos. Las
@@ -35,8 +37,8 @@ integrados inicialmente en 577c4b8. Adaptacion PKCE autorizada el 31 de octubre
 e integrada en 955eebe, revisada por el propietario. Se conserva plantilla
 predeterminada y SMTP incluido. Prueba real en curso: usuario confirmado con
 sesion/perfil USER observado y retorno PKCE sin repetir password corroborado por
-el propietario. Tarea 11 verificada con los limites de docs/20; entrega lista
-para revision/commit y cierre expreso, sin dar Phase 5 por cerrada.
+el propietario. Tarea 11 verificada con los limites de docs/20, revisada y subida
+en b3aeb6d. El propietario autoriza el cierre de Phase 5 el 31 de octubre.
 Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
@@ -1604,3 +1606,26 @@ checks ya correctos (63 web, 105 unitarias, 32 HTTP, lint/tipos/build web/API),
 sin ampliar ejecuciones sin cambios o riesgos nuevos. Diff documental limpio.
 Phase 5 NO se marca cerrada ni se inicia Phase 6: faltan revision/commit de esta
 entrega y cierre expreso del propietario. El propietario crea/sube los commits.
+
+
+## Cierre autorizado de Phase 5 (31 de octubre de 2026)
+
+El propietario confirma revision y subida del commit b3aeb6d de tarea 11 y
+posteriormente autoriza expresamente cerrar Phase 5. Informa de una PR abierta
+en GitHub para esta rama; no se afirma que este mergeada ni se modifica la PR.
+Se acepta el alcance de desarrollo local con la matriz/limites de docs/20:
+registro/confirmacion, login/logout, renovacion explicita real, identidad y
+perfiles propios, roles y aislamiento de dos sesiones. Las simulaciones de
+Proxy por expiracion y de algunos errores de enlaces siguen identificadas.
+
+Estado final permanece: dos perfiles USER locales, cero ADMIN; A autenticada en
+normal, B cerrada en privada, diagnostico temporal cerrado. Este cierre no
+repite pruebas, cambia codigo/servicios/datos, publica credenciales o ejecuta
+migraciones. Revision documental, enlaces locales y diff limpio. El propietario
+crea/sube el commit documental de cierre para incluirlo en la PR existente.
+
+La validacion remota/de produccion aplazada no queda completada por este cierre.
+Phase 6 es la proxima fase, pendiente de propuesta/tarea expresa y del estado de
+integracion que confirme el propietario. No contenido, CRUD, seeds o cambio de
+mocks autorizados por esta operacion. Estados pendientes de apartados anteriores
+se conservan como historia y quedan superados por este cierre vigente.

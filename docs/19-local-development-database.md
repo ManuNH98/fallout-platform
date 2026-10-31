@@ -13,9 +13,11 @@ Estado actual: L1 integrada en 514fdb6; L2 aplicada y verificada en PostgreSQL
 perfiles entonces. Validacion real de Auth actual: dos perfiles USER, cero ADMIN.
 Tarea 8 integrada en 9a2c3ef y tarea 9 en 2ec4a8c. Tarea 10 registro/confirmacion
 integrada en 577c4b8 y adaptacion PKCE en 955eebe, con evidencias en 457c5a8.
-Tarea 11 lista para revision: dos perfiles propios, renovacion/login/logout y
+Tarea 11 revisada/subida en b3aeb6d: dos perfiles propios, renovacion/login/logout y
 permisos verificados; ADMIN temporal autorizado y restaurado, sin ADMIN
-permanente. Plantilla predeterminada sin cambios; matriz/limites en docs/20. Migracion remota aplazada;
+permanente. Phase 5 cerrada expresamente por el propietario el 31 de octubre
+de 2026; PR pendiente de merge confirmado. Plantilla predeterminada sin cambios;
+matriz/limites aceptados en docs/20. Migracion remota aplazada;
 Auth/Storage siguen remotos. Sin CI ni cambios a WARP, hosts, certificados o
 llavero. Resultados y uso diario al final.
 La decision inicial se documento en 326ee0e antes de implementar esta entrega.

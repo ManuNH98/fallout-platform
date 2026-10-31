@@ -1,7 +1,9 @@
 # 20. Phase 5: evidencias de validacion
 
 Fecha: 31 de octubre de 2026. Rama: feature/Phase-5_auth_foundation.
-Estado: tarea 11 lista para revision; Phase 5 espera cierre expreso del propietario.
+Estado: Phase 5 cerrada por autorizacion expresa del propietario el 31 de octubre
+de 2026, tras revisar y subir b3aeb6d. PR de la rama abierta segun el propietario;
+merge en develop aun pendiente de confirmar.
 No se inicia Phase 6 ni se acreditan despliegue o PostgreSQL remoto.
 
 ## Entorno y alcance
@@ -66,7 +68,10 @@ B cerrada en privada. No nuevas migraciones, configuracion remota, correos del
 agente, servicios, costes, CI o cambios WARP/hosts/certificados. Evidencia
 cronologica y autorizaciones en docs/18.
 
-Pendiente exclusivamente de revision de esta entrega y cierre expreso de fase
-por el propietario, valorando los limites de la matriz. Antes de produccion:
+El propietario revisa la entrega, sube b3aeb6d y autoriza expresamente el cierre
+con los limites de esta matriz. Se cierra el alcance local acordado de Phase 5;
+no se inicia Phase 6 ni se presupone merge/despliegue. Este cierre es solo
+documental: diff y enlaces revisados, sin repetir tests/build o mutar servicios.
+Antes de produccion:
 origen HTTPS/redirects, SMTP/entrega, infraestructura remota, migraciones,
 RLS/ACL/Data API y entorno desplegado requieren tareas separadas.

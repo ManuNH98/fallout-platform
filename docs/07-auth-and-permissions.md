@@ -2,11 +2,13 @@
 
 ## Estado y responsabilidades
 
-Phase 5 en curso: identidad JWT, perfil local y guards de roles implementados
+Phase 5 cerrada por autorizacion expresa del propietario el 31 de octubre de
+2026 tras revisar/subir b3aeb6d; integracion de la PR en develop pendiente de
+confirmar. Identidad JWT, perfil local y guards de roles implementados
 en tareas 4 y 8; login/logout web integrados en 2ec4a8c. Registro/confirmacion
-integrados con PKCE en 955eebe y comprobados con cuentas reales. Tarea 11 lista
-para revision: login/logout, renovacion explicita, aislamiento A/B y permisos
-verificados; Phase 5 espera cierre del propietario. Matriz y limites en docs/20. Supabase Auth identifica
+integrados con PKCE en 955eebe y comprobados con cuentas reales. Tarea 11
+revisada: login/logout, renovacion explicita, aislamiento A/B y permisos
+verificados con los limites aceptados por el propietario. Matriz y limites en docs/20. Supabase Auth identifica
 usuarios y mantiene passwords, sesiones, access tokens y refresh tokens.
 NestJS aplica autorizacion de negocio con perfiles y roles en PostgreSQL.
 Desde la decision del 30 de octubre de 2026, la DB de desarrollo sera local;
@@ -48,7 +50,7 @@ mismo navegador/dispositivo y cookies intactas. Sin sesiones prematuras, destino
 libres, fallback implicit o sincronizacion DB por GET. La plantilla local HTML
 no se aplica; SMTP/plan sin cambios. Para produccion se preparara redirect HTTPS
 en tarea separada. Pruebas y limites en docs/18 y docs/20; entrega final para
-revision, sin cierre automatico de Phase 5.
+revision ya aceptada y cierre expreso documentado de Phase 5.
 
 ## Flujo de usuario y cookies
 

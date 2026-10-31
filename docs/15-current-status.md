@@ -16,7 +16,7 @@ Actualizado el 30 de octubre de 2026.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
 - **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`, que incorpora `8222fb4`).
-- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge. Las factorias Supabase web, Proxy SSR, verificador JWT y provider DB de NestJS estan implementados. El provider ha ejecutado SELECT 1 de solo lectura; UserRole/UserProfile y su SQL estan preparados sin aplicacion remota. Registro/login/logout, renovacion explicita, perfiles y permisos probados con cuentas reales; matriz y limites en docs/20. La tarea 7 remota se aplaza: L1/L2 verificadas, migracion local aplicada; tarea 8 integrada en 9a2c3ef; tarea 9 integrada en 2ec4a8c; tarea 10 integrada en 577c4b8; plantilla y una prueba real autorizadas pero bloqueadas por la restriccion de plantillas Free con SMTP incluido. PKCE integrado en 955eebe y revisado. El propietario ha registrado dos cuentas, una confirmada y otra pendiente. Sesion real y un perfil USER verificados; el propietario confirma retorno PKCE sin repetir password. Evidencias de tarea 10 integradas en 457c5a8; tarea 11 lista para revision/commit, Phase 5 pendiente de cierre expreso.
+- **Phase 5: Auth foundation** cerrada expresamente por el propietario el 31 de octubre de 2026 tras revisar y subir b3aeb6d. PKCE, sesiones, perfiles y roles verificados con los limites aceptados de docs/20. PR de feature/Phase-5_auth_foundation abierta segun el propietario; merge en develop pendiente de confirmar. PostgreSQL local, Auth/Storage remotos; dos perfiles USER y cero ADMIN. Phase 6 es la siguiente, sin iniciar ni autorizar implicitamente.
 
 ## Base completada
 
@@ -644,12 +644,26 @@ Codigo de tarea 11: test SDK real y helper manual aislado; sin cambios de produc
 API, Prisma, .env, manifests, dependencias, mocks o diseno. Docs/07, 12, 18, 19,
 20 y AGENTS reconciliados; los apartados anteriores son evidencias cronologicas.
 
+## Cierre vigente de Phase 5
+
+El propietario revisa/sube b3aeb6d y autoriza expresamente el cierre el 31 de
+octubre de 2026. Los estados pendientes anteriores son historicos; rige el cierre
+y la matriz aceptada de docs/20. PR abierta segun el propietario, aun sin merge
+confirmado. Este cambio solo registra cierre/documentacion: no nuevas pruebas,
+mutaciones, usuarios, correos o dependencias. Queda subir el commit documental
+de cierre a la rama de la PR. El propietario hace commit/push y gestiona merge.
+
+Phase 6 es la proxima fase, pendiente de una tarea acotada expresamente autorizada
+y de confirmar la integracion. No modelos, seeds, CRUD o reemplazo de mocks
+iniciados por cerrar Phase 5. Requisitos remotos/de produccion aplazados conservan
+sus limites y tareas independientes. Evidencias y entrega en docs/18 y docs/20.
+
 ## Inicio recomendado para un chat nuevo
 
 ```md
 Read AGENTS.md, docs/15-current-status.md, docs/20-phase-5-validation.md and the task-specific documentation before changing code.
 
-Phase 4 is integrated through PR #7 (b324cd5). Phase 5 is active on feature/Phase-5_auth_foundation and awaits owner review/commit of task 11 and explicit phase closure; do not start Phase 6 implicitly. Tasks 8/9/10 were committed in 9a2c3ef, 2ec4a8c and 577c4b8; PKCE adaptation is 955eebe, real registration evidence 457c5a8. Follow docs/18 for chronology and docs/20 for the consolidated evidence and limits.
+Phase 4 is integrated through PR #7 (b324cd5). Phase 5 is closed by explicit owner authorization on 31 October 2026 after review/push of task 11 (b3aeb6d). Owner reports an open GitHub PR; merge into develop is not yet confirmed. This documentation-only closure must be committed/pushed by the owner into that PR. Do not start Phase 6 implicitly; it requires its own scoped authorization. Tasks 8/9/10 were committed in 9a2c3ef, 2ec4a8c and 577c4b8; PKCE adaptation is 955eebe, real registration evidence 457c5a8. Follow docs/18 for chronology and docs/20 for the consolidated evidence and limits.
 
 Development uses native PostgreSQL 17.11 on the Mac, dedicated SCRAM cluster 127.0.0.1:55432/fallout_platform_dev owned by fallout_app. L1/L2 commits are 514fdb6/ffee55a. One schema/history, approved UserProfile migration 20261030000000_add_user_profile; no remote migration. Use pnpm --filter @repo/db db:local:start|stop|status, no global service/autostart. Local loopback sslmode=disable only; remote TLS strict. Supabase Auth/Storage remain remote. No Docker, local Supabase, root .env, paid services or CI setup.
 
