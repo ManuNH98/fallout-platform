@@ -717,3 +717,52 @@ test("registro filtra cookies de sesion y otros proyectos, preservando chunks de
   assert.equal(x.jar.has("sb-project-auth-token-code-verifier.hostil"), false);
   assert.equal(x.jar.has("sb-otro-auth-token-code-verifier"), false);
 });
+
+test("SDK real renueva una sesion caducada, usa el bearer nuevo y logout impide otra renovacion", async () => {
+  const { generateKeyPairSync, sign } = await import("node:crypto");
+  const keys = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const jwk = { ...keys.publicKey.export({ format: "jwk" }), kid: "integracion-renovacion", alg: "ES256" };
+  const now = Math.floor(Date.now() / 1000);
+  function jwt(expiration) {
+    const header = Buffer.from(JSON.stringify({ alg: "ES256", typ: "JWT", kid: jwk.kid })).toString("base64url");
+    const payload = Buffer.from(JSON.stringify({ sub: subject, role: "authenticated", is_anonymous: false, iss: "https://project.example/auth/v1", aud: "authenticated", exp: expiration, iat: now - 600 })).toString("base64url");
+    const input = `${header}.${payload}`;
+    return `${input}.${sign("sha256", Buffer.from(input), { key: keys.privateKey, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;
+  }
+  const user = { id: subject, aud: "authenticated", role: "authenticated", app_metadata: {}, user_metadata: {}, created_at: "2026-10-31T10:00:00Z" };
+  const oldToken = jwt(now - 120);
+  const newToken = jwt(now + 3600);
+  const session = { access_token: oldToken, refresh_token: "synthetic-refresh", expires_at: now - 120, expires_in: 3600, token_type: "bearer", user };
+  const authRequests = [];
+  const x = await load({
+    realSdk: true,
+    initialCookies: [["sb-project-auth-token", `base64-${Buffer.from(JSON.stringify(session)).toString("base64url")}`], ["sb-project-auth-token-code-verifier", "pending-verifier"]],
+    authFetch: async (input, init) => {
+      const url = new URL(input);
+      authRequests.push({ path: url.pathname, grant: url.searchParams.get("grant_type"), scope: url.searchParams.get("scope") });
+      if (url.pathname.endsWith("/token")) {
+        assert.equal(url.searchParams.get("grant_type"), "refresh_token");
+        assert.equal(JSON.parse(init.body).refresh_token, "synthetic-refresh");
+        return Response.json({ access_token: newToken, refresh_token: "synthetic-refresh-rotated", expires_in: 3600, token_type: "bearer", user });
+      }
+      if (url.pathname.endsWith("/.well-known/jwks.json")) return Response.json({ keys: [jwk] });
+      assert.equal(url.pathname, "/auth/v1/logout");
+      assert.equal(url.searchParams.get("scope"), "local");
+      return new Response(null, { status: 204 });
+    },
+  });
+  const view = await x.core.loadLoginView(x.dependencies(true));
+  assert.equal(view.kind, "authenticated");
+  assert.equal(x.jar.has("sb-project-auth-token-code-verifier"), false);
+  assert.equal(view.profile.supabaseUserId, subject);
+  assert.equal(x.calls.fetch.length, 1);
+  assert.equal(x.calls.fetch[0].init.headers.Authorization, `Bearer ${newToken}`);
+  assert.ok(x.calls.cookies.some(({ name, value }) => name === "sb-project-auth-token" && value));
+  assert.equal(authRequests.filter(({ grant }) => grant === "refresh_token").length, 1);
+  await assert.rejects(x.actions.logoutAction({}), (error) => error.destination === "/login");
+  assert.equal(x.jar.has("sb-project-auth-token"), false);
+  assert.equal(authRequests.filter(({ scope }) => scope === "local").length, 1);
+  assert.equal((await x.core.loadLoginView(x.dependencies(true))).kind, "anonymous");
+  assert.equal(authRequests.filter(({ grant }) => grant === "refresh_token").length, 1);
+  assert.equal(x.calls.fetch.length, 1);
+});

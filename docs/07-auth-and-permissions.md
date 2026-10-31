@@ -4,8 +4,9 @@
 
 Phase 5 en curso: identidad JWT, perfil local y guards de roles implementados
 en tareas 4 y 8; login/logout web integrados en 2ec4a8c. Registro/confirmacion
-implementados en tarea 10 con simulaciones; plantilla remota y pruebas con
-usuarios/sesiones reales siguen pendientes. Supabase Auth identifica
+integrados con PKCE en 955eebe y comprobados con cuentas reales. Tarea 11 lista
+para revision: login/logout, renovacion explicita, aislamiento A/B y permisos
+verificados; Phase 5 espera cierre del propietario. Matriz y limites en docs/20. Supabase Auth identifica
 usuarios y mantiene passwords, sesiones, access tokens y refresh tokens.
 NestJS aplica autorizacion de negocio con perfiles y roles en PostgreSQL.
 Desde la decision del 30 de octubre de 2026, la DB de desarrollo sera local;
@@ -35,8 +36,9 @@ La secuencia y criterios detallados se mantienen en
 El propietario autoriza PKCE con plantilla predeterminada para evitar el bloqueo
 de personalizacion de Supabase Free con SMTP incluido. Sustituye TokenHash y
 verifyOtp de la entrega inicial de tarea 10; los registros inferiores de esa
-entrega son historicos. Codigo y pruebas adaptados, pendientes de revision;
-ningun registro/envio real aun. La autorizacion del unico registro sigue vigente.
+entrega son historicos. Codigo integrado y revisado; registro real de A
+corroborado y A/B confirmadas, con dos perfiles USER locales. El diagnostico
+temporal de tarea 11 ya esta cerrado; no se enviaron correos adicionales.
 
 signUp lleva emailRedirectTo fijo http://localhost:3000/auth/confirmar. Su cliente
 SSR solo persiste cookie code-verifier (una hora), sin leer/escribir cookies de
@@ -45,7 +47,8 @@ rechaza TokenHash/type, errores del proveedor y tokens en query. Necesita el
 mismo navegador/dispositivo y cookies intactas. Sin sesiones prematuras, destinos
 libres, fallback implicit o sincronizacion DB por GET. La plantilla local HTML
 no se aplica; SMTP/plan sin cambios. Para produccion se preparara redirect HTTPS
-en tarea separada. Pruebas y limites en docs/18; tarea 10 sigue abierta.
+en tarea separada. Pruebas y limites en docs/18 y docs/20; entrega final para
+revision, sin cierre automatico de Phase 5.
 
 ## Flujo de usuario y cookies
 

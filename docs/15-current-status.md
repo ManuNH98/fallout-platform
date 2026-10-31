@@ -16,7 +16,7 @@ Actualizado el 30 de octubre de 2026.
 - **Phase 2: Public design with mocks** esta completada.
 - **Phase 3: Mock content browsing** esta completada e integrada mediante la PR #6 (merge `4cf28bd`).
 - **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`, que incorpora `8222fb4`).
-- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge. Las factorias Supabase web, Proxy SSR, verificador JWT y provider DB de NestJS estan implementados. El provider ha ejecutado SELECT 1 de solo lectura; UserRole/UserProfile y su SQL estan preparados sin aplicacion remota. Login/logout web implementados; sesiones/access tokens y flujos con usuarios reales aun sin verificar. La tarea 7 remota se aplaza: L1/L2 verificadas, migracion local aplicada; tarea 8 integrada en 9a2c3ef; tarea 9 integrada en 2ec4a8c; tarea 10 integrada en 577c4b8; plantilla y una prueba real autorizadas pero bloqueadas por la restriccion de plantillas Free con SMTP incluido. PKCE integrado en 955eebe y revisado. El propietario ha registrado dos cuentas, una confirmada y otra pendiente. Sesion real y un perfil USER verificados; el propietario confirma retorno PKCE sin repetir password. Evidencias de tarea 10 listas para revision; tarea 11 pendiente.
+- La fase activa es **Phase 5: Auth foundation**, inicialmente para planificacion y preparacion. El propietario confirmo el merge y autorizo continuar el 23 de octubre de 2026. La rama `feature/Phase-5_auth_foundation` parte de ese merge. Las factorias Supabase web, Proxy SSR, verificador JWT y provider DB de NestJS estan implementados. El provider ha ejecutado SELECT 1 de solo lectura; UserRole/UserProfile y su SQL estan preparados sin aplicacion remota. Registro/login/logout, renovacion explicita, perfiles y permisos probados con cuentas reales; matriz y limites en docs/20. La tarea 7 remota se aplaza: L1/L2 verificadas, migracion local aplicada; tarea 8 integrada en 9a2c3ef; tarea 9 integrada en 2ec4a8c; tarea 10 integrada en 577c4b8; plantilla y una prueba real autorizadas pero bloqueadas por la restriccion de plantillas Free con SMTP incluido. PKCE integrado en 955eebe y revisado. El propietario ha registrado dos cuentas, una confirmada y otra pendiente. Sesion real y un perfil USER verificados; el propietario confirma retorno PKCE sin repetir password. Evidencias de tarea 10 integradas en 457c5a8; tarea 11 lista para revision/commit, Phase 5 pendiente de cierre expreso.
 
 ## Base completada
 
@@ -561,10 +561,101 @@ logout, renovacion forzada, ADMIN, cambios de codigo o configuracion; sin repeti
 tests/build. Evidencias/limites en docs/18. Evidencias de tarea 10 listas para revision. Phase 5 sigue abierta y la tarea 11
 requiere autorizacion separada.
 
+## Tarea 11 activa: comprobaciones de sesiones y permisos
+
+Autorizada tras 457c5a8. En curso: logout real observado en Safari y formulario
+anonimo persistente al recargar. API sin bearer devuelve 401. Diagnostico local
+loopback en puerto 3196 confirma ausencia de sesion, con Origin ajeno denegado
+403. No hay cambios de roles, correos, cuentas o configuracion.
+
+Nuevo test SDK real con transporte simulado verifica renovacion de JWT ES256,
+uso del bearer nuevo en perfil y logout sin renovacion posterior. Herramienta
+manual en apps/web/features/auth/tests/manual-auth-server.mjs permite consultar
+estados HTTP reales con cookies de Safari sin mostrar credenciales ni crear
+perfiles; no es una ruta de producto ni se despliega. Cerrar al terminar.
+63 pruebas web, 105 unitarias y 32 HTTP API; web/API lint/tipos/build correctos.
+Pendiente login manual con cuenta confirmada, comprobacion USER/ADMIN real,
+renovacion/aislamiento remotos y cierre expreso. ADMIN requiere autorizacion
+propia sobre el perfil local confirmado. Detalles y limites en docs/18.
+
+## Tarea 11: permisos y renovacion reales observados
+
+Login real A observado: perfil HTTP 200 y correspondiente a la identidad,
+ADMIN 403 con USER. Propietario autoriza ADMIN temporal para ese unico perfil
+LOCAL: HTTP 200, restauracion USER y HTTP 403 sin nuevo login; lectura final
+confirma un perfil USER, cero ADMIN. Se actualiza updatedAt durante esos cambios;
+no promocion permanente ni cambios de Supabase Auth.
+
+Diagnostico temporal anade POST /renovar con Origin exacto, cookie jar por
+peticion y Set-Cookie acumulados. Renovacion real observada con access token
+nuevo, claims validos, perfil 200 y ADMIN 403; /login conserva sesion. Origin
+ajeno/ausente/null se rechaza 403. Referrer-Policy same-origin solo en esta
+herramienta permite POST de Safari; callback del producto sigue no-referrer.
+
+Ventana privada Safari preparada en /login, anonima e independiente de sesion
+A normal. Pendiente login manual con B sin confirmar y aislamiento completo;
+no confirmar/enviar/borrar B sin tarea expresa. Renovacion automatica por Proxy
+sigue probada con simulaciones; la real observada es POST explicito del SDK.
+Sin emails nuevos ni nuevos usuarios. Tarea 11/Phase 5 abiertas. Detalle docs/18.
+
+## Tarea 11: intento B rechazado y confirmacion B autorizada
+
+Intento de login B sin confirmar en privado rechazado con mensaje generico,
+sin sesion ni perfil; A mantiene sesion normal despues de recargar. DB local
+sigue con un USER y cero ADMIN; B sin perfil. No se inspecciono el codigo interno
+de Auth, por lo que no se distingue solo por UI entre falta de confirmacion y
+password incorrecto. No se repiten pruebas ni se muestran secretos.
+
+El propietario tiene el correo existente de B y autoriza su confirmacion para
+comprobar aislamiento con dos usuarios autenticados. Debe abrir el enlace en
+Safari normal donde registro B; esa ventana pasara a B. Posteriormente se usara
+A en privada. Sin reenvio, alta adicional ni confirmacion desde Dashboard.
+Diagnostico incluye etiquetas efimeras Cuenta 1/Cuenta 2 y perfil coincide con
+sub, sin UUID/email/token; sigue abierto hasta completar pruebas. Pendiente
+confirmacion B, su perfil y observacion de ambos contextos. Phase 5 abierta.
+
+## Estado actual de B: confirmada, pendiente login privado
+
+El enlace existente de B devuelve error generico del callback, pero Dashboard
+Overview confirma email verificado el 31 de octubre a las 02:16 y sin ultimo
+login. No reenviar: el correo ya esta confirmado. A sigue autenticada en normal,
+con perfil propio 200 y ADMIN 403; formulario privado preparado para login B.
+
+SDK instalado elimina verifier pendiente al guardar/cerrar sesion. La secuencia
+de logout/login/refresh de A pudo borrar el verifier del registro B; no se han
+inspeccionado cookies historicas ni causa interna unica. Se documenta el efecto
+y se cubre su eliminacion en el test de renovacion SDK. No cambio de producto
+ni bypass de confirmacion. Nueva ruta manual: A normal, B login privado con
+password; dos perfiles/contextos y aislamiento siguen pendientes. Docs/18.
+
+## Estado final de tarea 11: listo para revision
+
+A normal y B privada autenticadas concurrentemente, cada una con perfil propio
+HTTP 200 y ADMIN 403, etiquetas efimeras diferentes. Logout B no cierra A.
+Consulta READ ONLY final: 2 perfiles/2 identidades, uno por A/B, 2 USER, 0 ADMIN.
+Diagnostico temporal cerrado y puerto 3196 verificado sin servicio. Sesion A
+conservada, B cerrada. Sin nuevos correos o cambios de roles despues de restaurar.
+
+Registro/PKCE, login/logout, renovacion real explicita, permisos y aislamiento
+verificados con los limites de la matriz consolidada en docs/20. 63 web,
+105 unitarias y 32 HTTP API, web/API lint/tipos/build correctos. Tarea 11 entregada
+para revision/commit; Phase 5 abierta hasta cierre expreso. No iniciar Phase 6.
+Codigo de tarea 11: test SDK real y helper manual aislado; sin cambios de producto,
+API, Prisma, .env, manifests, dependencias, mocks o diseno. Docs/07, 12, 18, 19,
+20 y AGENTS reconciliados; los apartados anteriores son evidencias cronologicas.
+
 ## Inicio recomendado para un chat nuevo
 
 ```md
-Read AGENTS.md, docs/15-current-status.md, docs/12-roadmap.md, and the documents relevant to the task before making changes.
+Read AGENTS.md, docs/15-current-status.md, docs/20-phase-5-validation.md and the task-specific documentation before changing code.
 
-Phase 0 and local Phase 1 are complete; Phase 4 verified the deferred infrastructure. Phases 2/3 are complete; PR #6 merged Phase 3 (4cf28bd), PR #7 merged Phase 4 (b324cd5). Phase 5 is active on feature/Phase-5_auth_foundation. Read docs/19-local-development-database.md first for the owner-approved 30 October 2026 environment decision: native PostgreSQL on the Mac for development, remote Supabase Auth/Storage, planned Supabase PostgreSQL for production, zero additional service cost. Documentation was committed in 326ee0e. L1 local setup was committed in 514fdb6: PostgreSQL 17.11, dedicated ignored cluster packages/db/.local-postgres on 127.0.0.1:55432, SCRAM, DB fallout_platform_dev and owner fallout_app without superuser/CREATEDB/CREATEROLE/BYPASSRLS. SQL roles anon/authenticated are NOLOGIN. API/DB .env files now target local; prior sensitive copies are ignored under .local-postgres/previous-env. L2 has applied the approved UserProfile migration locally: Prisma status current, checksum matches, structural diff empty, RLS enabled with no client policies, anon/authenticated denied, Nest Prisma read succeeds with zero profiles. No remote migration applied. Use pnpm --filter @repo/db db:local:start|stop|status; manual start after reboot, no global service. Local loopback only uses sslmode=disable; remote TLS remains strict. L1 SELECT 1 CLI/runtime/Nest, credentials and lifecycle passed; DB/API lint/types/build, 69 unit and 8 e2e tests passed. No Docker, local Supabase, root .env, CI setup or paid services. L2 was committed in ffee55a. Phase 5 task 8 is committed in 9a2c3ef: POST /auth/perfil with identity-only/no-overwrite upsert and P2002 recovery, GET /auth/me read-only, GET /admin/comprobacion ADMIN-only; profile and role guards/decorators, shared type-only JSON contracts in @repo/types. API lint/types/build, shared types lint/types, web types, 105 unit and 32 e2e tests pass. Fixtures use synthetic ES256 JWT/JWKS and simulated Prisma/DB, with no real profile/user creation or DB mutations. Task 9 web login/logout is committed in 2ec4a8c: dynamic /login, Server Actions with writable SSR cookies, shared Zod validation, verified session claims, private API requests, profile synchronization/retry and local logout. Web lint/types/build, validation lint/types and 47 simulated web tests pass. Safari desktop and production HTTP smoke checked; real users/emails and Auth integration remain untested. Task 10 registration/email confirmation is implemented with 60 simulated web tests, lint/types/build and production HTTP smoke passing. The initial stateless TokenHash implementation is superseded by the authorized PKCE revision below. Task 10 was committed in 577c4b8. The owner authorized applying the local template and a single real signup/email, but neither happened: Safari inspection shows Free/default SMTP template editing disabled. Current default ConfirmationURL is incompatible with the TokenHash contract. On 31 October 2026 the owner authorized PKCE adaptation with the default template. Registration now uses a project-filtered SSR verifier cookie (one-hour maxAge), fixed local emailRedirectTo and callback exchangeCodeForSession; no premature session cookies. 62 web tests including the real SDK with simulated transport, lint/types/build and HTTP smoke pass. PKCE was committed in 955eebe and reviewed by the owner. Owner reports two self-created accounts, A confirmed and B unconfirmed. Read-only Safari and local DB observations verify an authenticated profile view, exactly one USER profile matching A and none matching B. The owner explicitly confirms A was created through /registro and reached the authenticated app from the email link in the same Safari without entering the password again. Treat the callback path as owner-confirmed, supplemented by direct session/profile observations. No personal emails/identifiers in documentation; no further signup/email or ADMIN promotion performed. Do not upgrade or configure SMTP implicitly. Owner reconfirmed Confirm email and Site URL http://localhost:3000. Next config excludes confirmation queries from request logs and disables Server Function argument logs. Task 10 real-flow evidence is complete and ready for owner review; task 11 integration/closure requires separate authorization. One Prisma schema/history; preserve migration 20261030000000_add_user_profile from 73791bf and account for anon/authenticated SQL roles locally. Remote task 7 is deferred, not complete; do not implicitly resume deployment attempts. Remote TLS/migrations/RLS/ACL/Data API and deployed Auth/Storage checks are required before production. WARP/hosts cleanup is separate and not performed; no automatic networking/keychain changes. Preserve docs/17 Phase 4 evidence and docs/18 diagnostics. Supabase factories, SSR Proxy, ES256/JWKS verification, lazy @repo/db integration and UserProfile schema/SQL exist. Profile/role enforcement is implemented and tested with simulations; real Supabase flows/tokens/users and end-to-end integration remain pending. Build DB before direct filtered API commands or use Turbo dependencies. App Router is apps/web/app/ without src/. Preserve Spanish public design and typed mocks; no content models, CRUD or seeds. Never request secrets in chat. Applying migrations, creating Auth users, sending emails and changing remote configuration require scoped explicit authorization. Work one task at a time, validate affected workspaces, provide an English commit title/body and stop for owner review; owner commits/pushes. Phase 5 remains open until its revised development criteria pass and the owner authorizes closure.
+Phase 4 is integrated through PR #7 (b324cd5). Phase 5 is active on feature/Phase-5_auth_foundation and awaits owner review/commit of task 11 and explicit phase closure; do not start Phase 6 implicitly. Tasks 8/9/10 were committed in 9a2c3ef, 2ec4a8c and 577c4b8; PKCE adaptation is 955eebe, real registration evidence 457c5a8. Follow docs/18 for chronology and docs/20 for the consolidated evidence and limits.
+
+Development uses native PostgreSQL 17.11 on the Mac, dedicated SCRAM cluster 127.0.0.1:55432/fallout_platform_dev owned by fallout_app. L1/L2 commits are 514fdb6/ffee55a. One schema/history, approved UserProfile migration 20261030000000_add_user_profile; no remote migration. Use pnpm --filter @repo/db db:local:start|stop|status, no global service/autostart. Local loopback sslmode=disable only; remote TLS strict. Supabase Auth/Storage remain remote. No Docker, local Supabase, root .env, paid services or CI setup.
+
+Owner-created test accounts A/B are confirmed; final local DB has exactly two USER profiles, one per identity, zero ADMIN. Real registration/PKCE A is owner-confirmed; login/logout, protected profile reads, explicit SDK refresh accepted by Nest, A/B isolation and temporary authorized ADMIN 403-to-200-to-403 were directly observed. A stays signed in normal Safari; B is signed out in private. The temporary diagnostic localhost:3196 is stopped; its test-only script may be run manually as documented, never deployed. No personal identifiers/tokens in documentation.
+
+Task 11 adds one real-SDK simulated-transport renewal/logout test and a manual loopback diagnostic under apps/web/features/auth/tests/. Validation passed: 63 web, 105 API unit, 32 API HTTP tests, web/API lint/types/build and public HTTP/CORS smoke. Proxy automatic expiry renewal and some invalid/expired/replayed callback cases are simulated, not all reproduced remotely; real refresh was explicit. B email was confirmed despite a failed PKCE return, then normal password login worked; SDK save/remove session clears pending verifiers, so complete each signup before testing other auth flows in that context. No automatic resend or auth bypass.
+
+Never request passwords/tokens in chat; owner enters them in the web. New users/emails, remote config, migration or role promotion need scoped authorization. No permanent ADMIN exists or is authorized. Keep Spanish public design, typed mocks, REST/Nest business authorization, shared types/validation and one Prisma history. Work one task at a time; owner commits/pushes. Before production separately prepare HTTPS origins/redirects, SMTP/delivery, remote DB/TLS/migrations/RLS/ACL/Data API and deployment checks. WARP/hosts/keychain changes were not performed and must not resume implicitly.
 ```

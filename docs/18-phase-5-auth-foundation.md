@@ -35,7 +35,8 @@ integrados inicialmente en 577c4b8. Adaptacion PKCE autorizada el 31 de octubre
 e integrada en 955eebe, revisada por el propietario. Se conserva plantilla
 predeterminada y SMTP incluido. Prueba real en curso: usuario confirmado con
 sesion/perfil USER observado y retorno PKCE sin repetir password corroborado por
-el propietario. Evidencias listas para revision; integracion/cierre pendientes.
+el propietario. Tarea 11 verificada con los limites de docs/20; entrega lista
+para revision/commit y cierre expreso, sin dar Phase 5 por cerrada.
 Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
@@ -1397,3 +1398,209 @@ Enlaces invalidos/caducados/reutilizados siguen cubiertos por simulaciones;
 no se declara que se hayan reproducido todos esos casos contra Supabase real.
 Validacion de esta aclaracion: diff documental limpio; sin cambios de codigo,
 cuentas, envios, roles o configuracion y sin repetir tests/build.
+
+
+## Tarea 11 en curso: sesiones y diagnostico de permisos
+
+Autorizada por el propietario tras integrar evidencias de tarea 10 en 457c5a8.
+No incluye crear mas usuarios, confirmar la cuenta B ni promover ADMIN sin
+operacion expresa sobre perfil/entorno confirmados. Tarea 11 y Phase 5 abiertas.
+
+Pruebas y herramienta locales:
+
+- features/auth/tests/auth.test.mjs anade un caso con SDK real, JWT sintetico
+  ES256 y respuestas Auth/JWKS/API simuladas: sesion caducada renovada, firma
+  verificada, GET perfil usa solo bearer nuevo, cookies actualizadas, logout
+  scope local elimina sesion y una lectura posterior no renueva ni consulta API.
+- features/auth/tests/manual-auth-server.mjs es una herramienta temporal de
+  pruebas, no una ruta de Next ni parte del producto. Escucha solo 127.0.0.1:3196,
+  valida Host, metodo/path/Origin y rechaza fetch cross-site. Sin CORS. Lee
+  cookies de localhost en Safari, verifica claims con SDK y consulta solamente
+  GET /auth/me y /admin/comprobacion. Puede renovar sesion como operacion Auth
+  normal; propaga cookies SSR. No crea perfiles ni cambia roles. Solo muestra
+  booleanos y estados HTTP, sin tokens, emails, UUID ni cuerpos de errores.
+  Respuestas private/no-store, no-referrer, noindex y CSP sin scripts/frames;
+  sin registro de solicitudes o credenciales. Cada peticion crea su cliente.
+- Para ejecutar desde la raiz: node --env-file=apps/web/.env.local
+  apps/web/features/auth/tests/manual-auth-server.mjs (una sola linea), abrir
+  http://localhost:3196 en el mismo Safari y cerrar con Ctrl+C al terminar.
+  Requiere entorno web existente y API http://localhost:3001; no crea .env nuevo.
+  La primera invocacion por pnpm no encontro el .env relativo; se arranco con
+  ruta absoluta sin cambiar el archivo ni mostrarlo.
+
+Evidencias reales observadas por el agente:
+
+1. Safari /login muestra sesion y perfil preparados antes de logout.
+2. Cerrar sesion en este navegador devuelve formulario de login. Una recarga
+   mantiene formulario anonimo; diagnostico en otra pestana confirma
+   sessionVerified=false, sin solicitar datos privados a Nest.
+3. Solicitudes directas sin bearer a /auth/me y /admin/comprobacion responden
+   401. Diagnostico rechaza Origin ajeno con 403, respuesta anonima 200 privada.
+4. Home/publico conservan interfaz mock. No se inspeccionan ni extraen cookies
+   mediante automatizacion de navegador; el SDK las maneja en memoria.
+
+Checks de esta entrega en curso: 63 pruebas web, 105 unitarias API y 32 HTTP
+API correctas. Web/API lint, check-types y build correctos; build web fuera del
+sandbox por el puerto interno de Turbopack. Matriz de roles y aislamiento de
+usuarios cubiertos por pruebas API simuladas, no por promocion real en DB.
+El primer intento de unitarias uso pnpm test con flag no reconocido; la
+invocacion correcta pnpm --filter api run test --runInBand paso completa.
+Sin dependencias o manifests nuevos, cambios de produccion, API/DB o migraciones.
+
+Pendientes reales: login con password por el propietario en Safari; perfil
+HTTP 200 y ADMIN 403 del USER desde diagnostico; renovacion remota observada
+cuando corresponda, aislamiento y rechazo de cuenta sin confirmar; ADMIN 200
+requiere operacion autorizada separada y verificada. No extraer credenciales,
+crear endpoints de promocion ni dar por completo el cierre con simulaciones.
+Se deja el servidor temporal disponible para estas comprobaciones entre turnos;
+se cerrara al terminar. No se han enviado mas correos, confirmado B o cambiado
+roles/configuracion. No se solicita de nuevo autorizacion para registro previo.
+
+
+### Tarea 11: login, permisos reales y renovacion verificados
+
+El propietario inicia sesion con A y comunica Tu sesion. Observacion directa
+posterior del agente en Safari: sessionVerified=true, GET /auth/me=200,
+profileMatchesSubject=true y GET /admin/comprobacion=403 desde diagnostico.
+La identidad real obtiene su propio perfil y no supera la comprobacion ADMIN.
+
+El propietario autoriza expresamente ADMIN temporal para el unico perfil local
+confirmado y restauracion USER, solo fallout_platform_dev en 127.0.0.1:55432.
+Operacion parametrizada con precondiciones: destino/usuario DB exactos, un solo
+perfil y rol inicial USER. Actualiza role y updatedAt en ese perfil; ningun
+cambio de Supabase Auth o metadata. Respaldo de restauracion automatica a los
+60 segundos, interrumpido tras comprobar HTTP 200 con ADMIN. Restauracion
+confirmada a USER y recarga del diagnostico vuelve a HTTP 403 sin nuevo login.
+Lectura READ ONLY posterior acredita total=1, users=1, admins=0. No queda ADMIN
+permanente; cualquier nueva promocion exige su propio alcance/autorizacion.
+
+Renovacion real: se amplia la herramienta temporal con POST /renovar y boton
+manual. Exige Origin exactamente http://localhost:3196, Host local y evita
+cross-site; POST sin Origin, Origin ajeno o null devuelve 403 sin usar cookies.
+GET de perfil/permisos sigue sin escrituras. El POST llama auth.refreshSession,
+propaga todas las cookies actualizadas y muestra solo booleanos/estados. Usa
+cookie jar por peticion y acumula Set-Cookie por nombre para conservar cambios
+multiples. CSP form-action self; nunca imprime JWT/refresh token.
+
+El primer POST de Safari fue rechazado antes de renovar: no-referrer elimina
+el origen util del formulario en este contexto. Se usa Referrer-Policy same-origin
+SOLO en esta pagina de prueba sin queries sensibles, manteniendo el control
+estricto de Origin. El callback del producto conserva no-referrer y no cambia.
+Tras corregir la herramienta y repetir una vez, observacion directa:
+sessionRefreshed=true, accessTokenChanged=true, sessionVerified=true,
+profileHttp=200, profileMatchesSubject=true y adminHttp=403. Recarga de /login
+en la aplicacion mantiene Tu sesion y perfil preparados con las nuevas cookies.
+Esta renovacion real es explicita; la automatica por expiracion de Proxy se
+sigue acreditando por simulaciones, no por esperar la caducidad de esta cuenta.
+
+Se abre una ventana privada de Safari en /login para comprobar B sin confirmar:
+se observa formulario anonimo, mientras la ventana normal conserva la sesion
+A. El propietario debe introducir password y enviar un unico login B; resultado
+pendiente. No se confirma B, reenvia email ni borra cuenta. No afirmar todavia
+rechazo de login B ni aislamiento entre DOS usuarios autenticados: una sesion
+normal y otra privada anonima no completan ese criterio por si solas.
+
+Checks tras ampliar herramienta: web lint/check-types y smoke de rechazo de
+POST por origen. No se repiten build o suites sin cambios de codigo de producto;
+se conservan resultados de esta entrega: 63 web, 105 unitarias y 32 HTTP API,
+lint/tipos/build web/API. No nuevas dependencias. Servidor temporal sigue abierto
+para la siguiente comprobacion y debe cerrarse al terminar. Tarea 11/Phase 5
+siguen abiertas hasta resolver pendientes, revision y cierre del propietario.
+
+
+### Cuenta B sin confirmar: intento rechazado y siguiente prueba autorizada
+
+El propietario intenta login B en la ventana privada y comunica el error generico
+No se ha podido iniciar sesion. Revisa tu correo y contrasena. El agente observa
+ese mensaje y el formulario; diagnostico privado confirma sessionVerified=false,
+sin consulta de perfil/ADMIN. La ventana normal sigue en Tu sesion y al recargar
+mantiene el perfil de A. Lectura local final: total=1, users=1, admins=0 y cero
+perfiles correspondientes a B. No se han leido passwords ni mostrado tokens.
+
+Este intento rechazado no expone el estado de cuenta. Por ser error generico,
+la UI por si sola no distingue email no confirmado de password incorrecto; no
+se inspecciono el error interno de Auth. El contexto de cuenta pendiente esta
+acreditado por Dashboard/propietario; no atribuir un codigo interno no observado.
+Queda probada ausencia de sesion/perfil tras el intento y separacion de la
+ventana anonima respecto de A, no aun dos usuarios autenticados.
+
+El propietario confirma que tiene el correo de B y autoriza confirmarla para
+la prueba de aislamiento. No se reenvia correo, crea otra cuenta o confirma
+manualmente desde Dashboard. Debe abrir el enlace existente en el Safari normal
+que inicio ese registro PKCE; puede sustituir la identidad A de esa ventana por B.
+Despues se usara Gmail/A en la ventana privada. Si el enlace ha caducado o falla,
+registrar el resultado antes de plantear cualquier envio adicional.
+
+Herramienta temporal ampliada con accountLabel (Cuenta 1, Cuenta 2): mapa en
+memoria del proceso de etiquetas efimeras por sub verificado, sin mostrar UUID,
+email o tokens ni guardar clientes, sesiones o permisos entre peticiones. Sirve
+para comparar dos contextos mientras cada profileMatchesSubject acredita su
+perfil propio. Se reinicio solo el proceso de diagnostico, sin modificar cookies
+ni detener apps. Etiquetas reiniciadas con el proceso; no identificadores de
+producto. Web lint/check-types tras este ajuste. No declarar confirmacion de B
+ni aislamiento completo hasta observar las dos sesiones/perfiles.
+
+
+### Enlace B: correo confirmado, retorno PKCE no completado
+
+El propietario abre el enlace existente autorizado y obtiene /registro con
+confirmacion=invalida y error generico. No se reenvia correo. Inspeccion de solo
+lectura en Dashboard, Overview de B: Confirmed 31 Oct 2026 02:16, Last signed in
+sin valor. Por tanto el correo SI se confirmo en Supabase, aunque la aplicacion
+no completo el acceso por ese retorno. No volver a enviar/confirmar ni modificar
+Dashboard para resolver este estado; usar login normal con password.
+
+Se comprueba que la ventana normal sigue con A: diagnostico sessionVerified=true,
+accountLabel=Cuenta 1, perfil 200 correspondiente al sub y ADMIN 403. Se prepara
+el formulario de login B en la ventana privada, sin introducir ni leer su
+password. Se rechaza la sugerencia de Safari de guardar password (Ahora no),
+sin cambiar preferencias o credenciales guardadas.
+
+Causa compatible con la secuencia de pruebas: el SDK auth-js instalado 2.108.0
+elimina storageKey-code-verifier al guardar una sesion nueva (_saveSession) y al
+cerrarla (_removeSession). Entre registro B y su enlace se probaron logout,
+login y refresh de A en el mismo navegador/proyecto. Esas operaciones pudieron
+eliminar el verifier B pendiente; el agente debio prever ese efecto al ordenar
+la prueba. No se observaron las cookies del momento ni el error interno exacto,
+por lo que no se afirma como causa forense unica ni se atribuye a caducidad.
+Se amplia la prueba SDK real de renovacion con un verifier pendiente y se
+comprueba su eliminacion. No se modifica el SDK ni se preserva verifier a la
+fuerza tras logout: se mantienen sus protecciones y la salida segura a login.
+
+Para aislamiento final se ajusta el recorrido: A/Gmail sigue en ventana normal,
+B/Outlook ya confirmado inicia sesion manualmente en privada. No necesita otro
+email ni abrir de nuevo el enlace consumido. Pendiente observar Tu sesion B,
+perfil propio y distinto, ambos contextos concurrentes y logout de uno sin
+cerrar el otro. Task 11/Phase 5 abiertas. No nueva autorizacion para el mismo
+login; el propietario introduce las credenciales directamente en el formulario.
+
+
+### Tarea 11: aislamiento final y entrega para revision
+
+B inicia sesion mediante password en la ventana privada; Tu sesion y perfil
+preparado observados. Diagnostico en la MISMA pestana privada del login muestra
+sessionVerified=true, Cuenta 2, perfil 200 coincidente con sub y ADMIN 403. Otra
+pestana privada que estaba abierta siguio anonima: se usa siempre el contexto
+exacto del login para no confundir esa separacion de almacenamiento con un fallo.
+Ventana normal A muestra Cuenta 1, perfil propio 200 y ADMIN 403 simultaneamente.
+No se reducen las protecciones de privacidad sugeridas por Safari.
+
+Logout B desde su pestana de aplicacion devuelve formulario; diagnostico de ese
+mismo contexto queda sessionVerified=false sin lecturas de datos privados.
+A sigue autenticada tras recargar, con Cuenta 1 y perfil 200/ADMIN 403.
+Consulta parametrizada READ ONLY final: total=2, perfiles distintos=2,
+identidades distintas=2, USER=2, ADMIN=0; A/B tienen exactamente un perfil cada una.
+Sesion normal A conservada, B cerrada. No nuevas mutaciones de roles.
+
+CORS comprobado con preflight anonimo: 204 y Allow-Origin fijo localhost:3000;
+un origen ajeno no coincide, y GET privado sigue 401 sin bearer. Publico
+/, /wiki, /juegos 200, sin cambios de diseno/mocks. Diagnostico temporal cerrado,
+puerto 3196 rechaza conexiones, pestaña normal de prueba cerrada y aplicacion
+normal dejada en Tu sesion. No se detienen servicios de desarrollo/DB del dueno.
+
+La entrega de tarea 11 queda lista para revision del propietario, con matriz
+consolidada y limites en [docs/20](20-phase-5-validation.md). Se conservan los
+checks ya correctos (63 web, 105 unitarias, 32 HTTP, lint/tipos/build web/API),
+sin ampliar ejecuciones sin cambios o riesgos nuevos. Diff documental limpio.
+Phase 5 NO se marca cerrada ni se inicia Phase 6: faltan revision/commit de esta
+entrega y cierre expreso del propietario. El propietario crea/sube los commits.

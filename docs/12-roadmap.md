@@ -229,15 +229,14 @@ El 30 de octubre de 2026 se aprueba PostgreSQL nativo local para desarrollo;
 documentacion integrada en 326ee0e, L1 integrada en 514fdb6 y L2 migracion
 local aplicada/verificada e integrada en ffee55a. Tarea 8 de sincronizacion y
 roles integrada en 9a2c3ef. Tarea 9 login/logout integrada en 2ec4a8c.
-Tarea 10 registro/confirmacion integrada en 577c4b8 con simulaciones.
-Plantilla/prueba real autorizadas pero no ejecutadas: Supabase Free/SMTP incluido
-bloquea personalizar plantillas. El 31 de octubre el propietario autoriza PKCE
-con plantilla predeterminada: integrada en 955eebe y revisada. El propietario
-registra dos cuentas, una confirmada con perfil USER verificado y otra sin
-confirmar/sin perfil. El propietario confirma registro desde /registro y retorno
-PKCE autenticado sin repetir password; evidencias de tarea 10 listas para revision.
-Integracion completa y cierre (tarea 11) siguen pendientes; docs/18. Auth/Storage siguen remotos;
-tarea 10 y flujos con usuarios reales aun sin completar/verificar.
+Tarea 10 integrada en 577c4b8, adaptada a PKCE en 955eebe para conservar
+plantilla predeterminada/SMTP incluido; evidencias reales integradas en 457c5a8.
+Tarea 11 lista para revision: login/logout, renovacion explicita real, aislamiento
+A/B y permisos USER/ADMIN temporal/restauracion verificados. Final: 2 perfiles
+USER, 0 ADMIN; diagnostico temporal cerrado. 63 pruebas web, 105 unitarias y
+32 HTTP API, lint/tipos/build correctos. Matriz y limites en
+[validacion Phase 5](20-phase-5-validation.md). Phase 5 sigue abierta hasta revision,
+commit y cierre expreso del propietario; no se inicia Phase 6. Auth/Storage remotos.
 [Decision y criterios por entorno](19-local-development-database.md).
 Cada implementacion requiere autorizacion y revision independientes.
 

@@ -9,11 +9,13 @@ Storage siguen remotos en el plan gratuito, dentro de sus limites; no se crea
 Supabase local. Next.js, NestJS, Prisma y los packages existentes se mantienen.
 
 Estado actual: L1 integrada en 514fdb6; L2 aplicada y verificada en PostgreSQL
-17.11 local, pendiente de revision. UserProfile/UserRole existen, con cero perfiles.
+17.11 local, integrada en ffee55a. UserProfile/UserRole existen; L2 verifico cero
+perfiles entonces. Validacion real de Auth actual: dos perfiles USER, cero ADMIN.
 Tarea 8 integrada en 9a2c3ef y tarea 9 en 2ec4a8c. Tarea 10 registro/confirmacion
-integrada en 577c4b8; adaptacion PKCE autorizada el 31 de octubre e implementada
-con simulaciones, pendiente de revision y prueba real ya autorizada. Plantilla
-predeterminada sin cambios; sin nuevas escrituras de DB. Migracion remota aplazada;
+integrada en 577c4b8 y adaptacion PKCE en 955eebe, con evidencias en 457c5a8.
+Tarea 11 lista para revision: dos perfiles propios, renovacion/login/logout y
+permisos verificados; ADMIN temporal autorizado y restaurado, sin ADMIN
+permanente. Plantilla predeterminada sin cambios; matriz/limites en docs/20. Migracion remota aplazada;
 Auth/Storage siguen remotos. Sin CI ni cambios a WARP, hosts, certificados o
 llavero. Resultados y uso diario al final.
 La decision inicial se documento en 326ee0e antes de implementar esta entrega.
