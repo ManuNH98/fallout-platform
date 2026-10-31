@@ -8,7 +8,7 @@ Cada fase debe cerrarse antes de depender de ella desde la siguiente. Una fase s
 
 ## Estado actual
 
-La configuracion local de **Phase 1: Infrastructure and configuration** esta completada. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta activa para revision de cierre: runtime y Prisma CLI verificados con TLS, Email/URLs preparados y Storage verificado. CLI Direct en macOS requiere WARP y una entrada temporal de hosts; condiciones en `docs/17-phase-4-validation.md`. El frontend conserva los mocks.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada y sus pendientes externos se verificaron en Phase 4. **Phase 2 y Phase 3 estan completadas.** Phase 3 se integro mediante la PR #6 (merge `4cf28bd`). **Phase 4: Supabase real infrastructure** esta completada e integrada en develop mediante la PR #7 (merge `b324cd5`). El propietario confirmo la integracion y autorizo continuar con **Phase 5: Auth foundation** el 23 de octubre de 2026, en la rama `feature/Phase-5_auth_foundation`. El acceso remoto de Phase 4 se verifico con WARP/hosts; evidencias historicas en `docs/17-phase-4-validation.md`. Desde el 30 de octubre de 2026, desarrollo con PostgreSQL local aprobado; L1/L2 verificadas, migracion local aplicada; contrato y continuacion en `docs/19-local-development-database.md`. El frontend conserva los mocks y el diseno durante Phase 5.
 
 **Phase 0 se completo el 29 de julio de 2026.** La base del monorepo incluye pnpm workspaces, Turborepo, `apps/web`, `apps/api`, los seis packages previstos, documentacion y configuraciones compartidas.
 
@@ -47,7 +47,7 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 
 ## Phase 1: Infrastructure and configuration
 
-**Estado:** configuracion local completada; integracion externa aplazada originalmente y retomada en Phase 4, todavia pendiente de verificacion.
+**Estado:** configuracion local completada; integracion externa aplazada originalmente y verificada en Phase 4. Evidencias y limites en `docs/17-phase-4-validation.md`.
 
 **Objetivo:** conectar la infraestructura principal.
 
@@ -72,14 +72,14 @@ La web utiliza el puerto `3000` y la API el `3001` durante desarrollo. Las valid
 - Prisma conecta con PostgreSQL.
 - Las variables necesarias estan documentadas sin incluir secretos.
 
-**Pendientes externos trasladados a Phase 4:**
+**Pendientes externos trasladados a Phase 4 y completados en esa fase:**
 
 - Crear el proyecto remoto de Supabase.
 - Configurar Auth y el bucket `media` en Supabase Dashboard.
 - Rellenar los archivos `.env` locales con credenciales reales.
 - Ejecutar `pnpm --filter @repo/db db:check` contra Supabase PostgreSQL.
 
-Estos pendientes deben completarse antes de implementar autenticacion real, migraciones o persistencia. No bloquean un prototipo visual con datos mock, pero las fases dependientes no se consideraran terminadas hasta integrar la infraestructura real.
+Estos requisitos quedaron cubiertos por las evidencias de Phase 4, incluida la preparacion de Email/URLs por confirmacion del propietario. No acreditan flujos Auth, entrega de correo ni persistencia de aplicacion, que siguen pendientes de sus fases correspondientes.
 
 ## Phase 2: Public design with mocks
 
@@ -190,7 +190,7 @@ entrega. Posteriormente la PR #6 quedo integrada y el propietario autorizo Phase
 
 ## Phase 4: Supabase real infrastructure
 
-**Estado:** validacion tecnica realizada; pendiente de revision del propietario, no marcada completada. Runtime y Prisma CLI pasan con TLS verificado. CLI Direct en macOS depende de WARP activo y una entrada temporal del hostname en hosts aplicada por el propietario. Email/URLs preparados por confirmacion, SMTP incluido sin pruebas Auth. Storage privado y rechazo anonimo verificados; aplicaciones, health, mocks y checks validados. Evidencias y limites en `docs/17-phase-4-validation.md`.
+**Estado:** completada e integrada en develop mediante la PR #7 (merge `b324cd5`, que incorpora `8222fb4`). El propietario confirmo el merge y autorizo avanzar a Phase 5 el 23 de octubre de 2026. Runtime y Prisma CLI pasan con TLS verificado segun las evidencias existentes; CLI Direct en macOS depende de WARP activo y una entrada temporal del hostname en hosts. Email/URLs preparados por confirmacion, SMTP incluido sin pruebas Auth. Storage privado y rechazo anonimo verificados; aplicaciones, health, mocks y checks validados. El cierre documental no constituye una nueva verificacion. Evidencias y limites en `docs/17-phase-4-validation.md`.
 
 **Objetivo:** activar la infraestructura externa preparada en Phase 1.
 
@@ -222,6 +222,26 @@ Secuencia, responsabilidades, configuracion objetivo y comandos en `docs/14-envi
 
 ## Phase 5: Auth foundation
 
+**Estado:** completada y cerrada por el propietario el 31 de octubre de 2026
+en `feature/Phase-5_auth_foundation`. Tarea 11 revisada/subida en b3aeb6d; PR
+abierta segun el propietario, merge en develop aun sin confirmar.
+Factorias Supabase, Proxy SSR, JWT API, provider DB y schema/SQL UserProfile
+preparados (tareas 2 a 6 de docs/18). Migracion remota sin aplicar.
+El 30 de octubre de 2026 se aprueba PostgreSQL nativo local para desarrollo;
+documentacion integrada en 326ee0e, L1 integrada en 514fdb6 y L2 migracion
+local aplicada/verificada e integrada en ffee55a. Tarea 8 de sincronizacion y
+roles integrada en 9a2c3ef. Tarea 9 login/logout integrada en 2ec4a8c.
+Tarea 10 integrada en 577c4b8, adaptada a PKCE en 955eebe para conservar
+plantilla predeterminada/SMTP incluido; evidencias reales integradas en 457c5a8.
+Tarea 11 validada y revisada: login/logout, renovacion explicita real, aislamiento
+A/B y permisos USER/ADMIN temporal/restauracion verificados. Final: 2 perfiles
+USER, 0 ADMIN; diagnostico temporal cerrado. 63 pruebas web, 105 unitarias y
+32 HTTP API, lint/tipos/build correctos. Matriz y limites en
+[validacion Phase 5](20-phase-5-validation.md). Cierre expresamente autorizado
+con los limites registrados; no inicia Phase 6. Auth/Storage remotos.
+[Decision y criterios por entorno](19-local-development-database.md).
+Cada implementacion requiere autorizacion y revision independientes.
+
 **Objetivo:** autenticar usuarios y autorizar acciones desde la API.
 
 **Tareas:**
@@ -237,12 +257,22 @@ Secuencia, responsabilidades, configuracion objetivo y comandos en `docs/14-envi
 
 **Definicion de completado:**
 
-- Un usuario puede registrarse, iniciar y cerrar sesion.
+- PostgreSQL local preparado y migracion UserProfile validada antes de las tareas dependientes.
+- Un usuario puede registrarse, iniciar y cerrar sesion en el entorno de desarrollo acordado.
 - Next.js puede llamar a NestJS con el access token.
 - NestJS identifica al usuario y carga su perfil local.
 - Solo ADMIN puede acceder al endpoint administrativo de prueba.
 
+La tarea 7 remota se aplaza; no se considera completada por pruebas locales.
+La comprobacion DB/Prisma/TLS, migraciones, RLS/ACL/Data API y flujos completos
+sobre el despliegue sera obligatoria antes de produccion. CI Linux es una opcion
+futura sin configurar; no garantiza conectividad ni implica gasto autorizado.
+Phase 5 solo se cierra con sus criterios locales verificados y aprobacion expresa.
+
 ## Phase 6: Core content models and API
+
+**Estado:** pendiente de inicio y de una tarea acotada autorizada por el propietario.
+El cierre de Phase 5 no inicia esta fase ni acredita su integracion en develop.
 
 **Objetivo:** implementar la persistencia y API iniciales de contenido.
 

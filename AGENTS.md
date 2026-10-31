@@ -21,7 +21,7 @@ All user-facing copy, routes, labels, validation messages, admin labels, and see
 - Backend framework: NestJS
 - Language: TypeScript
 - UI: TailwindCSS + shadcn/ui
-- Database: PostgreSQL hosted in Supabase
+- Database: native local PostgreSQL 17.11 for development (L1/L2 ready; UserProfile migrated locally); Supabase PostgreSQL for production
 - Auth: Supabase Auth
 - Storage: Supabase Storage
 - ORM: Prisma
@@ -288,20 +288,26 @@ pnpm --filter @repo/ui check-types
 
 ## Current priority
 
-Phase 0 is complete and the local part of Phase 1 is prepared. Phases 2 and 3 are complete; Phase 3 was integrated through PR #6 (merge commit `4cf28bd`). Phase 4 is active with owner-authorized planning and documentation; remote Supabase infrastructure and connectivity remain unverified. Public pages must continue using typed mock data throughout Phase 4.
+Phases 0 to 5 are complete for their agreed development scope. Phase 3 was merged through PR #6 (4cf28bd), Phase 4 through PR #7 (b324cd5). The owner reviewed/pushed task 11 (b3aeb6d) and explicitly authorized Phase 5 closure on 31 October 2026. Closure is recorded in docs/20-phase-5-validation.md. The owner reports a GitHub PR for feature/Phase-5_auth_foundation; its merge into develop remains pending confirmation. Do not claim that it is already merged.
 
 Current implementation order:
 
-1. Public design and shell with typed mock data (Phase 2, completed).
-2. Mock wiki and games browsing routes (Phase 3, completed).
-3. Real Supabase infrastructure and connection verification (Phase 4, active).
-4. Authentication flow and application roles.
-5. Core Prisma content models and REST API.
-6. Replace public mocks with API data.
+1. Public design and typed mocks (Phase 2, complete).
+2. Mock wiki and games browsing (Phase 3, complete).
+3. Supabase infrastructure verification (Phase 4, complete).
+4. Authentication and application roles (Phase 5, closed by owner).
+5. Core Prisma content models and REST API (Phase 6, next; not started or implicitly authorized).
+6. Replace public mocks with API data (Phase 7).
 7. Protected admin panel and content CRUD.
 
-The complete phase definitions are maintained in `docs/12-roadmap.md`.
+Use docs/12-roadmap.md for phase definitions, docs/18-phase-5-auth-foundation.md for Auth history and docs/20-phase-5-validation.md for the accepted evidence and its limits. Phase 6 requires its own scoped owner-authorized task; this closure does not authorize new models, CRUD, seeds, migrations or public design/data changes. Preserve Spanish public pages and typed mocks until their planned replacement.
 
-During Phase 4, follow `docs/14-environment-and-supabase.md`. Do not implement auth flows, sessions, roles, JWT validation, content models, migrations or seeds, replace mocks, or change the public design. Do not introduce Docker, local Supabase, or a root `.env` file. Never request secrets in chat or use migrations or `db:push` as connectivity checks.
+Development follows docs/19-local-development-database.md: native PostgreSQL 17.11 on the Mac, dedicated SCRAM cluster at 127.0.0.1:55432/fallout_platform_dev owned by fallout_app; manual pnpm --filter @repo/db db:local:start|stop|status, no global service/autostart. L1/L2 are integrated in 514fdb6/ffee55a, and the approved UserProfile migration 20261030000000_add_user_profile is applied locally. Final Auth validation left two USER profiles and zero ADMIN. Test accounts/profiles do not move implicitly to production. Keep one Prisma schema/history and the local anon/authenticated SQL roles; RLS/client ACLs remain protected.
 
-Execute one scoped task at a time. After each implementation, validate affected workspaces, report changes and limitations, and provide an English commit title and description. Stop for owner review; the owner creates and pushes commits and authorizes the next task. Phase 4 stays open until all its acceptance criteria have been verified.
+Supabase Auth/Storage remain remote; PostgreSQL production migration and validation are deferred, not complete. Remote TLS, migrations, RLS/ACL/Data API, HTTPS origins/redirects, SMTP/delivery and deployed integration require separate tasks before production. Local loopback alone uses sslmode=disable; preserve strict TLS remotely. WARP/hosts/keychain cleanup was not performed and must not happen automatically. No Docker, local Supabase, root .env, paid services or CI setup is authorized implicitly. Sensitive previous-env backups and cluster data stay ignored under packages/db/.local-postgres.
+
+Auth uses PKCE with the default Supabase email template and a fixed local redirect; open confirmation in the signup browser/device before testing other auth flows that clear its verifier. Nest validates ES256/JWKS and owns application authorization. No permanent ADMIN exists or is authorized. New real users/emails, remote configuration, migrations or role promotion require specific authorization; never request passwords/tokens in chat or put personal identifiers in documentation. The owner enters credentials directly in the web.
+
+Accepted evidence: real signup/confirmation, login/logout, explicit SDK renewal, two-session/profile isolation and authorized temporary ADMIN 403-to-200-to-403 restored to USER. Proxy automatic expiry renewal and some callback error cases are simulated, distinguished in docs/20. Checks passed: 63 web, 105 API unit and 32 API HTTP tests, web/API lint/types/build and HTTP/CORS smoke. The test-only localhost:3196 diagnostic is stopped and must never be deployed. A remains signed in normal Safari; B is signed out in private.
+
+Execute one scoped task at a time. Validate affected workspaces, report changes/limits and provide an English commit title/body. The owner creates/pushes commits and authorizes subsequent work. Do not reopen Phase 5 or repeat its closure approval without new evidence that requires it.

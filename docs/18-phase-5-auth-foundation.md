@@ -1,0 +1,1631 @@
+# 18. Phase 5: Auth foundation
+
+## Estado y alcance
+
+Contrato y plan de ejecucion del 23 de octubre de 2026. Phase 4 esta integrada
+mediante PR #7, merge `b324cd5`; Phase 5 trabaja en
+`feature/Phase-5_auth_foundation`. El contrato describe el objetivo; solo las
+entregas registradas al final acreditan implementacion. Phase 5 cerrada por
+autorizacion expresa del propietario el 31 de octubre de 2026, tras revisar
+y subir b3aeb6d. Matriz aceptada y limites en docs/20; PR abierta, merge pendiente.
+
+La tarea 1 fue documental: solo docs/04, docs/05, docs/07, docs/15 y este
+documento, sin cambios de codigo, dependencias, entorno, Dashboard, usuarios ni datos. Las
+skills locales next-best-practices y nestjs-best-practices orientan el contrato;
+prevalecen AGENTS.md y la arquitectura del proyecto. No se adopta el ejemplo
+generico de emitir JWT propios: Supabase mantiene identidad y sesiones.
+
+Incluye registro con email/password y confirmacion, login, logout local,
+sesiones SSR, verificacion JWT en NestJS, perfil local, cuatro roles y un
+endpoint de prueba exclusivo de ADMIN. Las pantallas usan espanol.
+
+Excluye recuperacion de contrasena, OAuth, MFA, edicion de perfil, gestion de
+usuarios, panel admin, contenido, CRUD y seeds. La ruta reservada
+`/restablecer-contrasena` no obliga a implementarla en esta fase. Se mantienen
+el diseno y los mocks publicos; sustituirlos sigue siendo Phase 7.
+
+## Revision del contrato: PostgreSQL local (30 de octubre de 2026)
+
+El propietario aprueba el cambio de entorno de desarrollo y solicita documentarlo
+antes de implementar. Rige [docs/19](19-local-development-database.md): PostgreSQL
+nativo local, Supabase Auth/Storage remotos, sin coste de servicios adicionales.
+L1 instalada/validada: PostgreSQL 17.11 local y .env API/DB cambiados a loopback.
+L2 aplicada/verificada en local, con cero perfiles reales. Tarea 8 implementada,
+integrada en 9a2c3ef. Tarea 9 (login/logout) integrada en 2ec4a8c.
+Tarea 10 (registro/confirmacion): codigo y pruebas simuladas implementados,
+integrados inicialmente en 577c4b8. Adaptacion PKCE autorizada el 31 de octubre
+e integrada en 955eebe, revisada por el propietario. Se conserva plantilla
+predeterminada y SMTP incluido. Prueba real en curso: usuario confirmado con
+sesion/perfil USER observado y retorno PKCE sin repetir password corroborado por
+el propietario. Tarea 11 verificada con los limites de docs/20, revisada y subida
+en b3aeb6d. El propietario autoriza el cierre de Phase 5 el 31 de octubre.
+Migracion remota aplazada. Resultados y comandos en docs/19.
+El registro cronologico inferior conserva propuestas previas, incluidas las
+alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
+
+La tarea 7 remota se aplaza y conserva sus evidencias de bloqueo; no se marca
+completada ni se continua automaticamente con su autorizacion anterior. Se
+insertan L1 (preparacion local sin migrar) y L2 (migracion local autorizada del
+SQL aprobado) antes de tarea 8. No se exige recuperar Direct desde este Mac
+para continuar. RLS/ACL siguen vigentes; no suprimir REVOKE o crear otro schema
+para eludir roles SQL faltantes. El alcance de esta entrega se amplia solo a
+AGENTS.md, README.md y docs afectados para reconciliar el contrato documental.
+
+La aceptacion de tarea 8 dependera de tareas 4, 5 y L1/L2 revisadas. Tareas 9,
+10 y 11 conservan su orden; integracion/cierre de Phase 5 se comprueban sobre
+API/DB locales con identidad Supabase remota. Phase 5 sigue abierta hasta pruebas
+y cierre expreso del propietario. La validacion DB remota y Data API aplazada
+sera requisito antes de produccion; nunca acreditarla mediante pruebas locales.
+Crear usuarios, enviar correos o cambiar Supabase sigue necesitando autorizacion
+expresa. No hay CI contratado/configurado ni instalacion de Supabase local.
+
+## Evidencias y decisiones pendientes
+
+- El propietario confirma que `ECC (P-256)` aparece como Current el 30 de
+  octubre de 2026. Una consulta GET de solo lectura al JWKS publico confirma
+  una clave ES256/EC/P-256. El estado activo es evidencia del propietario; la
+  publicacion de la clave es inspeccion del agente. No se han creado usuarios,
+  obtenido secretos ni probado access tokens reales para esta comprobacion.
+- Email, confirmacion, Site URL `http://localhost:3000` y redirects exactos
+  `/auth/confirmar` y `/restablecer-contrasena` estaban preparados por
+  confirmacion del propietario. Plantilla SSR y entrega siguen pendientes.
+- SMTP incluido: la documentacion consultada limita destinatarios a miembros
+  del equipo de la organizacion y permite actualmente 2 mensajes/hora, sin SLA
+  y sujeto a cambios. Revisar limites antes del primer envio autorizado.
+- El destino previo remoto usaba Direct con WARP/hosts y runtime por session
+  pooler. Desarrollo usa PostgreSQL local segun docs/19, con L1/L2 verificadas.
+  Conservar TLS para remoto y evidencias historicas de docs/14 y docs/17.
+- UserRole/UserProfile y SQL preparados en tarea 6, sin aplicacion remota. La tarea 5 integra NestJS con
+  @repo/db sin escrituras; health sigue acreditando solo disponibilidad de API.
+
+## Revision autorizada: confirmacion PKCE (31 de octubre de 2026)
+
+El propietario elige PKCE con la plantilla predeterminada para mantener coste
+cero y autoriza la adaptacion. Sustituye el contrato TokenHash/verifyOtp vigente
+hasta 577c4b8; las entregas inferiores conservan la historia, no el contrato actual.
+Registro envia emailRedirectTo fijo http://localhost:3000/auth/confirmar con
+PKCE del SDK y conserva SOLO la cookie temporal code-verifier (una hora), sin
+leer/escribir cookies de sesion desde el cliente de registro. No se acepta una
+sesion prematura si el proveedor devuelve una inesperadamente.
+
+El callback valida un unico code, rechaza errores del proveedor y parametros
+TokenHash/type heredados, y usa exchangeCodeForSession con SSR escribible. Sin
+fallback implicit, verifyOtp o tokens en fragments. La confirmacion requiere el
+mismo navegador/dispositivo, conservando cookies; no iniciar registros paralelos
+que reemplacen el verifier. Respuestas 303 a destinos relativos fijos, sin codigo
+sensible en destino, cache privada/no-store y no-referrer. Continuar de tarea 9
+sincroniza perfil; callback no escribe DB.
+
+Esta entrega esta acotada al desarrollo local: el redirect usa el origen local
+ya aprobado, nunca Host/Origin/formulario. Antes de desplegar habra que configurar
+y validar el origen HTTPS de produccion en una tarea expresa. No se crean env
+nuevos, SMTP, servicios, dependencias ni planes. La plantilla HTML personalizada
+se conserva solo como referencia futura, sin aplicar; el correo actual de
+Supabase puede estar en ingles. La autorizacion previa de un registro/envio real
+permanece vigente para despues de revisar/probar la adaptacion; no se consume
+con simulaciones. No hay autorizacion implicita para ADMIN o segundo usuario.
+
+## Contrato web y sesiones
+
+Usar @supabase/supabase-js y @supabase/ssr. Mantener las variables publicas
+existentes en apps/web/.env.local, sin secretos ni .env raiz. Crear factorias
+en `apps/web/lib/supabase/client.ts` y `server.ts`; servidor por peticion,
+sin estado de usuario global. El modulo servidor no se importa desde cliente.
+
+SSR utiliza cookies y PKCE del SDK. Usar `await cookies()` y adaptadores
+getAll/setAll. Server Components leen cookies; Server Actions y Route Handlers
+pueden escribirlas. Next.js 16 usa `apps/web/proxy.ts` junto a app, sin src.
+El proxy actualiza cookies de peticion y respuesta; redirecciones conservan
+cookies y cabeceras de cache del resultado renovado. Limitar el matcher a
+rutas Auth y privadas; home/wiki/juegos y assets mantienen su comportamiento.
+No introducir lectura de sesion en el layout publico o raiz.
+
+Usar getClaims para verificar identidad; getUser cuando se necesite estado
+actual del usuario en Auth. getSession puede obtener el access token, pero no
+acredita identidad. No almacenar respuestas personales ni Set-Cookie en cache
+compartida; llamadas privadas a Nest con cache no-store. No serializar refresh
+tokens ni sesiones en props o logs. El patron compartido del SDK necesita
+cookies accesibles al navegador: no imponer HttpOnly que impida su renovacion.
+Conservar atributos seguros, SameSite apropiado y Secure en HTTPS de produccion.
+
+Las paginas publicas siguen funcionando sin variables Supabase; invocar una
+factoria Auth sin configuracion completa produce error controlado en espanol.
+No hay conexiones Auth durante build ni clientes creados al importar modulos.
+
+| Flujo | Ruta y comportamiento previsto |
+| --- | --- |
+| Login | `app/(auth)/login/page.tsx`; Server Action valida email/password y llama signInWithPassword. Errores genericos, sin devolver password. |
+| Registro | `app/(auth)/registro/page.tsx`; signUp PKCE, emailRedirectTo local fijo, solo cookie temporal verifier y estado revisa tu correo sin sesion prematura. No aceptar role ni supabaseUserId del formulario. |
+| Confirmacion | `app/(auth)/auth/confirmar/route.ts`; plantilla predeterminada, parametro code y verifier del mismo navegador. exchangeCodeForSession establece cookies y redirige a /login sin parametros sensibles; Continuar sincroniza el perfil. |
+| Logout | Server Action o POST, signOut con scope local explicito, limpiar sesion y redirigir a /login. GET no cierra sesiones. |
+
+La revision del 31 de octubre sustituye TokenHash por PKCE con la plantilla
+predeterminada y emailRedirectTo fijo http://localhost:3000/auth/confirmar.
+No usar Host sin validar, destinos next libres, fragments implicit ni dos
+contratos de confirmacion simultaneos. El HTML personalizado es referencia
+futura y no se aplica en esta entrega. Los enlaces TokenHash antiguos se rechazan.
+
+Tratar enlaces ausentes, invalidos, caducados o usados con mensajes espanoles
+sin filtrar detalles. No registrar la query de confirmacion ni incluirla en
+analitica. Contemplar prefetch de proveedores de correo en la prueba manual.
+Validar entradas tambien en servidor, proteger acciones frente a CSRF segun
+el mecanismo Next elegido y evitar enumeracion de cuentas. No desactivar
+confirmacion para facilitar pruebas.
+
+El logout revoca la renovacion de la sesion elegida; un access token ya emitido
+puede seguir siendo valido hasta expirar. No prometer revocacion instantanea
+mediante verificacion JWT local ni anadir listas de revocacion en esta fase.
+
+## Identidad y autorizacion API
+
+Contrato ES256, con Current confirmado por el propietario y JWKS inspeccionado: jose con
+createRemoteJWKSet y jwtVerify. JWKS en
+`SUPABASE_URL/auth/v1/.well-known/jwks.json`, issuer
+`SUPABASE_URL/auth/v1`, audiencia authenticated y algoritmo admitido ES256.
+Derivar destinos de la URL configurada confiable, nunca del token. No obtener
+claves privadas, JWT secret ni claves privilegiadas. No agregar fallback HS256
+ni rotar claves automaticamente si la inspeccion contradice el dato del owner;
+revisar el contrato antes de implementar.
+
+Exigir firma, exp, sub UUID y claims de sesion de usuario; comprobar nbf cuando
+exista. Rechazar anon, service_role, publishable keys, usuarios anonimos y
+algoritmos no admitidos. El claim role=authenticated es de Supabase, no ADMIN.
+Nunca confiar en role del frontend o user_metadata para permisos.
+
+Mantener un resolvedor JWKS reutilizable, con timeout y cache acotados, recarga
+ante kid nuevo y pruebas de rotacion. Considerar los 10 minutos de cache Edge
+publicados por Supabase y documentar la ventana de revocacion. Si no se puede
+verificar, no autorizar; distinguir token invalido (401) de indisponibilidad de
+Auth/JWKS/DB (503) sin exponer errores internos.
+
+SupabaseAuthGuard valida identidad y carga el perfil existente cuando proceda;
+POST /auth/perfil permite identidad valida sin perfil. RolesGuard usa el rol
+actual de PostgreSQL y deniega perfiles ausentes. @CurrentUser expone el perfil
+local solo cuando existe; @Roles declara roles permitidos. No hay jerarquia
+implicita que permita EDITOR o MODERATOR entrar en el endpoint ADMIN.
+
+| Endpoint propuesto | Resultado |
+| --- | --- |
+| POST /auth/perfil | Identidad verificada; cuerpo vacio. Servicio crea o recupera perfil idempotentemente, devuelve perfil con HTTP 200. Solo esta operacion crea perfil. |
+| GET /auth/me | Identidad verificada; devuelve perfil existente, 404 si falta. No crea datos durante lectura. |
+| GET /admin/comprobacion | Identidad y perfil ADMIN; 200 con mensaje espanol, 401 sin identidad, 403 sin perfil o con otro rol. Sin panel ni operaciones administrativas. |
+
+Tras login o la accion Continuar con sesion valida, Next hace POST /auth/perfil con
+Bearer access token; si falla, no presenta el perfil como disponible. Una
+sesion Supabase valida no garantiza que la API o la DB esten disponibles.
+Ningun refresh token llega a Nest. Next puede comprobar acceso para navegar,
+pero cada endpoint privado valida y autoriza tambien llamadas directas.
+Los contratos de respuesta viven en packages/types, sin importar Prisma al
+frontend. Las reglas de formulario compartidas viven en packages/validation.
+
+## Perfil y persistencia minima
+
+Seguir docs/04: UUID local, supabaseUserId UUID unico, role enum USER por defecto,
+createdAt, updatedAt; username, displayName y avatarUrl opcionales. No guardar
+password, refresh token ni copiar email innecesariamente. No modificar
+schemas gestionados, auth.users ni introducir triggers para sincronizacion.
+
+Upsert por identidad verificada, seguro frente a concurrencia; una repeticion
+no cambia role ni campos existentes. No importar roles desde metadata. Primer
+ADMIN mediante tarea manual expresamente autorizada sobre un perfil existente,
+con identificador confirmado y verificacion posterior; sin seed ni endpoint
+publico de promocion. EDITOR y MODERATOR existen, sin funciones posteriores.
+
+La tarea 5 prepara @repo/db como package compilado ESM con declaraciones;
+Nest lo consume mediante importacion dinamica nativa y conserva su compilacion
+CommonJS. Mantener una sola factoria en packages/db y provider con cierre
+ordenado en API. No mover DB a apps/api ni actualizar versiones sin necesidad.
+Generar/compilar DB antes de los consumidores; comandos y resultados al final.
+
+Crear y revisar el artefacto de migracion separadamente de su aplicacion. No
+usar migrate dev contra Supabase como generacion inocua: usa shadow database
+y puede aplicar cambios o pedir reset. Preparar SQL sin conexion con Prisma 7,
+revisar solo UserProfile/UserRole, RLS y privilegios. La tabla no sera accesible
+por Data API al navegador: RLS sin politicas cliente y permisos minimos, sin
+trasladar autorizacion de negocio a SQL. Comprobar el acceso del rol runtime.
+Aplicar mediante Prisma Migrate solo en una tarea autorizada; sin reset,
+db:push, seeds ni manipulacion de storage/auth.
+
+## Secuencia de tareas
+
+Ejecutar en orden, una entrega por revision. La numeracion es propia de este
+documento. Cada fila permite ademas actualizar docs/15 y este registro para
+resultados reales. Todo archivo no listado queda excluido; pnpm-lock.yaml
+solo cambia al modificar dependencias autorizadas. Excluidos comunes: mocks,
+diseno publico, secretos, entorno real, contenido, seeds y mutaciones de recursos externos.
+La fila 7 remota queda aplazada por la revision local; L1/L2 se definen en docs/19.
+Las mutaciones remotas de 7, 10 y 11 requieren autorizacion expresa; las lecturas JWKS/conectividad se acotan en su propia tarea.
+
+| Tarea | Depende de | Archivos permitidos y dependencias | Aceptacion y pruebas |
+| --- | --- | --- | --- |
+| 1. Contrato documental (esta entrega) | Cierre Phase 4 | docs/04, 05, 07, 15, 18; sin dependencias | Coherencia, fuentes oficiales, diff limpio; sin implementacion. |
+| 2. Factorias web | 1 revisada | apps/web/lib/supabase/client.ts y server.ts; lib/env.ts si necesario; manifest web y lockfile; pruebas locales asociadas | Solo @supabase/supabase-js y @supabase/ssr. Configuracion completa/ausente/parcial, adaptadores simulados y aislamiento servidor/cliente; checks web. Sin proxy, rutas ni sesiones reales. |
+| 3. Renovacion SSR | 2 | apps/web/proxy.ts, lib/supabase/proxy.ts y pruebas | Cookies renovadas en peticion/respuesta/redirecciones, cache privada, matcher excluye publico; tests simulados de expiracion y errores; checks web. |
+| 4. Verificador API | 1, Current confirmado y JWKS inspeccionado | apps/api/src/modules/auth/**, common/guards de identidad, config y pruebas, app.module.ts, manifest API/lockfile; ejemplo/Turbo solo si contrato cambia | jose justificado por JWKS. Tokens sinteticos ES256, exp/iss/aud/sub invalidos, otro algoritmo, kid desconocido, rotacion y timeout; checks y tests API. Sin DB/perfiles. |
+| 5. Integracion DB/API | 1 | packages/db configuracion de build/exports y manifests; provider DB y configuracion compilacion/tests API; lockfile | Dependencia @repo/db workspace; consumo desde dist y Jest, generacion/cierre correctos; checks DB/API y prueba de solo lectura cuando se autorice. Sin modelos. |
+| 6. Modelo y SQL revisable | 5 | packages/db/prisma/schema.prisma y artefactos de migracion | Solo UserRole/UserProfile; SQL, unicidad, RLS y permisos revisados; validate/generate y checks DB. Sin aplicacion remota. |
+| 7. Aplicacion migracion remota (aplazada) | 6 revisada y nueva tarea de produccion autorizada | Migracion aprobada y registro; destino remoto confirmado | Prisma Migrate con SQL aprobado, sin resets; verificar estructura, acceso runtime, rechazo Data API y estado. Sin usuarios ni perfiles de prueba. |
+| 8. Sincronizacion y roles | 4, 5, L1 y L2 de docs/19 revisadas | modules/auth y users API; guards/decorators/pipes, modulo endpoint admin de prueba; packages/types; manifests/lockfile si necesario; pruebas | Upsert concurrente, USER por defecto, conservacion de ADMIN, 401/403/404/503 y matriz de roles; tests unitarios/e2e simulados y checks afectados. |
+| 9. Login/logout | 3, 8 | apps/web/app/(auth)/login/** y layout Auth; features/auth/**; helper privado API; packages/validation; manifests/lockfile | Zod en package compartido y dependencias workspace justificadas; formularios espanoles, validacion servidor, errores, sincronizacion y logout local; checks web/packages y pruebas simuladas. Sin registros ni envios. |
+| 10. Registro/confirmacion | 9; PKCE autorizado para plantilla predeterminada y destinatario autorizado antes del envio | app/(auth)/registro/** y auth/confirmar/route.ts; features/auth/**, schemas/tests; next.config.js solo para impedir logs de credenciales; plantilla predeterminada sin cambios remotos | Sin sesion prematura, enlace correcto/invalido/caducado/reutilizado, sin redireccion abierta ni logs sensibles; simulaciones primero, unico registro/envio real autorizado despues. |
+| 11. Integracion/cierre | 2 a 10 revisadas | Pruebas Auth y documentacion de estado; operacion ADMIN solo autorizada | Registro-confirmacion-login-renovacion-perfil-API-logout, aislamiento entre usuarios, USER denegado y ADMIN admitido; mocks sin regresion; evidencias con limites y cierre del propietario. |
+
+No instalar dependencias en la tarea 1. No hacen falta bcrypt, Passport ni un
+emisor JWT propio. Fijar versiones compatibles cuando se autorice cada tarea;
+no instalar latest sin revisar runtime. La web no tiene runner de tests: la
+tarea correspondiente concretara un harness minimo con tooling disponible;
+cualquier runner nuevo necesita justificarlo antes de ampliar el alcance.
+
+## Pasos manuales del propietario
+
+1. Confirmar que ECC (P-256) es Current en Project Settings > JWT Keys. No
+   migrar, rotar, revocar ni compartir secretos. Contrastar despues con JWKS y,
+   cuando exista una prueba autorizada, con el header de un token verificado.
+2. Confirm email y Site URL revisados. Desde el 31 de octubre usar plantilla
+   predeterminada con PKCE y redirect exacto existente /auth/confirmar; no aplicar
+   HTML TokenHash, cambiar Redirect URLs ni habilitar recuperacion.
+3. Elegir una direccion del equipo para el primer registro; autorizar cuenta
+   y envio, comprobar limite disponible y recepcion. No introducir reintentos
+   automaticos ni pruebas masivas. No registrar direcciones personales en docs.
+4. SMTP propio solo mediante decision posterior antes de destinatarios externos
+   o produccion; credenciales se introducen directamente en Dashboard.
+5. Revisar y autorizar migracion remota y promocion manual a ADMIN por separado.
+
+## Validacion y cierre
+
+Para cambios exclusivamente documentales: git diff --check, revisar enlaces
+relativos, coherencia con roadmap/codigo y distinguir propuestas de evidencias.
+La tarea documental 1 no tuvo workspaces afectados para lint/check-types/build.
+
+Para cada implementacion ejecutar solo los grupos afectados:
+
+```bash
+pnpm --filter web lint
+pnpm --filter web check-types
+pnpm --filter web build
+pnpm --filter api lint
+pnpm --filter api check-types
+pnpm --filter api build
+pnpm --filter api run test --runInBand
+pnpm --filter api run test:e2e --runInBand
+pnpm --filter @repo/db lint
+pnpm --filter @repo/db check-types
+pnpm --filter @repo/db build
+pnpm --filter @repo/db prisma:validate
+pnpm --filter @repo/db prisma:generate
+pnpm --filter @repo/types lint
+pnpm --filter @repo/types check-types
+pnpm --filter @repo/validation lint
+pnpm --filter @repo/validation check-types
+git diff --check
+```
+
+Types/validation no tienen build propio actualmente. Conectividad, solo cuando
+corresponda y se autorice: db:check y db:check:runtime en @repo/db; no sustituyen
+pruebas Auth ni aplican schema. Las pruebas unitarias usan claves/JWKS/DB
+simulados; pruebas remotas nunca se ejecutan implicitamente desde lint/build.
+Comprobar navegacion mock, cache privada, aislamiento de sesiones, CORS y
+endpoint directo sin UI. No anunciar rechazo inmediato de access tokens tras
+logout: verificar ausencia de sesion/renovacion y documentar su validez residual.
+
+Cierre: registro y confirmacion reales autorizados, login/logout y renovacion
+funcionales, llamada Next/Nest con token verificado, perfil unico y rol en DB,
+matriz USER/EDITOR/MODERATOR denegada y ADMIN admitido en prueba, sin secretos
+publicados y mocks intactos. Checks correctos y limites registrados. Tras cada
+entrega resumir archivos, decisiones, TODOs y validacion; titulo y descripcion
+de commit en ingles. El propietario crea/sube el commit y autoriza continuar.
+
+## Fuentes oficiales
+
+Consultadas el 23 de octubre de 2026; revisar otra vez APIs/versiones concretas
+al implementar. El repositorio usa Next 16.2.0, Nest 11 y Prisma 7.9.1; no se
+adoptan APIs de otra version por aparecer en una pagina latest.
+
+- [Clientes SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs).
+- [SSR, PKCE y cookies](https://supabase.com/docs/guides/auth/server-side/advanced-guide).
+- [Firma y rotacion](https://supabase.com/docs/guides/auth/signing-keys) y [verificacion JWT](https://supabase.com/docs/guides/auth/jwts).
+- [Plantillas de correo](https://supabase.com/docs/guides/auth/auth-email-templates) y [SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
+- [Logout y scopes](https://supabase.com/docs/guides/auth/signout).
+- [Proxy Next](https://nextjs.org/docs/app/api-reference/file-conventions/proxy) y [cookies](https://nextjs.org/docs/app/api-reference/functions/cookies).
+- [Autenticacion Nest](https://docs.nestjs.com/security/authentication), [autorizacion](https://docs.nestjs.com/security/authorization) y [Prisma en Nest](https://docs.nestjs.com/recipes/prisma).
+- [Migraciones Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/development-and-production).
+
+
+## Entrega de tarea 2: factorias web
+
+Implementada el 23 de octubre de 2026 e integrada por el propietario en `587adfc`.
+Se ha aplicado la skill local next-best-practices, en particular cookies
+asincronas y aislamiento servidor/cliente. Archivos cambiados: client.ts,
+server.ts y tests/factories.test.mjs en apps/web/lib/supabase, apps/web/lib/env.ts,
+apps/web/package.json, pnpm-lock.yaml, docs/15 y este registro.
+
+- Dependencias exactas @supabase/ssr 0.10.3 y @supabase/supabase-js 2.108.0.
+  Se verificaron metadata npm y codigo instalado: peer compatible y engines
+  Node >=20. Las versiones latest consultadas (SSR 0.12.7 con peer >=2.114 y
+  supabase-js 2.118.0) requieren Node >=22 en el SDK; no se eleva el minimo
+  Node 20.19 del monorepo. La validacion se ejecuto con Node 24.15.0/pnpm 9.0.0;
+  compatibilidad declarada no equivale a una ejecucion en Node 20.
+- getSupabaseEnvironment exige configuracion solo al invocar Auth y devuelve
+  URL/publishable key; importar sin configuracion sigue permitiendo mocks.
+  Se conserva el rechazo previo de configuracion parcial y los mensajes sin
+  valores sensibles. No se valida autenticidad de claves ni conectividad.
+- Client Component usa createBrowserClient, sin cliente creado al importar.
+  Servidor usa server-only, await cookies y createServerClient por peticion.
+  Lectura por defecto mediante getAll. Actions/Handlers deben usar
+  createClient({ writableCookies: true }); setAll preserva opciones, chunks y
+  borrados. No se capturan ni silencian errores de escritura. En lectura se
+  omite setAll; el SDK advertira si se intenta una operacion que requiera escribir.
+- No se llama a Auth ni se cargan sesiones desde las paginas existentes.
+  No se modifican layouts, rutas, mocks, API, DB, archivos reales de entorno,
+  configuracion remota, red ni llavero. Sin usuarios, correos o migraciones.
+
+Validacion realizada:
+
+| Comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter web lint | Correcto, sin warnings |
+| pnpm --filter web check-types | Correcto |
+| pnpm --filter web build con entorno local existente | Correcto |
+| Build con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY sobrescritas a vacio en el proceso | Correcto; sin editar .env.local |
+| node --experimental-vm-modules --test apps/web/lib/supabase/tests/factories.test.mjs | 6 pruebas correctas, sin conexiones externas |
+| Fixture Next temporal fuera del repo: importacion desde Client Component | Rechazo esperado por server-only y next/headers |
+| Mismo fixture como Server Component | Build correcto; solo comprueba frontera/importacion, no Auth ni tipos del fixture |
+| git diff --check | Correcto |
+
+El build sin Supabase no avanzo dentro del sandbox y se interrumpio; termino
+correctamente fuera del sandbox. El fixture de frontera usa webpack y omite
+solo su comprobacion de tipos; el proyecto real supera su check-types y build
+normales. No se cambia la configuracion del repositorio para esos controles.
+
+El harness usa node:test, VM Modules y TypeScript existentes; sin runner nuevo.
+Cubre importacion sin clientes ni cookies, configuracion ausente/parcial/invalida,
+argumentos publicos, aislamiento por peticion, cookies de lectura/escritura y
+propagacion de errores. VM Modules requiere la bandera experimental indicada.
+
+Limites: no se acredita login, confirmacion, sesion o renovacion real. Proxy,
+propagacion de cabeceras de cache y validacion de identidad siguen para tarea 3
+y posteriores. Los futuros Route Handlers que escriban sesiones deben asegurar
+respuesta privada/no-store y conservar cabeceras correspondientes; esta factoria
+adapta cookies, no construye respuestas HTTP. No usarla como proteccion de rutas.
+
+La tarea 3 se autorizo posteriormente y su entrega se registra a continuacion.
+El propietario crea y sube los commits.
+
+
+## Entrega de tarea 3: renovacion SSR mediante Proxy
+
+Implementada el 30 de octubre de 2026 e integrada por el propietario en `e5b3573`.
+Archivos permitidos/modificados: apps/web/proxy.ts,
+apps/web/lib/supabase/proxy.ts, tests/proxy.test.mjs en esa misma carpeta,
+docs/15 y este registro. Sin dependencias nuevas ni cambios en factorias,
+layouts, paginas, mocks, API, DB, entorno, Dashboard, red o llavero.
+
+Se aplica next-best-practices (convencion Proxy de Next 16, runtime Node por
+defecto y separacion servidor/cliente). Contrastados el 30 de octubre de 2026
+[SSR Supabase](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs)
+y [Proxy Next](https://nextjs.org/docs/app/api-reference/file-conventions/proxy),
+ademas del contrato getClaims y setAll del SDK instalado. No se actualizan SDKs.
+
+- Matcher estatico: /login, /registro, /auth/confirmar y /admin/:path*.
+  Quedan fuera home, wiki, juegos, assets y recuperacion de contrasena.
+  Los route groups no forman parte de las URLs. No se crean paginas Auth/admin.
+- createServerClient por peticion, getAll/setAll y getClaims, sin confiar en
+  getSession. Al renovar, actualizar cookies de request y reconstruir la
+  respuesta Next para propagar Cookie al render servidor. Conservar cookies
+  previas entre multiples escrituras, incluidos chunks, opciones y borrados.
+- Trasladar cabeceras de cache del SDK. Todas las respuestas del Proxy son
+  privadas/no-store, con Expires y Pragma; las respuestas de redireccion/error
+  conservan las cookies finales. No copiar cabeceras internas de override de
+  request a una redireccion o respuesta de error.
+- Sin identidad, /admin redirige 303 a /login en el mismo origen, quitando query
+  y sin aceptar un destino next del cliente. Auth/confirmacion pueden continuar
+  sin sesion. Una identidad valida permite continuar, pero NO acredita ADMIN:
+  los roles y datos privados se autorizaran en NestJS y en sus futuros consumidores.
+- Errores Auth 400/401/403 equivalen a identidad no valida. Otros errores,
+  excepciones o configuracion ausente producen 503 con mensaje espanol generico,
+  sin filtrar detalles del proveedor ni registrar tokens. No conceder acceso
+  si no se ha podido verificar. Conservar cookies aunque el error ocurra despues
+  de una renovacion o limpieza efectuada por el SDK.
+
+Validaciones ejecutadas:
+
+| Comando/comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter web lint | Correcto, sin warnings |
+| pnpm --filter web check-types | Correcto |
+| NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= pnpm --filter web build | Correcto, incluye Proxy y conserva rutas publicas/prerender |
+| node --experimental-vm-modules --test apps/web/lib/supabase/tests/*.test.mjs | 16 pruebas correctas: 10 Proxy y las 6 previas de factorias |
+| Smoke del build en 127.0.0.1:3218 sin configuracion Supabase | 6 respuestas publicas 200 sin Set-Cookie; 5 respuestas de matcher 503 con private/no-store |
+| git diff --check | Correcto |
+
+El intento de build no avanzo en el sandbox y se interrumpio; el mismo comando
+termino fuera de el. Variables vacias solo en los procesos de build/arranque,
+sin editar .env.local. Se cerro el servidor temporal al terminar. Las seis URLs
+publicas fueron /, /wiki, /wiki/mr-house, /juegos, /juegos/fallout-4 y /favicon.ico;
+las cinco del matcher fueron /login, /registro, /auth/confirmar, /admin y
+/admin/wiki. Se enviaron solo cookies sinteticas, sin credenciales reales.
+
+Pruebas usan node:test/VM/TypeScript existentes, NextRequest/NextResponse reales
+y el matcher de Next instalado (utilidad unstable_doesMiddlewareMatch).
+Supabase esta simulado: renovacion, limpieza, cookies al render/navegador,
+conservacion en redireccion/503, claims invalidos, proveedor no disponible,
+configuracion ausente e aislamiento concurrente. El matcher excluye tambien
+prefijos parecidos, paths publicos interiores y recursos _next. Sin runner nuevo.
+
+Limitaciones: no hay usuarios/correos nuevos ni sesiones reales probadas; no se
+acreditan conectividad Auth, entrega de correo o validacion JWT en NestJS. El
+SDK getClaims verifica segun la firma del proyecto; esta tarea no implementa
+un verificador JWT propio ni confirma Current/JWKS. No protege por rol un panel
+que aun no existe. Login/registro/confirmacion aun no tienen paginas/handlers;
+con configuracion completa y sin sesion podran llegar al 404 existente hasta
+su implementacion. Sin configuracion, las rutas del matcher devuelven 503;
+la navegacion publica sigue disponible con mocks.
+
+La tarea 4 se autorizo despues de esta entrega y de la confirmacion de Current;
+su resultado se registra a continuacion. Sin cuentas ni correos como preparacion.
+Phase 5 sigue abierta.
+
+
+## Entrega de tarea 4: identidad JWT en NestJS
+
+Implementada el 30 de octubre de 2026 e integrada por el propietario en `5a20708`.
+Se sigue nestjs-best-practices para guards, inyeccion de dependencias,
+excepciones HTTP y simulacion de servicios externos. Sin emitir JWT propios.
+
+### Requisitos previos y fuentes
+
+El propietario confirma Current para ECC P-256. Inspeccion GET del JWKS derivado
+de la SUPABASE_URL local de API: una clave ES256, EC, P-256. No se imprimen URL
+real, referencia de proyecto, kid ni componentes de clave. Sin Authorization,
+API key, cookies o cambios remotos; fetch HTTPS con validacion TLS por defecto.
+El intento dentro del sandbox fallo por acceso de red; fuera termino correctamente.
+Esto acredita publicacion de clave, no verificacion de un token de usuario.
+
+Contrastados el 30 de octubre de 2026: [verificacion Supabase](https://supabase.com/docs/guides/auth/jwts),
+[autenticacion Nest](https://docs.nestjs.com/security/authentication),
+[opciones JWKS jose 6.2.14](https://github.com/panva/jose/blob/v6.2.14/docs/jwks/remote/interfaces/RemoteJWKSetOptions.md)
+y [runtimes de jose](https://github.com/panva/jose#supported-runtimes).
+Dependencia exacta jose 6.2.14; no Passport, emisor JWT ni nuevas claves.
+
+### Archivos y comportamiento
+
+- apps/api/src/modules/auth/: auth.module.ts, jwks-fetch.provider.ts,
+  supabase-identity.ts, supabase-jwt.service.ts y sus pruebas unitarias.
+- apps/api/src/common/guards/: supabase-auth.guard.ts y sus pruebas.
+- apps/api/src/app.module.ts registra/exporta las dependencias mediante AuthModule;
+  no registra guard global ni nuevos endpoints de produccion.
+- apps/api/src/config/environment.ts y sus pruebas, apps/api/.env.example,
+  apps/api/package.json, apps/api/test/jest-e2e.json, test/auth.e2e-spec.ts,
+  pnpm-lock.yaml, docs/15 y este documento.
+
+SupabaseJwtService crea un resolvedor JWKS reutilizable y perezoso. Verifica
+firma ES256, typ JWT, kid no vacio, issuer del proyecto, audiencia authenticated,
+exp y nbf cuando existe; exige iat, sub UUID, session_id UUID y role authenticated.
+Rechaza usuarios anonimos y un indicador is_anonymous presente que no sea false.
+Ignora roles de user_metadata. Devuelve solo supabaseUserId y sessionId, como
+tipo interno de API, sin perfil ni permisos de negocio. Ningun consumidor web
+requiere ese tipo aun; los contratos compartidos futuros iran a packages/types.
+
+Guard exige una sola cabecera Bearer compacta, con maximo 16 KiB; rechaza
+Authorization duplicada, sintaxis extra y claves API. Borra cualquier identidad
+previa antes de verificar y adjunta authIdentity solo despues del exito. No
+adjunta un UserProfile ficticio. Los endpoints futuros deben aplicar el guard;
+health y endpoints existentes conservan su comportamiento publico.
+
+Errores de token, claims, firma o kid desconocido: 401 generico en espanol.
+Error de red, timeout, respuesta/JWKS invalido o configuracion ausente: 503
+generico. No incluir excepciones originales, JWTs o credenciales en logs/respuestas.
+No conceder acceso ante errores. El endpoint /privado-prueba existe solo dentro
+del fixture e2e, sin rutas Auth/perfil/admin prematuras en la API real.
+
+JWKS usa destino fijo derivado del origen configurado, sin seguir jku del token,
+sin API keys ni bearer, con redirects manuales (redireccion rechazada), timeout
+5 segundos, cache local 10 minutos y cooldown 30 segundos para kid nuevo.
+Una clave nueva puede rechazarse durante ese cooldown. Con cache vigente no se
+consulta Auth en cada peticion. La cache Edge de Supabase puede sumar otros
+10 minutos a la ventana local: no prometer revocacion instantanea. Reiniciar
+el proceso elimina cache local, pero no la Edge; rotaciones/revocaciones son
+operaciones del propietario fuera de esta tarea.
+
+El contrato de SUPABASE_URL se endurece: origen HTTPS remoto sin userinfo,
+ruta, query ni fragmento; HTTP solo en loopback para pruebas. La variable sigue
+opcional al arrancar con mocks; verificar identidad sin ella devuelve 503.
+WEB_URL y DATABASE_URL conservan sus contratos. Sin JWT secret, API key o nueva
+variable; Turbo ya declara SUPABASE_URL en build/dev. El ejemplo actualizado no
+modifica los .env reales. No se introduce Supabase local.
+
+jose 6 es ESM. Produccion mantiene la compilacion actual de Nest; require(esm)
+esta disponible por defecto en Node ^20.19, ^22.12 o >=23 segun el proveedor.
+Validado con Node 24.15.0; no se ha ejecutado en Node 20 y no se cambia engines.
+Jest transforma solo la dependencia JS jose mediante ts-jest existente, con
+configuracion CommonJS para ese JS. Los tests TS conservan su transformacion y
+check-types valida el codigo propio; diagnostics=false se limita a ese transform
+JS externo. Sin nuevo runner ni cambio del formato de modulos de produccion.
+
+### Validacion
+
+| Comando/comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter api lint | Correcto, sin warnings |
+| pnpm --filter api check-types | Correcto |
+| pnpm --filter api build | Correcto |
+| pnpm --filter api run test --runInBand | 61 pruebas correctas en 5 suites |
+| pnpm --filter api run test:e2e --runInBand | 8 pruebas correctas en 2 suites |
+| Smoke del verificador dist con require de jose ESM | Firma real ES256 y JWKS simulado correctos, sin conexion externa |
+| API dist en puerto local temporal 3219 sin SUPABASE_URL/DATABASE_URL | health 200; /privado-prueba y /auth/me 404; proceso cerrado |
+| git diff --check | Correcto |
+
+Las e2e fallaron inicialmente con listen EPERM en el sandbox y terminaron fuera
+de el. Claves criptograficas y tokens se generan solo en memoria para tests,
+con fetch JWKS simulado; no se conecta a Supabase desde las suites. Cubren
+manipulacion, firma ajena, algoritmos/tipo/claims invalidos o ausentes, caducidad,
+nbf, origen fijo, cache, cooldown, rotacion, retirada de clave, fallos HTTP/JSON/
+JWKS/red y timeout real de cinco segundos. Guard cubre cabeceras, limites y
+propagacion de errores. E2e comprueba identidad adjunta y respuestas 401/503 sin
+secretos, mas regresion del health publico. No se llama a PostgreSQL.
+
+Limites: sin perfiles, roles, persistencia, sesiones o access tokens reales
+verificados; sin nuevos usuarios, correos, migraciones o escrituras remotas.
+Web, mocks, diseno y paquetes DB/types/validation permanecen intactos. La
+confirmacion Current/JWKS antes pendiente en el contrato queda satisfecha con
+las dos evidencias descritas, sin afirmar una prueba funcional de usuario.
+
+La tarea 5 se autorizo posteriormente y se registra a continuacion. Sin
+modelos ni migraciones en esa integracion. El propietario crea/sube los commits;
+Phase 5 permanece abierta.
+
+
+## Entrega de tarea 5: integracion DB/API
+
+Implementada el 30 de octubre de 2026; pendiente de revision del propietario.
+Skills locales nestjs-best-practices (modulos compartidos, inyeccion y lifecycle)
+y turborepo (packages compilados y dependencias de tareas). Referencias oficiales
+contrastadas: [generador Prisma 7](https://www.prisma.io/docs/orm/v7/prisma-schema/overview/generators),
+[lifecycle Nest](https://docs.nestjs.com/fundamentals/lifecycle-events) y
+[ESM en Jest](https://jestjs.io/docs/ecmascript-modules). No se adopta una
+conversion global de modulos ni se cambia Prisma 7.9.1.
+
+### Cambios y decisiones
+
+- packages/db/package.json y tsconfig.build.json: build genera Prisma y emite
+  ESM/declaraciones en dist/src y dist/generated. Exportaciones apuntan a
+  dist/src/index.js y dist/src/index.d.ts, sin exponer TypeScript de fuente
+  como entrada de runtime. No se cambian schema, generador, factoria, cliente
+  compartido, configuracion Prisma CLI ni script de comprobacion runtime.
+- apps/api/package.json y lockfile: dependencia local @repo/db workspace:*.
+  No se anaden librerias externas ni se actualizan versiones.
+- apps/api/src/modules/database/: database.module.ts, database.service.ts,
+  prisma-client.provider.ts y database.service.spec.ts. El provider delega en
+  createPrismaClient existente mediante import('@repo/db') nativo. Importar
+  tipos no carga el cliente generado dentro de Jest ni altera el runtime ESM.
+- apps/api/src/app.module.ts importa DatabaseModule; main.ts habilita shutdown
+  hooks. DatabaseModule exporta DatabaseService para los futuros consumidores;
+  no es global ni registra endpoints. Los modulos consumidores deben importarlo,
+  sin volver a declarar sus providers.
+- packages/db/turbo.json: check-types espera a su build antes de comprobar tipos,
+  para producir los artefactos requeridos y serializar las dos generaciones
+  Prisma. apps/api/turbo.json: dev espera a ^build. Build/test mantienen las
+  dependencias ^build del pipeline raiz, que reconoce el nuevo enlace workspace.
+- docs/15 y este registro actualizan estado, limites y siguiente tarea.
+
+DatabaseService.getClient() es asincrono y perezoso: una unica promesa comparte
+cliente y creacion concurrente. Construir el modulo no crea cliente ni conecta.
+La primera solicitud necesita DATABASE_URL; si falta o el servicio esta cerrando,
+responde con excepcion 503 generica. Un fallo de factoria se sanitiza y permite
+reintento. Prisma conecta al ejecutar operaciones, no durante el bootstrap.
+El servicio no introduce consultas automaticas ni acredita conectividad en health.
+
+onModuleDestroy marca cierre, impide nuevas solicitudes, espera la creacion
+pendiente y llama $disconnect una sola vez. Si no se llego a crear cliente, no
+intenta desconectarlo. Error de cierre generico, sin URI ni excepciones del driver.
+app.close y SIGTERM utilizan el lifecycle de Nest; no se modifican red o llavero.
+La integracion conserva TLS y las opciones del adapter/factoria originales.
+
+### Comandos y requisitos de build
+
+En un checkout limpio, instalar workspaces y construir DB antes de comandos
+filtrados directos de API que necesiten sus declaraciones/artefactos:
+
+```bash
+pnpm --filter @repo/db build
+pnpm --filter api check-types
+pnpm --filter api build
+pnpm --filter api run test --runInBand
+pnpm --filter api run test:e2e --runInBand
+```
+
+Para resolver dependencias automaticamente, usar el pipeline de Turbo:
+
+```bash
+pnpm exec turbo run build --filter=api
+pnpm exec turbo run check-types --filter=api
+pnpm exec turbo run test --filter=api
+pnpm exec turbo run dev --filter=api
+```
+
+Los scripts pnpm --filter api siguen siendo tareas locales; no se les anaden
+compilaciones recursivas duplicadas de otros packages. Al editar DB durante
+watch de Nest hay que reconstruir DB/reiniciar el consumidor: no se implementa
+watch de la libreria en esta tarea. Dist y generated siguen fuera de Git.
+
+### Validacion realizada
+
+| Comando/comprobacion | Resultado |
+| --- | --- |
+| pnpm --filter @repo/db lint | Correcto |
+| pnpm --filter @repo/db check-types | Correcto |
+| pnpm --filter @repo/db build | Correcto, JS y declaraciones generados |
+| pnpm --filter @repo/db prisma:validate | Correcto; prisma:generate tambien ejecutado por build/check-types |
+| pnpm --filter api lint | Correcto, sin warnings |
+| pnpm --filter api check-types | Correcto |
+| pnpm --filter api build | Correcto; dist/main.js mantiene su ubicacion |
+| pnpm --filter api run test --runInBand | 69 pruebas correctas, 6 suites |
+| pnpm --filter api run test:e2e --runInBand | 8 pruebas correctas, 2 suites; fuera del sandbox para puertos locales |
+| Turbo check-types --filter=api --force con DATABASE_URL/DIRECT_URL vacias en el proceso | Correcto: DB build, DB check-types y API check-types, en orden |
+| Dry run Turbo dev --filter=api | Confirma dependencia de API dev respecto de DB build |
+| API dist sin DATABASE_URL/SUPABASE_URL, puerto local temporal 3220 | health 200; cierre por SIGTERM sin timeout; servidor cerrado |
+| Provider Nest dist contra runtime existente | SELECT 1 correcto, mismo cliente en dos solicitudes y app.close correcto |
+| git diff --check | Correcto; schema, src DB y configuracion CLI/runtime-check sin cambios |
+
+Las ocho pruebas nuevas cubren ausencia de configuracion, creacion concurrente,
+cierre durante creacion, reintento, errores sanitizados, idempotencia y lifecycle
+Nest. Jest usa una factoria simulada para lifecycle; el consumo del package ESM
+real se ejecuta en un proceso Node nativo lanzado desde Jest, con conexiones de
+sockets bloqueadas. Se comprueba resolucion a dist, construccion y desconexion,
+sin loader TS ni transformacion de import.meta a CommonJS. No se afirma que
+Jest cargue directamente el grafo ESM de Prisma en su VM CommonJS.
+
+La unica consulta remota fue SELECT 1 AS ok a traves de DatabaseService del
+build API y del contexto Nest real, reutilizando DATABASE_URL del entorno API.
+Se exigio sslmode=verify-full y CA explicita antes de consultar, sin publicar
+valores. Consulta y cierre terminaron dentro del limite de 10 segundos, con
+salida generica ante errores. No se alteraron .env ni TLS. No se repiten controles
+negativos TLS o CLI Direct: siguen siendo las evidencias de Phase 4, y esta
+prueba valida el nuevo camino de consumo desde Nest por runtime/session pooler.
+
+Limites: validado con Node 24.15.0, no se repite en Node 20. Sin modelos,
+migraciones, seeds, perfiles, roles o endpoints persistentes. No se implementa
+CRUD ni se reemplazan mocks o diseno web. Health acredita disponibilidad, no DB.
+Errores de futuras consultas se trataran en sus servicios; este provider solo
+administra creacion y cierre. No hay nuevos usuarios, correos o escrituras remotas.
+
+Siguiente tarea propuesta: tarea 6, solo UserRole/UserProfile y artefacto SQL
+revisable, tras revision y autorizacion. Aplicar la migracion remota sigue siendo
+tarea 7 separada; no ejecutar migrate dev, deploy o db:push como continuacion
+implicita. El propietario crea/sube el commit y Phase 5 permanece abierta.
+
+
+## Entrega de tarea 6: modelo y SQL revisable
+
+Fecha: 2026-10-30. El propietario autorizo continuar tras el commit 6a4e187
+(tarea 5). Esta entrega se limita al schema, artefactos de migracion y registros
+de estado; no autoriza aplicar SQL ni crear perfiles.
+
+### Modelo y decisiones
+
+- UserRole: USER, ADMIN, EDITOR y MODERATOR.
+- UserProfile: id UUID local y supabaseUserId UUID obligatorio con indice unico;
+  username, displayName y avatarUrl opcionales, sin unicidad adicional.
+- role obligatorio con default USER en PostgreSQL. Fechas timestamptz(3):
+  createdAt con CURRENT_TIMESTAMP y updatedAt administrado por Prisma.
+- uuid() genera id en Prisma, no instala extensiones ni un default SQL. Las
+  escrituras SQL directas futuras deben proporcionar id y updatedAt.
+- Sin FK a auth.users, passwords, sesiones, email duplicado, triggers ni contenido.
+  Sin sincronizacion ni guards de roles: corresponden a tarea 8.
+
+### Artefacto y seguridad
+
+Migracion: packages/db/prisma/migrations/20261030000000_add_user_profile/migration.sql.
+Se versiona migration_lock.toml con provider postgresql. El bloque estructural
+procede de Prisma 7.9.1 migrate diff --from-empty --to-schema, sin datasource
+remoto ni shadow database. CLI sin datasource no emitio SQL; se repitio usando
+una URL ficticia loopback en puerto 1 solo para configurar el provider. No se
+uso --from-config-datasource ni --to-config-datasource, migrate dev o db:push.
+
+Se anade BEGIN/COMMIT y search_path local public: creacion, RLS y retirada de
+privilegios quedan en una sola transaccion. RLS habilitado sin politicas cliente;
+REVOKE ALL PRIVILEGES de PUBLIC, anon y authenticated solo sobre UserProfile.
+No se alteran permisos globales, default privileges, otros schemas/tablas ni roles.
+Los roles anon/authenticated deben existir en el destino Supabase confirmado.
+No se revoca USAGE del enum: no concede acceso a filas de la tabla.
+
+RLS/ACL no se representan en el schema Prisma: conservar y revisar el bloque
+manual al preparar migraciones posteriores. RLS sin FORCE no restringe al owner
+ni a roles BYPASSRLS; Nest conserva la autorizacion de negocio. No se anaden
+politicas permisivas ni grants runtime por suposicion. La tarea 7 debe confirmar
+identidad y acceso efectivo del rol de Nest (owner/BYPASSRLS y privilegios),
+privilegios heredados de anon/authenticated, ausencia de politicas cliente y
+rechazo desde Data API. Si el rol runtime no tiene acceso, revisar una solucion
+acotada antes de aplicar; no abrir la tabla al navegador para resolverlo.
+
+Esta combinacion de RLS y retirada de grants sigue la documentacion oficial de
+[Supabase sobre RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+La sintaxis CLI se verifico con --help de la version instalada 7.9.1; no se
+adopta el flujo de migraciones de versiones mayores de Prisma.
+
+### Validacion y limites
+
+| Comprobacion | Resultado |
+| --- | --- |
+| Prisma format y validate | Correcto |
+| Prisma generate y build @repo/db | Correcto, cliente y declaraciones regenerados |
+| lint y check-types @repo/db | Correcto |
+| lint, check-types y build API | Correcto |
+| Unitarias API | 69 correctas, 6 suites |
+| E2e API con DB simulada | 8 correctas, 2 suites; permiso para puertos locales |
+| SQL estructural frente a migrate diff offline | Coincide; RLS/ACL y transaccion revisados aparte |
+| git diff --check | Correcto |
+
+No se ejecuta DDL, SELECT remoto, migrate deploy, db:push, seeds ni pruebas con
+usuarios/correos reales. Las pruebas comprueban compatibilidad del cliente
+regenerado con Nest, no constraints ni permisos de PostgreSQL real. No se
+verifican todavia RLS/ACL o acceso runtime sobre la nueva tabla. Node 24.15.0;
+sin dependencias nuevas, cambios de entorno/red o modificaciones de la web.
+
+Siguiente entrega: tarea 7, solo tras revision y autorizacion expresa para
+aplicar esta migracion al destino confirmado. Antes de aplicar, revisar estado
+de migraciones y objetos existentes, roles/permisos y ausencia de colisiones;
+no asumir que --from-empty describe todo el proyecto Supabase. No reset ni
+baseline improvisado. Despues verificar estructura, unicidad/defaults, RLS/ACL,
+acceso runtime, rechazo Data API y estado Prisma sin crear usuarios/perfiles.
+La autorizacion de tarea 6 no se extiende a la tarea 7. El propietario crea y
+sube el commit; Phase 5 permanece abierta.
+
+
+## Tarea 7: preflight remoto bloqueado por Direct
+
+Fecha: 2026-10-30. Tras el commit 73791bf, el propietario autorizo la siguiente
+tarea: aplicar la migracion de tarea 6 y verificar estructura, permisos y acceso.
+La autorizacion se limita a esa migracion; no incluye usuarios, perfiles de
+prueba, correos ni cambios de red. Se comprobo arbol Git limpio y SQL identico
+al commit aprobado antes de consultar Prisma.
+
+### Comprobaciones realizadas
+
+- Coherencia del proyecto entre URL publica web, SUPABASE_URL API, Direct y
+  usuario runtime del session pooler, sin publicar host, IP o credenciales.
+- Opciones TLS existentes conservadas: runtime verify-full con CA; Direct
+  sslaccept=strict y sslcert. Socket TLS cliente/session pooler cifrado y
+  certificado autorizado. pg_stat_ssl devuelve false para el tramo del pooler
+  a PostgreSQL; ese dato no mide el TLS entre el cliente y el pooler.
+- Inspeccion mediante pg con BEGIN READ ONLY/ROLLBACK: runtime postgres con
+  BYPASSRLS y CREATE sobre public; base esperada. Existen anon y authenticated.
+- Cero tablas en public; UserProfile, UserRole y _prisma_migrations ausentes.
+  No se detectan colisiones ni necesidad de baseline para el estado inspeccionado.
+- prisma migrate status por Direct falla (exit 1, Schema engine error sin
+  codigo P). Segundo intento diagnostico reproduce el error. No se ejecuta
+  migrate deploy, migrate dev, resolve, reset, db:push ni SQL de migracion.
+- Direct resuelve a IPv6; la entrada existente de hosts coincide con el AAAA
+  actual. TCP al puerto 5432 agota el tiempo en dos comprobaciones de 5 s.
+- warp-cli status informa Connected/Network healthy; modo WarpWithDnsOverHttps.
+  Son lecturas de estado; no se modifica WARP, hosts, red, TLS ni llavero.
+
+El sandbox no resolvia el host runtime (ENOTFOUND); las comprobaciones remotas
+se ejecutaron despues con permiso de red. El fallo TCP Direct persiste fuera
+del sandbox. No se ha determinado su causa; no atribuirlo a WARP desactivado,
+a una IP desactualizada o a credenciales incorrectas sin evidencia.
+
+### Resultado y siguiente paso
+
+Tarea 7 incompleta: migracion sin aplicar, ninguna escritura remota realizada.
+El propietario debe revisar/restablecer el acceso de este Mac a Direct:5432;
+AGENTS.md y docs/14 impiden cambiar automaticamente la red. Con Direct accesible,
+repetir preflight y migrate status; aplicar exclusivamente el SQL aprobado con
+migrate deploy y verificar despues estructura, checksum/estado, RLS/privilegios,
+lectura mediante Nest y rechazo Data API. No avanzar a tarea 8 ni declarar
+verificados constraints/permisos de una tabla que aun no existe.
+
+Solo cambian docs/15 y este registro. git diff --check correcto; no se repiten
+lint/tipos/build o tests porque no cambia codigo, schema ni artefactos. Scripts
+diagnosticos temporales fuera del repositorio; sin secretos versionados.
+Referencia del comando de aplicacion: [Prisma Migrate v7](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/development-and-production).
+
+
+### Reintento tras reconectar WARP
+
+El propietario confirma reconexion de WARP y solicita repetir la comprobacion.
+Direct vuelve a resolver a IPv6, con hosts coincidente con AAAA actual, pero
+TCP:5432 sigue agotando timeout (5 s). WARP informa Connected/Network healthy y
+modo WarpWithDnsOverHttps. Controles TCP a www.cloudflare.com:443 por IPv4 e
+IPv6 pasan: no se demuestra un fallo general de IPv6. Estos controles no prueban
+acceso al puerto PostgreSQL de Supabase ni determinan la causa del bloqueo.
+No se ejecutan Prisma deploy ni cambios remotos; migracion sigue sin aplicar.
+Solo se actualizan registros; git diff --check correcto.
+
+
+### Alternativa session pooler evaluada
+
+El propietario informa que Dashboard indica acceso desde todas las IPs, sin
+restricciones de red configuradas. Es confirmacion del propietario, no lectura
+del Dashboard por el agente. La guia oficial de Supabase admite session pooler
+puerto 5432 para migraciones Prisma:
+https://supabase.com/docs/guides/database/prisma.
+
+Se repite preflight de solo lectura: destino coherente, public sin tablas,
+UserProfile/UserRole/historial ausentes, rol runtime y TLS de Node correctos.
+Se prueba migrate status por session pooler con override DIRECT_URL unicamente
+en el proceso: mismo proyecto/base, puerto 5432, CA existente, sslmode=require,
+sslaccept=strict. No se cambia .env ni el SQL aprobado. CLI falla con error
+Schema engine error; invocar el motor instalado con can-connect-to-database
+revela P1011: certificado no confiable. Sin timeout en esta alternativa.
+
+Node pg verifica la cadena TLS con rejectUnauthorized y CA configurada, socket
+autorizado; la cadena recibida termina en la CA Supabase Root 2021 configurada.
+security verify-cert sobre la CA local con politica basic devuelve exit 1; esa
+prueba de CA no determina por si sola la causa del rechazo SSL del servidor.
+El rechazo nativo del session pooler ya se diagnostico en Phase 4 (docs/14),
+incluidos los requisitos de certificado de macOS; no repetir cambios de llavero
+que entonces no resolvieron el problema. No se relaja TLS ni se instala CA.
+
+Resultado: session pooler es compatible en principio, pero no operativo para el
+motor Prisma nativo en este Mac con el certificado actual. La aplicacion sigue
+pendiente. Siguiente opcion operativa: probar Direct desde otra red con IPv6 y
+WARP, manteniendo hostname/TLS, y repetir preflight antes de deploy. La causa
+del timeout Direct sigue sin determinarse. Ejecutar desde otro sistema requeriria
+preparar y revisar por separado su acceso seguro; no trasladar credenciales al chat.
+Sin deploy, cambios remotos, usuarios, perfiles o correos. Solo docs/15 y este
+registro modificados; git diff --check correcto.
+
+
+### Descartes adicionales y alternativa pendiente
+
+El propietario confirma Dashboard: no hay IPs bloqueadas (Banned IPs) ni
+restricciones de IP; ademas ya habia probado red movil sin resolver el acceso.
+Inspeccion local de rutas de solo lectura: Direct y un destino publico IPv6
+usan la misma interfaz utun6. WARP funciona en modo trafico/DNS; esto no garantiza
+que el destino Direct:5432 sea alcanzable ni demuestra la causa del timeout.
+No se han modificado rutas, reglas de red, configuracion remota o certificados.
+
+No repetir red movil o reconexion WARP como siguiente paso sin nueva evidencia.
+El repositorio no contiene .github ni workflows Linux existentes. Se consulta
+al propietario si dispone de Linux/WSL para evaluar el session pooler con Prisma
+y CA estricta fuera del verificador nativo de macOS. No se garantiza resultado:
+primero validar TLS y migrate status; solo despues, preflight y migracion aprobada.
+Crear un runner/CI, instalar herramientas o trasladar credenciales requiere una
+tarea acordada, como establece docs/14. No se preparan workflows ni se usan
+servicios externos en esta comprobacion. La tarea 7 permanece incompleta.
+
+
+El propietario confirma que solo dispone del Mac. Alternativa propuesta, aun
+sin autorizar: preparar una tarea separada para workflow manual Linux en GitHub
+Actions sobre el repositorio existente. Primero chequeos TLS, destino y estado;
+la aplicacion del SQL aprobado solo tras verificacion y ejecucion autorizada.
+Credenciales/CA mediante secretos gestionados por el propietario, nunca por chat.
+Sin workflow creado, secretos enviados, ejecuciones o promesa de exito en Linux.
+
+
+### Restriccion de coste y propuesta de desarrollo local
+
+El propietario exige coste cero durante desarrollo, dispone solo de Mac y usa
+Safari. No autoriza GitHub Actions, gastos ni recursos adicionales de pago.
+La propuesta de runner queda descartada para esta continuacion.
+
+Alternativa propuesta, pendiente de acordar una tarea acotada: PostgreSQL nativo
+en macOS para datos de desarrollo con Prisma/Nest, conservando Supabase Auth y
+Storage remotos gratuitos dentro de sus limites. No implica Docker ni Supabase
+local. Homebrew existe; no se encontro psql/postgres en PATH ni instalaciones
+Homebrew de postgresql, postgresql@16/17/18 o libpq. No se instalo software.
+
+Esta alternativa cambia el contrato actual de DB remota de desarrollo: antes de
+implementarla revisar docs/01, 04, 14 y contrato Phase 5, definir destino local
+separado, version compatible, roles SQL necesarios y comprobaciones locales.
+No aplicar automaticamente una migracion al destino equivocado ni considerar
+cerrada la tarea 7 remota por validar una DB local. Supabase Auth seguiria
+requiriendo Internet; los perfiles de aplicacion se guardarian en PostgreSQL local.
+
+Una comprobacion adicional de DNS mediante resolutores HTTPS independientes fue
+rechazada por revision automatica porque transmitiria el hostname de proyecto a
+Google/Cloudflare. No se ejecuto ni se intento eludir la decision. Se descarta ese
+paso para evaluar la alternativa local; no se cambian red, CA o llavero.
+
+
+### Comprobacion tras reiniciar el Mac
+
+El propietario reinicia y confirma WARP conectado en Trafico y DNS con HTTPS.
+Lectura local confirma Connected y WarpWithDnsOverHttps; Direct resuelve a IPv6
+con entrada de hosts presente. TCP:5432 vuelve a agotar timeout de 5 s. El
+reinicio no resuelve el bloqueo observado. Los helpers temporales desaparecieron
+tras el reinicio; se reconstruye solo el de lectura WARP/DNS efectivo/TCP. Sin
+consultas DNS HTTPS independientes, cambios de red o ejecucion de migraciones.
+La alternativa PostgreSQL local permanece propuesta, sin autorizacion ni instalacion.
+
+
+## Decision aprobada: documentar PostgreSQL local antes de implementar
+
+El propietario autoriza el cambio de desarrollo a PostgreSQL local y pide primero
+registrarlo para retomarlo. docs/19 pasa a ser el contrato del cambio; se actualizan
+arquitectura, stack, modelo, Auth, entorno, roadmap, estado, README y AGENTS.md.
+Se conservan historico de Phase 4 y diagnosticos de tarea 7 sin reinterpretarlos.
+Proximo paso propuesto: L1, preparacion nativa local, una vez revisada esta entrega.
+Sin instalaciones, scripts de provisioning, nuevos ejemplos activos o cambios en
+.env, codigo, dependencias, schema, SQL, red, Dashboard o datos. Revision de enlaces,
+coherencia del contrato y git diff --check; no corresponden builds/tests de codigo.
+El propietario crea/sube el commit y autoriza la siguiente tarea.
+
+
+## Entrega L1: PostgreSQL nativo preparado
+
+El propietario autoriza continuar tras 326ee0e. PostgreSQL 17.11 instalado con
+Homebrew; cluster dedicado en loopback:55432, SCRAM, rol de aplicacion sin
+superusuario/BYPASSRLS y roles SQL anon/authenticated NOLOGIN. API y Prisma
+usan la DB local; Auth/Storage y web intactos. Comandos start/stop/status y
+archivos privados ignorados. SQL de tarea 6 sin cambios y sin aplicar.
+
+SELECT 1 pasa por CLI, adapter y provider Nest compilado; parada/arranque,
+identidad, contrasena incorrecta, permisos y ausencia de tablas verificados.
+DB/API lint, tipos, build, Prisma validate/generate, 69 unitarias y 8 e2e pasan.
+Solo consulta remota SHOW server_version para compatibilidad; sin escrituras
+remotas. Instalacion y dependencias Homebrew, limites, copias y uso diario en
+docs/19. L1 pendiente de revision; siguiente tarea propuesta L2 local, requiere
+autorizacion independiente. No iniciar sincronizacion/roles hasta completar L2.
+
+
+## Entrega L2: migracion UserProfile aplicada localmente
+
+Tras 514fdb6, el propietario autoriza continuar con L2. Preflight confirma
+loopback:55432, DB fallout_platform_dev y rol fallout_app en API/Prisma; SQL
+identico a 73791bf, sin colisiones. migrate deploy correcto; migrate status
+al dia y migrate diff estructural vacio. Historial/checksum, columnas, defaults,
+enum, PK/indice unico, RLS sin politicas y permisos efectivos verificados.
+
+PUBLIC sin grants de tabla y anon/authenticated sin permisos de tabla/columna;
+lecturas por SET ROLE rechazadas con 42501. Nest compilado lee UserProfile por
+Prisma (0 filas), reutiliza cliente y cierra correctamente. DB/API lint, tipos y
+build; Prisma validate/generate correctos. No se insertan perfiles ni se repiten
+unitarias/e2e L1 sin cambios de codigo. No se acredita Data API o roles de negocio.
+
+Solo DDL/historial local y documentacion. Sin mutaciones remotas, usuarios/correos,
+.env, red o cambios al SQL aprobado. Evidencia completa y limitaciones en docs/19.
+L2 pendiente de revision; siguiente tarea 8 (sincronizacion y roles) solo despues
+de autorizacion. La tarea 7 remota sigue aplazada; Phase 5 permanece abierta.
+
+
+## Entrega tarea 8: sincronizacion y autorizacion por roles
+
+El propietario autoriza esta tarea despues de L2, commit ffee55a. Alcance:
+modulos auth/users/admin de API, guards/decorators y pipe de cuerpo vacio,
+AppModule, pruebas; tipos compartidos @repo/types, manifest API/lockfile y
+registros/contratos documentales. No frontend, schema o migraciones.
+
+### Implementacion y decisiones
+
+- UsersModule usa DatabaseService existente; no otro cliente ni DB en controller.
+  SupabaseAuthGuard valida el JWT antes de buscar perfil por su sub verificado.
+  Limpia estado previo de peticion; solo adjunta identidad/perfil tras exito.
+  Cada llamada privada carga el perfil actual, sin cache de rol entre peticiones.
+- POST /auth/perfil: HTTP 200 para creacion o perfil existente; cuerpo ausente o
+  {}. EmptyBodyPipe rechaza campos, arrays y payload no vacio sin parser (400).
+  Validacion exclusivamente API, sin reglas de formulario duplicadas ni Zod nuevo.
+- UsersService usa upsert por supabaseUserId, create solo con ese UUID y update
+  vacio; defaults USER/id/createdAt y manejo updatedAt de Prisma/DB existentes.
+  No acepta metadata o campos del cliente. P2002 por carrera recupera la fila
+  ganadora sin actualizar; si falta o falla la lectura, 503. No retry ilimitado.
+- GET /auth/me usa @CurrentUser: 404 si no hay perfil, sin crearlo. RolesGuard
+  exige coincidencia explicita con @Roles, deniega declaracion ausente/vacia y
+  responde 403 para perfil ausente o rol distinto; sin identidad, 401.
+- GET /admin/comprobacion exige ADMIN y solo devuelve mensaje espanol. Sin panel,
+  promociones, seed, endpoint de gestion o jerarquia implicita de roles.
+- UserRole, UserProfileResponse y AdminCheckResponse compartidos en packages/types;
+  dependencias API @repo/types workspace:* y lockfile. Solo imports type en API:
+  no exigir loader TS para el package ESM en runtime CommonJS de Nest.
+- Seleccion y serializacion explicitas de ocho campos; fechas ISO, opcionales
+  nullables. Sin email, sessionId, tokens o metadata. Cabecera private, no-store
+  en respuestas de perfil, 404 de me y ADMIN autorizado. Errores DB sanitizados.
+- AuthModule reexporta UsersModule para resolver las dependencias del guard en
+  modulos consumidores, sin providers globales ni dependencias circulares.
+  Health sigue publico y no consulta DB. Verificador ES256/JWKS sin cambios.
+
+El manejo P2002 responde al comportamiento documentado de upserts concurrentes:
+[Prisma Client v7](https://www.prisma.io/docs/orm/v7/reference/prisma-client-reference#unique-key-constraint-errors-on-upserts).
+Roles/decorators siguen los mecanismos Nest existentes:
+[autorizacion](https://docs.nestjs.com/security/authorization) y
+[decoradores](https://docs.nestjs.com/custom-decorators).
+Se aplican reglas locales nestjs-best-practices de guards y servicios externos
+simulados; prevalecen el contrato Supabase y la autorizacion de negocio en Nest.
+
+### Verificacion
+
+| Comprobacion | Resultado |
+| --- | --- |
+| API lint, check-types y build | Correcto |
+| @repo/types lint y check-types | Correcto |
+| Build @repo/db requerido por consumidor | Correcto; schema/SQL intactos |
+| Web check-types | Correcto; ningun archivo web cambiado |
+| Unitarias API | 105 correctas, 8 suites |
+| E2e API | 32 correctas, 3 suites; permiso para puertos locales |
+| API compilada sin DATABASE_URL/SUPABASE_URL | Health 200; GET me/admin y POST perfil sin token 401; cierre correcto |
+| git diff --check | Correcto |
+
+Las pruebas nuevas cubren upserts concurrentes con P2002, defaults pedidos,
+conservacion de ADMIN y campos/fechas, lectura sin creacion, 400/401/403/404/503,
+matriz de roles, perdida de ADMIN en la siguiente peticion, aislamiento de dos
+identidades, metadata maliciosa y sanitizacion. E2e usa firma real ES256 con
+claves sinteticas, transporte JWKS y Prisma/DB simulados; no se anula el guard.
+La concurrencia HTTP usa un servidor local unico para evitar la apertura/cierre
+por peticion de Supertest. Fixtures no se registran como endpoints de produccion.
+
+Limitaciones: Node 24.15.0; sin cuentas/tokens Supabase reales ni inserciones en
+PostgreSQL local/remoto. No se acredita concurrencia real de PostgreSQL ni el
+recorrido web completo: la unicidad SQL se verifico en L2 y la integracion real
+queda para cierre autorizado. No consultas/mutaciones remotas, usuarios, correos,
+.env, TLS, WARP, hosts o contenido. Unica dependencia anadida: workspace types;
+sin bibliotecas externas nuevas. Sesiones, email y primer ADMIN real pendientes.
+
+Siguiente tarea propuesta: 9, login/logout web con sincronizacion, tras revision
+y autorizacion. El propietario crea/sube el commit; no se avanza automaticamente.
+Phase 5 permanece abierta; DB remota/Data API siguen aplazadas a preproduccion.
+
+
+## Entrega tarea 9: login/logout web y perfil sincronizado
+
+Autorizada por el propietario despues de 9a2c3ef (tarea 8). Archivos: route group
+Auth (layout y /login), features/auth, helper API privado, packages/validation,
+manifest web/validation, lockfile, pruebas y contratos/estado documentales.
+Sin cambios en API, schema/migracion, mocks, paginas/header/diseno publicos,
+Proxy, factorias Supabase, entorno real o servicios externos.
+
+### Comportamiento y decisiones
+
+- /login es Server Component dinamico dentro de (auth), con layout propio que
+  reutiliza tokens visuales existentes. Solo los formularios son componentes
+  cliente con useActionState, labels, mensajes aria-live y estados pendientes.
+  No se instala react-hook-form ni primitivas nuevas: formulario pequeno con
+  HTML nativo, validacion servidor y React 19; sin nuevas necesidades de UI global.
+- Server Actions de login, continuar y logout crean cliente SSR por peticion con
+  writableCookies:true. Los redirects estan fuera del manejo de errores y solo
+  usan /login o /login?perfil=pendiente. No hay destino next libre o rutas admin.
+- loginSchema compartido en @repo/validation, con Zod 4.6.7 fijado (unica libreria
+  externa nueva) y dependencia workspace web. Email recortado, limite 254 y
+  formato valido; password requerido, maximo 4096 y sin trim/minimo de registro.
+  Validacion en servidor incluso sin JS; errores espanoles sin echo de valores.
+- signInWithPassword recibe email/password; Nest nunca recibe password. Antes
+  de usar el bearer se verifica ESE access token con getClaims. getSession solo
+  lo obtiene en lecturas/continuar; no acredita identidad. Se rechazan claims
+  anonimos, sin sub o con rol Supabase distinto de authenticated.
+- Login valido intenta POST /auth/perfil. Si falla, conserva la sesion Supabase
+  y redirige al estado perfil pendiente, sin afirmar que hay perfil disponible.
+  /login autenticado permite continuar (POST de sincronizacion) o cerrar sesion.
+  El GET de la pagina solo lee GET /auth/me; no crea perfiles ni cierra sesiones.
+- /login muestra el perfil disponible y acceso al archivo cuando la sincronizacion
+  esta confirmada; no implementa cuenta privada nueva ni panel. Falta de perfil
+  (404) y API no disponible se distinguen; identidad invalida no presenta perfil.
+- Helper server-only con rutas privadas fijas, bearer, no-store, credentials omit,
+  redirects rechazados y timeout de 5 s. Solo HTTPS o HTTP loopback; sin URL con
+  credenciales/query/fragmento. Respuestas HTTP/JSON malformadas son sanitizadas;
+  userProfileResponseSchema valida/selecciona campos del contrato de tarea 8.
+  Se comprueba supabaseUserId contra el sub verificado antes de presentar exito.
+- Tokens/refresh tokens/passwords no pasan a props, estados de formulario, URL
+  o logs. La pagina devuelve solo modelo de vista/perfil JSON validado. No se
+  confia en metadata para permisos; Nest conserva la autorizacion final.
+- Logout solo Server Action POST: signOut con scope local explicito, SDK borra
+  cookies por el adaptador existente y redirect /login. Si falla no anuncia cierre.
+  No promete revocacion inmediata de access tokens emitidos ni afecta otras sesiones.
+- Next conserva su proteccion de Server Actions por POST/Origin frente a Host;
+  no se amplian allowedOrigins. Cache privada desde Proxy existente; /login tiene
+  robots noindex/nofollow y render por peticion. Publico sigue sin lecturas Auth.
+
+Zod se reviso en el registro antes de fijar 4.6.7; sin actualizaciones generales
+ni nuevas dependencias de tests. Se reutiliza node:test, vm y TypeScript del
+harness de tareas 2/3; pnpm --filter web test:auth ejecuta las pruebas Auth.
+Referencias: [Next forms](https://nextjs.org/docs/app/guides/forms),
+[signInWithPassword](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
+[signOut](https://supabase.com/docs/reference/javascript/auth-signout),
+[getClaims](https://supabase.com/docs/reference/javascript/auth-getclaims) y
+[Zod](https://zod.dev/basics). Reglas locales next-best-practices sobre limites
+RSC, APIs asincronas y redirects; prevalece el contrato del proyecto.
+
+### Validacion y limites
+
+| Comprobacion | Resultado |
+| --- | --- |
+| Web lint, check-types y build | Correcto; /login dinamico, home/juegos/detalles conservan prerender |
+| @repo/validation lint y check-types | Correcto |
+| pnpm --filter web test:auth | 47 pruebas correctas: 31 nuevas y 16 previas |
+| Importaciones | Sin crear clientes/fetch al importar; factories por peticion y writable explicito |
+| Acciones simuladas | Credenciales invalidas, tipos ausentes/File, password sin trim, login+cookies+perfil, DB/API caida y retry, claims invalidos, aislamiento, logout y errores sanitizados |
+| Helper privado | Bearer sin cookies, rutas fijas, no-store, timeout, redirect error, respuesta valida y rechazo de perfil ajeno/malformado |
+| API Next de produccion en puerto temporal 3198 | GET /login 200, formulario espanol, noindex y private/no-store; /, /wiki, /juegos 200 |
+| CSRF real de Server Actions | Origin ajeno abortado antes de ejecutar accion; Next 16.2 responde HTTP 500 en esta rama, con diagnostico de aborto comprobado |
+| Safari | /login observado sin sesion: labels, campos y boton legibles; captura desktop revisada. Sin introducir credenciales |
+| git diff --check | Correcto; publico, API, DB, Proxy y factorias intactos |
+
+El primer build aislado fallo con EPERM por el puerto interno de Turbopack/CSS;
+se completo con permiso fuera del sandbox. El servidor temporal de produccion
+se cerro; no se detuvo el dev server del propietario. Safari queda con una nueva
+pestana /login para revision. No se alteraron preferencias del navegador.
+
+Pruebas con SDK/JWKS/API simulados y el adaptador cookies real del helper; no
+acreditan login/logout de una cuenta Supabase real. El smoke HTTP uso peticiones
+sin cookies/credenciales y un cuerpo vacio para CSRF, sin login ni escrituras en
+Nest. No registro, usuarios, emails, perfiles reales, migraciones o mutaciones
+remotas; sin cambios de .env, WARP, hosts, CA o llavero. Node 24.15.0, TS 5.9.2;
+no se repite en Node 20. Revision visual desktop, sin prueba mobile automatizada.
+No se repiten tests API porque no hay codigo backend modificado.
+
+Siguiente entrega propuesta: tarea 10, registro y confirmacion, previa revision
+y autorizacion. La plantilla y primer envio/usuario real requieren su alcance
+expreso; no se ejecutan por continuacion implicita. El propietario crea/sube el
+commit. Phase 5 sigue abierta; integracion real y cierre siguen pendientes.
+
+
+## Entrega de tarea 10: registro y confirmacion (implementacion local)
+
+Continuacion autorizada tras commit 2ec4a8c de tarea 9. El propietario reconfirma
+Confirm email activado y Site URL http://localhost:3000. Es evidencia del
+propietario, sin inspeccion ni cambios remotos por el agente. Se entrega codigo
+revisable y simulaciones; la tarea 10 sigue abierta por plantilla y prueba real.
+
+### Archivos y decisiones
+
+- app/(auth)/registro/page.tsx: pagina dinamica, metadata espanola y noindex
+  heredado; formulario, aviso de revisar correo y errores de enlace. Enlace
+  desde LoginForm; sin tocar nav, mocks, estilos o layout publico.
+- features/auth/components/registration-form.tsx: useActionState, email/password
+  y repeticion, labels y errores accesibles, pending y sin devolver credenciales.
+  Tras respuesta aceptada se oculta el formulario; no reenvio automatico.
+- packages/validation/src/index.ts: email reutilizado de login, password minimo
+  8/maximo 4096 sin trim y repeticion igual/maximo 4096. Minimo 8 es una regla
+  del formulario; Supabase sigue aplicando su politica y puede ser mas estricto.
+  TokenHash URL-safe entre 20 y 1024 caracteres y type literal email; duplicados
+  de estos parametros se rechazan antes de crear el cliente.
+- features/auth/registration.ts y actions.ts: signUp solo recibe email/password.
+  No metadata, roles, identificadores, callbacks libres ni llamadas a Nest.
+  Cuenta nueva, respuesta ofuscada y codigos de cuenta existente reciben el mismo
+  mensaje condicional, sin confirmar existencia ni entrega del correo. Errores
+  genericos y 429 sin retry automatico. No sincroniza perfiles antes de confirmar.
+- features/auth/registration-client.ts: cliente SDK servidor nuevo por intento,
+  sin persistencia, auto-refresh o deteccion de URL. Excepcion deliberada a la
+  factoria SSR para esta operacion sin sesion: no lee ni escribe cookies y
+  conserva una sesion previa del navegador. Si signUp devuelve sesion inesperada
+  se muestra indisponibilidad y no se persiste. No anade dependencias ni obliga
+  a desactivar la confirmacion; no puede deshacer un cambio remoto de configuracion.
+- app/(auth)/auth/confirmar/route.ts: GET dinamico, verifyOtp con tipo email fijo
+  y factoria SSR escribible. Solo redirige con 303 a /login o errores fijos de
+  /registro; Location relativo independiente de Host/next/redirect_to. Sin query
+  sensible en destino ni cuerpo. Respuesta private/no-store, Referrer-Policy
+  no-referrer y X-Robots-Tag noindex/nofollow. Cookies del SDK escritas con el
+  adaptador existente; perfil se prepara con Continuar de tarea 9, no desde GET.
+- next.config.js: ampliacion minima de alcance para cumplir el contrato de no
+  registrar credenciales: excluye /auth/confirmar del logger entrante de Next y
+  desactiva logs de argumentos de Server Functions. Verificado contra el logger
+  instalado. No configura futuros proxies, hosting o analitica: antes de desplegar
+  tambien deben excluir/redactar esta ruta y sus queries.
+- features/auth/email-templates/confirm-signup.html: artefacto local revisable
+  para Confirm sign up, asunto propuesto Confirma tu cuenta de Refugio. Link
+  {{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&amp;type=email.
+  Se aplica manualmente en Supabase solo tras autorizacion/revision; no se cambia
+  Site URL, Redirect URLs, SMTP ni plantillas de otros flujos.
+
+Referencias revisadas: [signUp](https://supabase.com/docs/reference/javascript/auth-signup),
+[plantillas](https://supabase.com/docs/guides/auth/auth-email-templates) y
+[configuracion](https://supabase.com/docs/guides/auth/general-configuration).
+Se sigue next-best-practices (RSC/Route Handlers y redirects); no PKCE callback
+alternativo, recuperacion de password, OAuth, reenvio o panel nuevo.
+
+### Validacion y limites
+
+Web y validation lint/check-types correctos. 60 tests web pasan (13 nuevos,
+47 previos), con SDK y API simulados y adaptador cookies SSR real: validacion,
+normalizacion, aislamiento, cuenta existente, sesion prematura, 429/errores,
+confirmacion correcta/incorrecta/caducada/reutilizada, parametros duplicados,
+redirect seguro, cache, cookies y exclusion de logs. No acreditan una entrega
+real de correo ni el consumo real del token; errores OTP simulados.
+
+Build web correcto, con /registro y /auth/confirmar dinamicos y publico sin
+cambios de prerender. Ejecucion fuera del sandbox por el puerto interno de
+Turbopack, igual que tarea 9. Smoke HTTP del build en puerto temporal 3199:
+/registro 200, formulario y noindex, cache privada; enlaces ausentes, cortos o
+tipo recovery reciben 303 a error fijo sin Set-Cookie; error espanol visible.
+CSRF de registerAction abortado con Origin ajeno (500 nativo de Next, como
+tarea 9); login y /, /wiki, /juegos 200. Proceso temporal cerrado. Sin prueba
+visual nueva en Safari ni mobile; no se usaron credenciales reales. No se
+repitieron pruebas API/DB porque no hay cambios en esos workspaces.
+
+Pendientes para completar esta tarea: revisar/aplicar la plantilla exacta y
+realizar un unico registro/envio a un miembro del equipo expresamente autorizado,
+tras comprobar limite vigente del SMTP incluido. El propietario introduce las
+credenciales directamente en la web; no se solicitan passwords/tokens en chat ni
+se registran direcciones personales en docs. Comprobar recepcion, confirmacion,
+Continuar y perfil USER; contemplar scanners/prefetch de correo que consuman el
+enlace antes del click. No reintentar envios ni cambiar SMTP implicitamente.
+
+Sin usuarios, correos, perfiles reales, mutaciones remotas, DB/migraciones,
+.env, WARP/hosts o llavero nuevos. Sin nuevas dependencias. No se cierran tarea
+10 ni Phase 5 por simulaciones; integracion/cierre (tarea 11) requiere autorizacion
+separada despues de revisar estas evidencias. El propietario crea/sube los commits.
+
+
+## Intento de aplicar plantilla y preparar prueba real (30 de octubre de 2026)
+
+Codigo de tarea 10 integrado en 577c4b8. El propietario autoriza expresamente
+aplicar la plantilla preparada y un unico registro/envio a su direccion miembro
+del equipo; las credenciales las introduce el propietario directamente en la web.
+No se repite esta autorizacion para el mismo alcance. No incluye contratar Pro,
+configurar un proveedor SMTP distinto ni cambiar el contrato de confirmacion.
+
+Preflight de solo lectura: web /registro y API /health responden 200; conexiones
+DB y API apuntan al cluster loopback previsto; consulta READ ONLY confirma cero
+UserProfile. El sandbox inicialmente no pudo observar servicios activos; fuera
+de el se confirmaron disponibles. El arranque duplicado de desarrollo termino
+con puerto 3000 ocupado, sin detener servicios existentes ni aplicar migraciones.
+
+Inspeccion directa en Safari del proyecto fallout-platform: Site URL local y
+los dos Redirect URLs conservados. Authentication > Emails > Confirm sign up
+muestra Set up custom SMTP to edit templates, Source/Save deshabilitados y
+plantilla predeterminada inglesa basada en ConfirmationURL. Las opciones extra
+ofrecen Upgrade to Pro o Send Email hook. No se guardo ninguna configuracion,
+no se cambio SMTP/plan ni se creo usuario o envio correo.
+
+Bloqueo real del contrato TokenHash: el proyecto Free con SMTP incluido no
+permite instalar la plantilla prevista. [Anuncio oficial del 3 de junio de 2026](https://github.com/orgs/supabase/discussions/46599)
+confirma esta restriccion para nuevos proyectos Free, con excepcion de SMTP
+propio; planes de pago permiten personalizacion. No usar informacion anterior
+que afirmaba edicion libre como evidencia del estado actual.
+
+Alternativas propuestas, pendientes de decision del propietario:
+
+1. Mantener coste cero y SMTP incluido, adaptar registro/callback a PKCE con
+   plantilla predeterminada. Usar emailRedirectTo fijo, code verifier del SDK
+   y exchangeCodeForSession, sin tokens en fragment ni fallback implicit.
+   Necesita cambio acotado de codigo, pruebas y contrato documental ANTES del
+   registro real. El enlace debe abrirse en el navegador que inicio el registro.
+2. Conservar TokenHash y estudiar SMTP propio sin coste, con limites y requisitos
+   verificados. Nuevo proveedor/configuracion y credenciales requieren tarea
+   propia; no se configura ni contrata implicitamente.
+
+[PKCE oficial](https://supabase.com/docs/guides/auth/sessions/pkce-flow) y
+[registro email/password](https://supabase.com/docs/guides/auth/passwords).
+No implementar ninguna alternativa silenciosamente. No ejecutar el registro con
+la plantilla incompatible ni cerrar tarea 10/Phase 5. Validacion de esta entrega:
+diff documental y fuentes oficiales; sin cambios de codigo ni nuevas pruebas.
+
+
+## Entrega de adaptacion PKCE (31 de octubre de 2026)
+
+Alcance autorizado por el propietario tras recomendar PKCE. Conserva los cuatro
+archivos documentales ya modificados por el bloqueo anterior, sin descartar esa
+historia. No se ha cambiado Dashboard, SMTP o plan ni enviado correos/creado cuentas.
+
+Archivos de codigo:
+
+- features/auth/registration-client.ts: usa createServerClient de @supabase/ssr
+  por peticion, con adaptador Next cookies limitado al storage key PKCE del
+  proyecto y sus chunks numericos. No lee ni escribe cookies de sesion, incluso
+  si el proveedor devuelve una sesion inesperada. Mantiene una sesion previa
+  intacta. Solo verifier con maxAge de una hora; respeta borrados con maxAge 0.
+  El SDK instalado restablece su maxAge predeterminado al persistir: se limita
+  expresamente en el adaptador, comprobado con SDK real y transporte simulado.
+- features/auth/registration.ts: signUp envia email/password y emailRedirectTo
+  local aprobado fijo, sin aceptar URL/role/metadata del formulario. El texto
+  indica abrir el enlace en el mismo navegador y dispositivo sin borrar cookies.
+  Confirmacion exige un code valido no duplicado; rechaza errores del proveedor,
+  TokenHash/type heredados y tokens en query. Llama exchangeCodeForSession;
+  conserva respuestas de error genericas y destinos relativos fijos.
+- packages/validation/src/index.ts: schema del callback code URL-safe acotado,
+  sustituye TokenHash/type sin segundo mecanismo alternativo.
+- app/(auth)/registro/page.tsx: instrucciones del navegador/cookies y error con
+  acceso a login si el correo ya se confirmo. Sin cambios de diseno publico.
+- features/auth/tests/auth.test.mjs: adapta las pruebas anteriores y anade dos
+  de SDK real/chunks. La ruta callback, helpers SSR de sesion, Proxy, API, DB,
+  manifests y lockfile conservan su implementacion.
+
+La plantilla personalizada existente permanece como referencia historica, no
+esta instalada ni forma parte del flujo actual. Correo predeterminado en ingles;
+la interfaz de la aplicacion sigue en espanol. El redirect esta acotado a local:
+antes de produccion se requiere configurar/verificar un origen HTTPS propio en
+una tarea separada; no desplegar este valor local sin esa preparacion.
+
+Validacion:
+
+- Web y @repo/validation lint/check-types correctos; build web correcto fuera
+  del sandbox por el puerto interno de Turbopack.
+- 62 pruebas web correctas: regresiones de login/logout, validacion, cookies,
+  filtrado, destinos, errores y logs; cuenta nueva/existente y sesion prematura.
+- Prueba con SDK instalado real y fetch simulado: signup envia challenge S256
+  y redirect correcto, solo cookie verifier temporal; otro navegador falla sin
+  sesion, callback correcto crea sesion y borra verifier, replay falla. No es
+  evidencia de Supabase remoto ni entrega/consumo real del correo.
+- Smoke HTTP del build en 3197: registro/login y publico 200, noindex/cache
+  privada, callbacks invalidos/error del proveedor 303 sin cookies, CSRF abortado
+  por Next con Origin ajeno (500 nativo). Proceso temporal cerrado; sin detener
+  servicios existentes. No credenciales reales ni nueva inspeccion visual.
+- Sin cambios API/DB: no se repiten sus tests. Sin .env, dependencias nuevas,
+  migraciones, usuarios, perfiles, envios ni cambios de red/llavero.
+
+Pendiente: revision y commit del propietario antes de continuar con el unico
+registro/envio real ya autorizado, introduciendo correo/password directamente en
+Safari. Verificar limite SMTP y recepcion, abrir enlace en ese Safari, Continuar
+con sesion verificada y comprobar perfil USER en DB local. No pedir secretos en
+chat, hacer reenvios automaticos o promover ADMIN. No cerrar tarea 10 ni avanzar
+implicitamente a tarea 11; Phase 5 sigue abierta.
+
+
+## Registro real: observaciones del 31 de octubre de 2026
+
+El propietario revisa/valida la adaptacion integrada en 955eebe y autoriza
+continuar con la prueba previamente aprobada. Despues comunica haber creado dos
+cuentas por su cuenta: A confirmada (Gmail) y B sin confirmar (Outlook). Esto
+registra lo realizado por el propietario, sin ampliar la autorizacion del agente
+para crear otra cuenta o enviar mas correos. No se guardan emails, UUID, passwords,
+links, cookies o tokens personales en este registro.
+
+Evidencia directa de solo lectura:
+
+- Dashboard Authentication > Users en Safari muestra ambas cuentas. A tiene
+  ultimo inicio de sesion; B muestra Waiting for verification. La confirmacion
+  del correo A y no confirmacion de B son tambien evidencia del propietario.
+- /login en ese Safari muestra Tu sesion esta iniciada y tu perfil esta preparado.
+  Solo se navega por GET; no se pulsa login, Continuar ni logout en esta entrega.
+  La vista usa claims verificados y lectura autenticada de perfil desde Nest.
+- API /health responde 200; no se usa health como prueba de conectividad DB.
+- Consulta PostgreSQL local BEGIN READ ONLY: un perfil total, role USER. Otra
+  consulta parametrizada cruza los UUID observados en Dashboard sin publicarlos:
+  exactamente un perfil USER corresponde a A y cero perfiles a B. Frente al
+  preflight previo de cero perfiles, ahora existe uno creado por el flujo del
+  propietario. No se han insertado/modificado perfiles desde las comprobaciones.
+
+Limites de la evidencia: el agente no observo la pulsacion de registro, ausencia
+previa de sesion ni el canje del enlace. Pendiente que el propietario confirme
+si uso /registro y llego autenticado por PKCE sin volver a introducir password,
+o si inicio sesion despues. No afirmar que una sesion posterior demuestra por
+si sola ese canje. La cuenta B sin perfil no acredita todavia rechazo de login
+ni aislamiento entre dos sesiones autenticadas. No login B, reenvios, expiracion,
+replay, renovacion forzada, logout o promocion ADMIN realizados por el agente.
+
+Se conservan cuentas y sesion vigentes. No se ha reenviado/confirmado/eliminado
+la cuenta B ni cambiado configuracion remota, SMTP, DB, entorno o red. No es
+necesario crear otra cuenta para continuar con las comprobaciones restantes.
+Tarea 10 sigue abierta hasta aclarar el recorrido y revisar sus evidencias;
+Phase 5/tarea 11 no se cierran ni se amplian implicitamente.
+Validacion de esta entrega: observaciones UI, consultas solo lectura y diff
+limpio; sin cambios de codigo ni necesidad de repetir tests/build.
+
+
+### Corroboracion del propietario del recorrido PKCE
+
+El propietario responde expresamente que creo A desde /registro y que, al abrir
+el enlace en el mismo Safari, llego a Tu sesion sin volver a introducir password.
+Esta confirmacion resuelve la duda del apartado anterior. El canje no fue
+observado directamente por el agente; se acredita por el propietario y se
+complementa con la vista autenticada y el perfil USER local comprobados por el
+agente. Registro, recepcion/confirmacion, sesion y perfil quedan verificados con
+esas fuentes, sin confundirlos con observacion automatizada de toda la secuencia.
+
+Evidencias de tarea 10 listas para revision del propietario. No se realizan mas
+operaciones ni se declara Phase 5 cerrada. Proxima tarea propuesta, despues de
+revision/commit y autorizacion: 11, integracion (login/logout, renovacion,
+aislamiento y permisos), aprovechando las cuentas existentes; promocion ADMIN
+solo con alcance/identificador confirmado y autorizacion especifica.
+Enlaces invalidos/caducados/reutilizados siguen cubiertos por simulaciones;
+no se declara que se hayan reproducido todos esos casos contra Supabase real.
+Validacion de esta aclaracion: diff documental limpio; sin cambios de codigo,
+cuentas, envios, roles o configuracion y sin repetir tests/build.
+
+
+## Tarea 11 en curso: sesiones y diagnostico de permisos
+
+Autorizada por el propietario tras integrar evidencias de tarea 10 en 457c5a8.
+No incluye crear mas usuarios, confirmar la cuenta B ni promover ADMIN sin
+operacion expresa sobre perfil/entorno confirmados. Tarea 11 y Phase 5 abiertas.
+
+Pruebas y herramienta locales:
+
+- features/auth/tests/auth.test.mjs anade un caso con SDK real, JWT sintetico
+  ES256 y respuestas Auth/JWKS/API simuladas: sesion caducada renovada, firma
+  verificada, GET perfil usa solo bearer nuevo, cookies actualizadas, logout
+  scope local elimina sesion y una lectura posterior no renueva ni consulta API.
+- features/auth/tests/manual-auth-server.mjs es una herramienta temporal de
+  pruebas, no una ruta de Next ni parte del producto. Escucha solo 127.0.0.1:3196,
+  valida Host, metodo/path/Origin y rechaza fetch cross-site. Sin CORS. Lee
+  cookies de localhost en Safari, verifica claims con SDK y consulta solamente
+  GET /auth/me y /admin/comprobacion. Puede renovar sesion como operacion Auth
+  normal; propaga cookies SSR. No crea perfiles ni cambia roles. Solo muestra
+  booleanos y estados HTTP, sin tokens, emails, UUID ni cuerpos de errores.
+  Respuestas private/no-store, no-referrer, noindex y CSP sin scripts/frames;
+  sin registro de solicitudes o credenciales. Cada peticion crea su cliente.
+- Para ejecutar desde la raiz: node --env-file=apps/web/.env.local
+  apps/web/features/auth/tests/manual-auth-server.mjs (una sola linea), abrir
+  http://localhost:3196 en el mismo Safari y cerrar con Ctrl+C al terminar.
+  Requiere entorno web existente y API http://localhost:3001; no crea .env nuevo.
+  La primera invocacion por pnpm no encontro el .env relativo; se arranco con
+  ruta absoluta sin cambiar el archivo ni mostrarlo.
+
+Evidencias reales observadas por el agente:
+
+1. Safari /login muestra sesion y perfil preparados antes de logout.
+2. Cerrar sesion en este navegador devuelve formulario de login. Una recarga
+   mantiene formulario anonimo; diagnostico en otra pestana confirma
+   sessionVerified=false, sin solicitar datos privados a Nest.
+3. Solicitudes directas sin bearer a /auth/me y /admin/comprobacion responden
+   401. Diagnostico rechaza Origin ajeno con 403, respuesta anonima 200 privada.
+4. Home/publico conservan interfaz mock. No se inspeccionan ni extraen cookies
+   mediante automatizacion de navegador; el SDK las maneja en memoria.
+
+Checks de esta entrega en curso: 63 pruebas web, 105 unitarias API y 32 HTTP
+API correctas. Web/API lint, check-types y build correctos; build web fuera del
+sandbox por el puerto interno de Turbopack. Matriz de roles y aislamiento de
+usuarios cubiertos por pruebas API simuladas, no por promocion real en DB.
+El primer intento de unitarias uso pnpm test con flag no reconocido; la
+invocacion correcta pnpm --filter api run test --runInBand paso completa.
+Sin dependencias o manifests nuevos, cambios de produccion, API/DB o migraciones.
+
+Pendientes reales: login con password por el propietario en Safari; perfil
+HTTP 200 y ADMIN 403 del USER desde diagnostico; renovacion remota observada
+cuando corresponda, aislamiento y rechazo de cuenta sin confirmar; ADMIN 200
+requiere operacion autorizada separada y verificada. No extraer credenciales,
+crear endpoints de promocion ni dar por completo el cierre con simulaciones.
+Se deja el servidor temporal disponible para estas comprobaciones entre turnos;
+se cerrara al terminar. No se han enviado mas correos, confirmado B o cambiado
+roles/configuracion. No se solicita de nuevo autorizacion para registro previo.
+
+
+### Tarea 11: login, permisos reales y renovacion verificados
+
+El propietario inicia sesion con A y comunica Tu sesion. Observacion directa
+posterior del agente en Safari: sessionVerified=true, GET /auth/me=200,
+profileMatchesSubject=true y GET /admin/comprobacion=403 desde diagnostico.
+La identidad real obtiene su propio perfil y no supera la comprobacion ADMIN.
+
+El propietario autoriza expresamente ADMIN temporal para el unico perfil local
+confirmado y restauracion USER, solo fallout_platform_dev en 127.0.0.1:55432.
+Operacion parametrizada con precondiciones: destino/usuario DB exactos, un solo
+perfil y rol inicial USER. Actualiza role y updatedAt en ese perfil; ningun
+cambio de Supabase Auth o metadata. Respaldo de restauracion automatica a los
+60 segundos, interrumpido tras comprobar HTTP 200 con ADMIN. Restauracion
+confirmada a USER y recarga del diagnostico vuelve a HTTP 403 sin nuevo login.
+Lectura READ ONLY posterior acredita total=1, users=1, admins=0. No queda ADMIN
+permanente; cualquier nueva promocion exige su propio alcance/autorizacion.
+
+Renovacion real: se amplia la herramienta temporal con POST /renovar y boton
+manual. Exige Origin exactamente http://localhost:3196, Host local y evita
+cross-site; POST sin Origin, Origin ajeno o null devuelve 403 sin usar cookies.
+GET de perfil/permisos sigue sin escrituras. El POST llama auth.refreshSession,
+propaga todas las cookies actualizadas y muestra solo booleanos/estados. Usa
+cookie jar por peticion y acumula Set-Cookie por nombre para conservar cambios
+multiples. CSP form-action self; nunca imprime JWT/refresh token.
+
+El primer POST de Safari fue rechazado antes de renovar: no-referrer elimina
+el origen util del formulario en este contexto. Se usa Referrer-Policy same-origin
+SOLO en esta pagina de prueba sin queries sensibles, manteniendo el control
+estricto de Origin. El callback del producto conserva no-referrer y no cambia.
+Tras corregir la herramienta y repetir una vez, observacion directa:
+sessionRefreshed=true, accessTokenChanged=true, sessionVerified=true,
+profileHttp=200, profileMatchesSubject=true y adminHttp=403. Recarga de /login
+en la aplicacion mantiene Tu sesion y perfil preparados con las nuevas cookies.
+Esta renovacion real es explicita; la automatica por expiracion de Proxy se
+sigue acreditando por simulaciones, no por esperar la caducidad de esta cuenta.
+
+Se abre una ventana privada de Safari en /login para comprobar B sin confirmar:
+se observa formulario anonimo, mientras la ventana normal conserva la sesion
+A. El propietario debe introducir password y enviar un unico login B; resultado
+pendiente. No se confirma B, reenvia email ni borra cuenta. No afirmar todavia
+rechazo de login B ni aislamiento entre DOS usuarios autenticados: una sesion
+normal y otra privada anonima no completan ese criterio por si solas.
+
+Checks tras ampliar herramienta: web lint/check-types y smoke de rechazo de
+POST por origen. No se repiten build o suites sin cambios de codigo de producto;
+se conservan resultados de esta entrega: 63 web, 105 unitarias y 32 HTTP API,
+lint/tipos/build web/API. No nuevas dependencias. Servidor temporal sigue abierto
+para la siguiente comprobacion y debe cerrarse al terminar. Tarea 11/Phase 5
+siguen abiertas hasta resolver pendientes, revision y cierre del propietario.
+
+
+### Cuenta B sin confirmar: intento rechazado y siguiente prueba autorizada
+
+El propietario intenta login B en la ventana privada y comunica el error generico
+No se ha podido iniciar sesion. Revisa tu correo y contrasena. El agente observa
+ese mensaje y el formulario; diagnostico privado confirma sessionVerified=false,
+sin consulta de perfil/ADMIN. La ventana normal sigue en Tu sesion y al recargar
+mantiene el perfil de A. Lectura local final: total=1, users=1, admins=0 y cero
+perfiles correspondientes a B. No se han leido passwords ni mostrado tokens.
+
+Este intento rechazado no expone el estado de cuenta. Por ser error generico,
+la UI por si sola no distingue email no confirmado de password incorrecto; no
+se inspecciono el error interno de Auth. El contexto de cuenta pendiente esta
+acreditado por Dashboard/propietario; no atribuir un codigo interno no observado.
+Queda probada ausencia de sesion/perfil tras el intento y separacion de la
+ventana anonima respecto de A, no aun dos usuarios autenticados.
+
+El propietario confirma que tiene el correo de B y autoriza confirmarla para
+la prueba de aislamiento. No se reenvia correo, crea otra cuenta o confirma
+manualmente desde Dashboard. Debe abrir el enlace existente en el Safari normal
+que inicio ese registro PKCE; puede sustituir la identidad A de esa ventana por B.
+Despues se usara Gmail/A en la ventana privada. Si el enlace ha caducado o falla,
+registrar el resultado antes de plantear cualquier envio adicional.
+
+Herramienta temporal ampliada con accountLabel (Cuenta 1, Cuenta 2): mapa en
+memoria del proceso de etiquetas efimeras por sub verificado, sin mostrar UUID,
+email o tokens ni guardar clientes, sesiones o permisos entre peticiones. Sirve
+para comparar dos contextos mientras cada profileMatchesSubject acredita su
+perfil propio. Se reinicio solo el proceso de diagnostico, sin modificar cookies
+ni detener apps. Etiquetas reiniciadas con el proceso; no identificadores de
+producto. Web lint/check-types tras este ajuste. No declarar confirmacion de B
+ni aislamiento completo hasta observar las dos sesiones/perfiles.
+
+
+### Enlace B: correo confirmado, retorno PKCE no completado
+
+El propietario abre el enlace existente autorizado y obtiene /registro con
+confirmacion=invalida y error generico. No se reenvia correo. Inspeccion de solo
+lectura en Dashboard, Overview de B: Confirmed 31 Oct 2026 02:16, Last signed in
+sin valor. Por tanto el correo SI se confirmo en Supabase, aunque la aplicacion
+no completo el acceso por ese retorno. No volver a enviar/confirmar ni modificar
+Dashboard para resolver este estado; usar login normal con password.
+
+Se comprueba que la ventana normal sigue con A: diagnostico sessionVerified=true,
+accountLabel=Cuenta 1, perfil 200 correspondiente al sub y ADMIN 403. Se prepara
+el formulario de login B en la ventana privada, sin introducir ni leer su
+password. Se rechaza la sugerencia de Safari de guardar password (Ahora no),
+sin cambiar preferencias o credenciales guardadas.
+
+Causa compatible con la secuencia de pruebas: el SDK auth-js instalado 2.108.0
+elimina storageKey-code-verifier al guardar una sesion nueva (_saveSession) y al
+cerrarla (_removeSession). Entre registro B y su enlace se probaron logout,
+login y refresh de A en el mismo navegador/proyecto. Esas operaciones pudieron
+eliminar el verifier B pendiente; el agente debio prever ese efecto al ordenar
+la prueba. No se observaron las cookies del momento ni el error interno exacto,
+por lo que no se afirma como causa forense unica ni se atribuye a caducidad.
+Se amplia la prueba SDK real de renovacion con un verifier pendiente y se
+comprueba su eliminacion. No se modifica el SDK ni se preserva verifier a la
+fuerza tras logout: se mantienen sus protecciones y la salida segura a login.
+
+Para aislamiento final se ajusta el recorrido: A/Gmail sigue en ventana normal,
+B/Outlook ya confirmado inicia sesion manualmente en privada. No necesita otro
+email ni abrir de nuevo el enlace consumido. Pendiente observar Tu sesion B,
+perfil propio y distinto, ambos contextos concurrentes y logout de uno sin
+cerrar el otro. Task 11/Phase 5 abiertas. No nueva autorizacion para el mismo
+login; el propietario introduce las credenciales directamente en el formulario.
+
+
+### Tarea 11: aislamiento final y entrega para revision
+
+B inicia sesion mediante password en la ventana privada; Tu sesion y perfil
+preparado observados. Diagnostico en la MISMA pestana privada del login muestra
+sessionVerified=true, Cuenta 2, perfil 200 coincidente con sub y ADMIN 403. Otra
+pestana privada que estaba abierta siguio anonima: se usa siempre el contexto
+exacto del login para no confundir esa separacion de almacenamiento con un fallo.
+Ventana normal A muestra Cuenta 1, perfil propio 200 y ADMIN 403 simultaneamente.
+No se reducen las protecciones de privacidad sugeridas por Safari.
+
+Logout B desde su pestana de aplicacion devuelve formulario; diagnostico de ese
+mismo contexto queda sessionVerified=false sin lecturas de datos privados.
+A sigue autenticada tras recargar, con Cuenta 1 y perfil 200/ADMIN 403.
+Consulta parametrizada READ ONLY final: total=2, perfiles distintos=2,
+identidades distintas=2, USER=2, ADMIN=0; A/B tienen exactamente un perfil cada una.
+Sesion normal A conservada, B cerrada. No nuevas mutaciones de roles.
+
+CORS comprobado con preflight anonimo: 204 y Allow-Origin fijo localhost:3000;
+un origen ajeno no coincide, y GET privado sigue 401 sin bearer. Publico
+/, /wiki, /juegos 200, sin cambios de diseno/mocks. Diagnostico temporal cerrado,
+puerto 3196 rechaza conexiones, pestaña normal de prueba cerrada y aplicacion
+normal dejada en Tu sesion. No se detienen servicios de desarrollo/DB del dueno.
+
+La entrega de tarea 11 queda lista para revision del propietario, con matriz
+consolidada y limites en [docs/20](20-phase-5-validation.md). Se conservan los
+checks ya correctos (63 web, 105 unitarias, 32 HTTP, lint/tipos/build web/API),
+sin ampliar ejecuciones sin cambios o riesgos nuevos. Diff documental limpio.
+Phase 5 NO se marca cerrada ni se inicia Phase 6: faltan revision/commit de esta
+entrega y cierre expreso del propietario. El propietario crea/sube los commits.
+
+
+## Cierre autorizado de Phase 5 (31 de octubre de 2026)
+
+El propietario confirma revision y subida del commit b3aeb6d de tarea 11 y
+posteriormente autoriza expresamente cerrar Phase 5. Informa de una PR abierta
+en GitHub para esta rama; no se afirma que este mergeada ni se modifica la PR.
+Se acepta el alcance de desarrollo local con la matriz/limites de docs/20:
+registro/confirmacion, login/logout, renovacion explicita real, identidad y
+perfiles propios, roles y aislamiento de dos sesiones. Las simulaciones de
+Proxy por expiracion y de algunos errores de enlaces siguen identificadas.
+
+Estado final permanece: dos perfiles USER locales, cero ADMIN; A autenticada en
+normal, B cerrada en privada, diagnostico temporal cerrado. Este cierre no
+repite pruebas, cambia codigo/servicios/datos, publica credenciales o ejecuta
+migraciones. Revision documental, enlaces locales y diff limpio. El propietario
+crea/sube el commit documental de cierre para incluirlo en la PR existente.
+
+La validacion remota/de produccion aplazada no queda completada por este cierre.
+Phase 6 es la proxima fase, pendiente de propuesta/tarea expresa y del estado de
+integracion que confirme el propietario. No contenido, CRUD, seeds o cambio de
+mocks autorizados por esta operacion. Estados pendientes de apartados anteriores
+se conservan como historia y quedan superados por este cierre vigente.

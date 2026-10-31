@@ -11,7 +11,7 @@ Usuario
   -> Next.js web app
   -> NestJS REST API con Supabase access token
   -> Prisma
-  -> Supabase PostgreSQL
+  -> PostgreSQL (local en desarrollo; Supabase en produccion)
 
 Supabase tambien proporciona Auth y Storage.
 ```
@@ -19,10 +19,14 @@ Supabase tambien proporciona Auth y Storage.
 Supabase se utiliza como infraestructura. NestJS sigue siendo el backend principal de negocio y autorizacion:
 
 - Supabase Auth identifica al usuario y gestiona sesiones.
-- Supabase PostgreSQL almacena los datos de la aplicacion.
+- PostgreSQL almacena los datos de la aplicacion: local en desarrollo y Supabase como destino previsto de produccion.
 - Supabase Storage almacena imagenes y archivos.
 - NestJS valida tokens, aplica permisos y contiene las reglas de negocio.
 - Next.js renderiza la web publica, las pantallas de autenticacion y el panel admin.
+
+El cambio a PostgreSQL local fue aprobado el 30 de octubre de 2026 y esta
+preparado en L1/L2: PostgreSQL 17.11 y migracion UserProfile aplicados localmente. Auth y Storage siguen remotos. Antes de instalar o
+migrar, consultar [la decision y el plan de continuacion](docs/19-local-development-database.md).
 
 ## Stack Tecnico
 
@@ -32,7 +36,7 @@ Supabase se utiliza como infraestructura. NestJS sigue siendo el backend princip
 - API: REST first
 - UI: TailwindCSS + shadcn/ui
 - Formularios: react-hook-form + Zod
-- Base de datos: PostgreSQL alojado en Supabase
+- Base de datos: PostgreSQL nativo local para desarrollo; Supabase para produccion
 - ORM: Prisma
 - Auth: Supabase Auth
 - Storage: Supabase Storage
@@ -133,11 +137,19 @@ docs/                     documentacion de producto y arquitectura
 
 El monorepo, las dos aplicaciones, la documentacion y los seis packages previstos estan configurados como workspaces funcionales. La web utiliza el puerto `3000` y la API el `3001` durante desarrollo.
 
-La configuracion local de **Phase 1: Infrastructure and configuration** esta preparada: Prisma 7, validacion de entorno, CORS, frontend env y `GET /health`. La conexion real con Supabase se ha aplazado mientras el desarrollo inicial utiliza datos mock.
+La configuracion local de **Phase 1: Infrastructure and configuration** esta completada; la infraestructura externa aplazada se verifico en Phase 4. Prisma 7, validacion de entorno, CORS, frontend env y `GET /health` estan preparados.
 
-La fase activa es **Phase 2: Public design with mocks**.
+Las Phases 2 a 5 estan completadas; el propietario autoriza el cierre de
+**Phase 5: Auth foundation** el 31 de octubre de 2026. La PR de Phase 5 esta
+abierta segun el propietario; su merge en develop aun no se ha confirmado.
+Evidencias y limites en [docs/20](docs/20-phase-5-validation.md).
+**Phase 6: Core content models and API** es la siguiente, pendiente de una tarea
+acotada autorizada; las paginas publicas conservan sus mocks y diseno.
 
-Antes de implementar autenticacion o persistencia real sera necesario crear el proyecto Supabase, configurar Auth y Storage, rellenar los archivos `.env` y ejecutar la comprobacion de conexion documentada.
+El desarrollo usa PostgreSQL nativo local y Supabase Auth/Storage remotos. El
+arranque y la migracion local se documentan en
+[docs/19](docs/19-local-development-database.md); el despliegue y la validacion
+pendiente de PostgreSQL remoto se trataran por separado antes de produccion.
 
 El contexto para retomar el trabajo se mantiene en [`docs/15-current-status.md`](./docs/15-current-status.md). El roadmap y los criterios de cierre se mantienen en [`docs/12-roadmap.md`](./docs/12-roadmap.md).
 

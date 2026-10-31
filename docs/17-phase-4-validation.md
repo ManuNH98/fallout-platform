@@ -2,10 +2,16 @@
 
 Fecha: 23 de octubre de 2026.
 
-Estado: aplicaciones, runtime y Prisma CLI verificados; **Phase 4 sigue abierta
-para revision del propietario**. CLI funciona en macOS mediante Direct con
-WARP activo y una entrada temporal de su hostname en /etc/hosts. La revision
-debe incluir esta dependencia local. No se inicia Phase 5 en esta entrega.
+Estado vigente: **Phase 4 completada e integrada en develop mediante la PR #7
+(merge `b324cd5`, que incorpora `8222fb4`)**. El propietario confirmo el merge
+y autorizo continuar con Phase 5 el 23 de octubre de 2026, en la rama
+`feature/Phase-5_auth_foundation`, creada desde ese merge. CLI funciona en
+macOS mediante Direct con WARP activo y una entrada temporal del hostname
+en /etc/hosts; esta dependencia local sigue vigente.
+
+Las secciones de validacion siguientes conservan las evidencias de la entrega
+original. Registrar el cierre no constituye una nueva verificacion de
+infraestructura ni implementa Auth.
 
 ## Alcance
 
@@ -143,10 +149,27 @@ Detalles y fuentes de cada comprobacion en docs/14-environment-and-supabase.md.
 No hay despliegue remoto operativo verificado ni variables de hosting revisadas;
 esta validacion es local contra Supabase remoto. No se ha creado hosting.
 
-## Pendiente para cerrar
+## Cierre confirmado y limites vigentes
 
-El bloqueo de conexion CLI queda superado bajo los requisitos locales
-documentados. Falta la revision del propietario, incluida la aceptacion del
-uso de WARP y la entrada temporal de hosts, y registrar el cierre autorizado.
-Hasta entonces Phase 4 no esta marcada completada. Si cambia esa configuracion,
-repetir ambas comprobaciones de conectividad y los checks afectados.
+La revision pendiente en la entrega original queda superada por el merge de
+la PR #7 y la confirmacion del propietario para avanzar a Phase 5. El historial
+Git y las referencias locales develop/origin/develop apuntan a `b324cd5`; el
+commit `8222fb4` es antecesor y la rama de Phase 5 parte del merge. Esta
+comprobacion no afirma una nueva consulta al remoto.
+
+La actualizacion de cierre modifica solo AGENTS.md y docs/12, docs/14, docs/15
+y este registro; no modifica codigo, dependencias, entorno ni recursos externos.
+Se revisaron las skills locales: ninguna guia de implementacion corresponde
+a esta reconciliacion documental. Validacion: revision del diff y coherencia
+entre los cinco archivos, historial Git y `git diff --check`. No hay workspaces
+afectados para lint, check-types o build, ni se repiten los checks historicos.
+
+El bloqueo de CLI queda superado bajo los requisitos locales documentados.
+Conservar WARP activo y revisar con el propietario la entrada temporal si
+cambia la IPv6 del proyecto, sin modificar automaticamente red o llavero. Si
+cambia esa configuracion, repetir ambas comprobaciones de conectividad y los
+checks afectados. Runtime sigue usando session pooler. Email/URLs mantienen
+evidencia por confirmacion del propietario; los flujos Auth, la entrega de
+correo y el algoritmo activo de firma JWT siguen pendientes de Phase 5.
+No hay despliegue remoto operativo verificado. La siguiente tarea de Phase 5
+requiere revision y autorizacion independientes.

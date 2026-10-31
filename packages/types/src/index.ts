@@ -50,3 +50,21 @@ export interface WikiArticleDetail extends WikiArticleSummary {
   sources: readonly WikiSourceSummary[];
   relatedArticles: readonly WikiArticleSummary[];
 }
+
+// Contratos JSON de Auth; no exponen modelos Prisma ni fechas Date al frontend.
+export type UserRole = "USER" | "ADMIN" | "EDITOR" | "MODERATOR";
+
+export interface UserProfileResponse {
+  id: string;
+  supabaseUserId: string;
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminCheckResponse {
+  message: string;
+}

@@ -73,6 +73,23 @@ export function validateEnvironment(
     'https:',
   ]);
 
+  if (supabaseUrl) {
+    const url = new URL(supabaseUrl);
+    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    if (
+      url.username ||
+      url.password ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash ||
+      (url.protocol !== 'https:' && !loopback)
+    ) {
+      throw new Error(
+        'SUPABASE_URL debe ser un origen HTTPS sin credenciales, ruta, query ni fragmento; HTTP solo se admite en loopback.',
+      );
+    }
+  }
+
   return {
     ...environment,
     NODE_ENV: nodeEnvironment as NodeEnvironment,

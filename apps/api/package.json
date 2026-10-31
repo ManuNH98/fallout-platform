@@ -28,6 +28,9 @@
     "@nestjs/config": "4.0.4",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@repo/db": "workspace:*",
+    "@repo/types": "workspace:*",
+    "jose": "6.2.14",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -65,12 +68,25 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.ts$": "ts-jest",
+      "^.+\\.js$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "allowJs": true,
+            "module": "CommonJS"
+          },
+          "diagnostics": false
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "transformIgnorePatterns": [
+      "node_modules/(?!\\.pnpm/jose@|jose/)"
+    ]
   }
 }

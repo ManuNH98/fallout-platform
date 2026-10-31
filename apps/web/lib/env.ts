@@ -32,3 +32,15 @@ export const webEnvironment = Object.freeze({
   supabaseUrl,
   supabasePublishableKey,
 });
+
+export function getSupabaseEnvironment() {
+  const { supabaseUrl, supabasePublishableKey } = webEnvironment;
+
+  if (!supabaseUrl || !supabasePublishableKey) {
+    throw new Error(
+      "Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY para usar la autenticacion.",
+    );
+  }
+
+  return { url: supabaseUrl, publishableKey: supabasePublishableKey };
+}

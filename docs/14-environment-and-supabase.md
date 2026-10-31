@@ -1,5 +1,21 @@
 # 14. Environment and Supabase
 
+## Decision vigente: desarrollo con PostgreSQL local
+
+El 30 de octubre de 2026 el propietario aprueba documentar PostgreSQL nativo en
+macOS para desarrollo, sin Docker ni Supabase local, con coste cero de servicios
+adicionales. Auth y Storage siguen remotos; Supabase PostgreSQL se reserva para
+produccion. L1 instalada y validada: PostgreSQL 17.11 en 127.0.0.1:55432,
+DB fallout_platform_dev, rol fallout_app. Los .env reales API/DB ya apuntan
+a local; migracion UserProfile aplicada/verificada en L2, sin perfiles creados. Uso diario y copias privadas en docs/19.
+Los procedimientos remotos historicos siguientes no cambian ese destino local.
+
+El contrato y pasos L1/L2, roles SQL, WARP/hosts y validacion futura se mantienen
+en [docs/19](19-local-development-database.md). Ese contrato prevalece para el
+entorno de desarrollo sobre los procedimientos historicos de Phase 4 que siguen
+abajo. No es necesario resolver Direct para continuar una vez validada la DB
+local. Mantener TLS estricto para cualquier conexion remota. Sin root .env.
+
 ## Objetivo y alcance
 
 Preparar y verificar Supabase remoto en Phase 4, manteniendo las responsabilidades de `docs/01-architecture.md`. El frontend conserva los mocks y el diseno publico. No crear `.env` en la raiz del monorepo: cada aplicacion/package mantiene su entorno.
@@ -8,7 +24,7 @@ No introducir Docker, Supabase local ni dependencias sin justificar. Login, regi
 
 ## Estado comprobado de Phase 4
 
-Revision del 23 de octubre de 2026. Runtime y CLI conectan con TLS verificado. CLI usa Direct en macOS con WARP activo y una entrada temporal del hostname en /etc/hosts aplicada por el propietario. Email/URLs preparados por confirmacion y Storage verificado. El registro docs/17-phase-4-validation.md detalla las evidencias y la dependencia local de WARP/hosts. Phase 4 permanece abierta para revision del propietario.
+Revision del 23 de octubre de 2026. Runtime y CLI conectan con TLS verificado. CLI usa Direct en macOS con WARP activo y una entrada temporal del hostname en /etc/hosts aplicada por el propietario. Email/URLs preparados por confirmacion y Storage verificado. El registro docs/17-phase-4-validation.md detalla las evidencias y la dependencia local de WARP/hosts. Phase 4 esta completada e integrada en develop por la PR #7 (merge `b324cd5`); el propietario confirmo el merge y autorizo Phase 5 el 23 de octubre de 2026. Este cierre reutiliza las evidencias existentes, sin repetir verificaciones de infraestructura.
 
 - Web: App Router en `apps/web/app/`, sin `src/`, puerto `3000`. `next.config.js` valida la URL de API. El layout raiz importa `apps/web/lib/env.ts`, por lo que la validacion publica tambien se ejecuta al cargar el layout de servidor, incluido el build.
 - API: puerto `3001`, ConfigModule, validacion de protocolos/host y CORS con `WEB_URL`. Las variables externas son opcionales. No consume `@repo/db`.
@@ -20,12 +36,12 @@ Revision del 23 de octubre de 2026. Runtime y CLI conectan con TLS verificado. C
 
 ## Diferencias entre codigo y configuracion objetivo
 
-Los contratos y ejemplos publicos/de servidor estan actualizados. La tabla distingue la preparacion local de las verificaciones externas pendientes.
+Los contratos y ejemplos publicos/de servidor estan actualizados. La tabla resume la preparacion y verificacion de Phase 4; el algoritmo de firma real sigue pendiente de identificar antes de implementar la validacion JWT de Phase 5.
 
 | Area | Contrato actual | Objetivo de Phase 4 |
 | --- | --- | --- |
 | Web | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en ejemplo/helper/Turbo; helper importado desde el layout raiz | Entorno real rellenado; formato y coherencia local comprobados, sin ejecutar Auth |
-| API | Sin `SUPABASE_JWT_SECRET` en ejemplo, tipo ni Turbo; URLs opcionales con protocolos y host validados | Implementado en tarea 3; registrar sistema de firma remoto antes de Phase 5 |
+| API | Sin `SUPABASE_JWT_SECRET` en ejemplo, tipo ni Turbo; URLs opcionales con protocolos y host validados | Implementado en tarea 3; registrar sistema de firma remoto antes de implementar el verificador JWT de Phase 5 |
 | PostgreSQL | Session pooler para runtime; Direct para CLI; CA configurada localmente | Ambos verificados; CLI depende de WARP y entrada temporal de hosts en macOS |
 | Verificacion | `db:check` por `DIRECT_URL` y `db:check:runtime` por `DATABASE_URL` | Ambos correctos; CLI rechaza CA ausente e identidad incorrecta en controles negativos |
 
@@ -75,7 +91,7 @@ El ejemplo de `DIRECT_URL` usa `sslmode=require`, que Prisma CLI documenta para 
 
 ### Verificacion real de tarea 5: macOS
 
-Los intentos siguientes son el historico del bloqueo. El resultado vigente es CLI Direct correcto con WARP y hosts, descrito en la subseccion final y en docs/17-phase-4-validation.md.
+Los intentos siguientes son el historico del bloqueo. Los estados abiertos o pendientes de esas entregas no representan el cierre actual. El resultado vigente es CLI Direct correcto con WARP y hosts, descrito en la subseccion final y en docs/17-phase-4-validation.md.
 
 El propietario descargo la CA desde Supabase Dashboard. Se verifico que es una CA vigente y se copio como PEM a un archivo local ignorado. Las dos URLs de runtime usan `sslmode=verify-full` y `sslrootcert` con ruta absoluta al PEM. `db:check:runtime` pasa contra Supabase y una comprobacion con el mismo driver pg confirma conexion cifrada y certificado autorizado.
 
@@ -113,7 +129,7 @@ WARP instalado y activado por el propietario proporciona acceso IPv6 a Direct. P
 
 Tras el cambio macOS resuelve el host y pasan `db:check` y `db:check:runtime`. CLI conserva hostname, `sslmode=require`, `sslcert` y `sslaccept=strict`. Sin CA adicional y con hostname sustituido por IPv6 literal, dos controles negativos solo en memoria fallan con P1011. El certificado Direct observado incluye serverAuth y tiene 730 dias de validez. No se cambiaron .env, llaveros, politicas remotas ni codigo. Lint, check-types y build de @repo/db pasan.
 
-Mantener WARP activo al usar Direct y revisar la entrada si cambia la IPv6 del proyecto. Es una solucion local temporal, no una reparacion general del DNS ni una garantia al cambiar de red. No sustituir la URI por una IP ni relajar TLS. El helper `/private/tmp/fallout-direct-hosts.py` admite `--rollback` con sudo y retira solo su entrada; conservar antes la copia y el registro de su ubicacion si se limpian temporales. Al retirarla puede volver el fallo DNS. El cierre de fase queda pendiente de revision del propietario sobre estos requisitos operativos.
+Mantener WARP activo al usar Direct y revisar la entrada si cambia la IPv6 del proyecto. Es una solucion local temporal, no una reparacion general del DNS ni una garantia al cambiar de red. No sustituir la URI por una IP ni relajar TLS. El helper `/private/tmp/fallout-direct-hosts.py` admite `--rollback` con sudo y retira solo su entrada; conservar antes la copia y el registro de su ubicacion si se limpian temporales. Al retirarla puede volver el fallo DNS. Estos requisitos operativos se conservan como limitaciones del cierre de Phase 4 confirmado por el propietario; no se ha reparado de forma general el DNS de macOS.
 
 Referencia de los parametros del motor nativo: [parser de conexiones de Prisma](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/url.rs) y [carga de la CA y modo estricto](https://github.com/prisma/prisma-engines/blob/main/quaint/src/connector/postgres/native/mod.rs). Las opciones del driver pg y del motor nativo se comprueban por separado.
 
@@ -125,7 +141,7 @@ Referencias: [Supabase con Prisma](https://supabase.com/docs/guides/database/pri
 
 ## Pasos del propietario en Supabase Dashboard
 
-Estos pasos se ejecutan en tareas posteriores, tras revisar la preparacion local.
+Esta lista conserva los pasos previstos para Phase 4; sus resultados se registran en las tareas siguientes y en docs/17-phase-4-validation.md. No es una instruccion para repetir cambios remotos tras el cierre. Las plantillas y flujos Auth pendientes se revisaran en tareas autorizadas de Phase 5.
 
 1. Seleccionar proyecto existente o crear uno. El propietario decide organizacion, region y plan y guarda la contrasena PostgreSQL en su gestor. Verificar que esta operativo; no crear recursos duplicados.
 2. Obtener Project URL y publishable key desde Connect/API Keys e introducirlas directamente en el archivo local correspondiente. No obtener claves privilegiadas sin consumidor previsto.
@@ -142,6 +158,8 @@ Referencias: [redirecciones](https://supabase.com/docs/guides/auth/redirect-urls
 No hay un destino de despliegue operativo verificado para esta fase. Registrar la limitacion; no crear hosting ni declarar configuradas variables remotas. Si se identifica un despliegue existente, configurarlo requiere una tarea acotada y URLs reales del propietario.
 
 ## Tarea 6: preparacion de Email y URLs
+
+Las tareas 6 y 7 conservan el estado historico de sus entregas, cuando CLI estaba pendiente. El resultado posterior de CLI y el cierre vigente se recogen arriba y en docs/17-phase-4-validation.md.
 
 Iniciada el 2026-10-23 por autorizacion del propietario, con la comprobacion CLI de tarea 5 pendiente. Esta configuracion de Auth se revisa en Dashboard y no requiere la conexion de Prisma CLI. No hay conector Supabase disponible en esta sesion: el propietario realiza los cambios y confirma su estado; no se declara inspeccion remota por el agente.
 
@@ -189,10 +207,10 @@ Referencias contrastadas el 2026-10-23: [crear buckets](https://supabase.com/doc
 | 2. Entorno publico | 1 revisada | Integrado en `cb7ca8e`: publishable key y validacion desde el layout, sin cambios visuales |
 | 3. Entorno servidor | 1; ejecutar tras 2 | Integrado en `36e0b26`: ejemplos API/DB, protocolos/host validados, pruebas y TLS documentado, sin requisito de JWT secret |
 | 4. Prueba runtime | 3 | Integrado en `d19cb94`: `db:check:runtime`, consulta fija, limite de 10 segundos, cierre y salida sin secretos |
-| 5. Proyecto y entorno real | 2, 3, 4 | Runtime y CLI verificados; Direct depende de WARP/hosts en macOS; revision del propietario pendiente |
+| 5. Proyecto y entorno real | 2, 3, 4 | Runtime y CLI verificados; Direct depende de WARP/hosts en macOS; cierre confirmado por el propietario tras PR #7 |
 | 6. Email y URLs | Proyecto y entorno de 5 preparados; excepcion autorizada para avanzar con CLI pendiente | Preparada por confirmacion del propietario: Email, URLs exactas y SMTP incluido; sin implementar ni probar autenticacion |
 | 7. Storage | Proyecto/entorno de 5 preparados; continuacion autorizada con CLI pendiente | Verificada: media privado, RLS activo, cero politicas, subida anonima rechazada por RLS y objeto ausente |
-| 8. Verificacion final | 1 a 7 | Aplicaciones, health, mocks y conectividad comprobados; registro en docs/17-phase-4-validation.md; revision de cierre pendiente |
+| 8. Verificacion final | 1 a 7 | Aplicaciones, health, mocks y conectividad comprobados; registro en docs/17-phase-4-validation.md; fase cerrada tras PR #7 y autorizacion de continuar con Phase 5 |
 
 Antes de cada tarea confirmar sus archivos permitidos/excluidos. En la tarea 1 solo se modifican `AGENTS.md`, `docs/12-roadmap.md`, este documento y `docs/15-current-status.md`. No modificar el registro historico `docs/16-phase-3-validation.md`.
 
@@ -248,7 +266,7 @@ git diff --check
 
 No ejecutar `db:migrate`, `db:deploy`, `db:push`, seeds ni DDL como comprobacion de conexion. La primera migracion se planificara con el primer modelo persistente.
 
-Phase 4 solo puede cerrarse tras registrar estas evidencias sin secretos:
+Phase 4 cerrada tras PR #7 y confirmacion del propietario el 23 de octubre de 2026. Checklist basado en las evidencias existentes, sin nuevas pruebas en esta actualizacion documental:
 
 - [x] Proyecto operativo y configuracion por consumidor, sin `.env` raiz ni secretos versionados/publicos; alcance de revision en docs/17-phase-4-validation.md.
 - [x] Contratos de entorno y ejemplos alineados; ausencia de Supabase permitida para desarrollo mock.
@@ -257,7 +275,7 @@ Phase 4 solo puede cerrarse tras registrar estas evidencias sin secretos:
 - [x] `media` existe con visibilidad documentada y sin escrituras anonimas; politicas y rechazo comprobados.
 - [x] Web/API arrancan con configuracion real; `/health` devuelve HTTP 200 y `{"status":"ok"}`; puertos y limites en docs/17-phase-4-validation.md.
 - [x] Home, wiki, juegos y detalles conservan mocks y diseno.
-- [ ] Registro disponible en `docs/17-phase-4-validation.md`, incluido CLI verificado; falta revision del propietario para el cierre.
+- [x] Registro disponible en `docs/17-phase-4-validation.md`, incluido CLI verificado y requisitos WARP/hosts; cierre documentado tras merge `b324cd5` y autorizacion del propietario para continuar con Phase 5.
 
 ## Vigencia
 

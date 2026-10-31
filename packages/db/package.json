@@ -4,10 +4,13 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
   },
   "scripts": {
-    "build": "prisma generate && tsc --noEmit",
+    "build": "prisma generate && tsc --project tsconfig.build.json",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "check-types": "prisma generate && tsc --noEmit",
@@ -16,6 +19,9 @@
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "db:check": "prisma db execute --file prisma/check-connection.sql",
+    "db:local:start": "node scripts/local-postgres.mjs start",
+    "db:local:stop": "node scripts/local-postgres.mjs stop",
+    "db:local:status": "node scripts/local-postgres.mjs status",
     "db:check:runtime": "prisma generate && tsc --project tsconfig.runtime-check.json && node dist/runtime-check/scripts/check-runtime.js",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

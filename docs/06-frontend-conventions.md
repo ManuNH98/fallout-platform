@@ -283,3 +283,41 @@ Every admin page that fetches data should include:
 - loading state
 - empty state
 - error state
+
+
+## Auth web implementado en tarea 9
+
+/login usa (auth)/layout.tsx y un Server Component dinamico separado del shell
+publico; metadata noindex/nofollow y cache privada por Proxy. Solo formularios
+cliente pequenos con useActionState, controles HTML nativos accesibles y Server
+Actions. Para este formulario simple no se anaden react-hook-form ni primitivas
+UI; no se cambia el diseno publico ni se anaden enlaces hacia rutas sin implementar.
+
+Validacion de login en @repo/validation (Zod 4.6.7), tambien en servidor. Password
+sin trim ni echo; errores en espanol y pending/disabled. Acciones de login,
+continuar con sesion y logout tienen cookies escribibles explicitamente y
+redirects fijos fuera de catch. Logout es POST scope local, nunca GET.
+
+El helper server-only de API usa bearer verificado, no-store, timeout 5 s,
+credentials omit y redirect error; no devuelve tokens al cliente. Si login inicia
+sesion pero falla el perfil, la pagina ofrece reintentar sincronizacion o cerrar
+sesion; GET solo lee. Auth y sesion no se consultan en layouts publicos o raiz.
+Contrato completo, estados y limites en docs/18 (entrega tarea 9). Registro y
+confirmacion se implementaran por separado, sin envios reales implicitos.
+
+
+Registro de tarea 10: /registro reutiliza el layout Auth y metadata noindex;
+useActionState con password y repeticion sin devolver valores sensibles. Schemas
+en @repo/validation, operacion signUp sin persistencia y verifyOtp en Route
+Handler /auth/confirmar con SSR escribible, redirects relativos fijos y
+no-referrer. Next omite logs de esta ruta y argumentos de Server Functions.
+Artefacto de plantilla en features/auth/email-templates; no aplicado a Supabase.
+Checks y limitaciones reales en docs/18; no cambios de diseno/mocks publicos.
+
+
+Revision PKCE del 31 de octubre: /registro conserva solo cookie temporal verifier
+mediante adaptador SSR filtrado por proyecto; callback canjea code con
+exchangeCodeForSession y requiere el mismo navegador/dispositivo. Sustituye la
+implementacion TokenHash/verifyOtp descrita en la entrega inicial. Redirect local
+fijo, plantilla predeterminada de Supabase sin cambios remotos. No se crean
+cookies de sesion antes de confirmar; no logs de code/verifier. Detalle en docs/18.

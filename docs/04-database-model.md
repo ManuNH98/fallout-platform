@@ -1,5 +1,14 @@
 # 04. Database model
 
+## Entorno vigente
+
+PostgreSQL local nativo para desarrollo, Supabase PostgreSQL como destino de
+produccion; L1 instalada y validada con PostgreSQL 17.11; migracion UserProfile L2 aplicada y verificada localmente. Un unico
+schema e historial Prisma; no duplicar migraciones por entorno. Las diferencias
+de roles SQL, RLS y validacion remota se detallan en
+[docs/19](19-local-development-database.md). Auth sigue remoto; no crear auth.users
+ni relaciones a schemas Supabase en la DB local.
+
 ## Principles
 
 The database should support:
@@ -70,16 +79,28 @@ enum CanonStatus {
 
 The application profile linked to Supabase Auth user id.
 
-Fields:
+Contrato minimo de Phase 5 (schema y SQL preparados en tarea 6, aplicados localmente en L2; aplicacion remota pendiente):
 
-- id
-- supabaseUserId
-- username
-- displayName
-- avatarUrl
-- role
-- createdAt
-- updatedAt
+| Campo | Contrato |
+| --- | --- |
+| id | UUID local, clave primaria |
+| supabaseUserId | UUID obligatorio y unico, obtenido de identidad verificada |
+| username | String opcional, sin requisito de unicidad ni flujo de eleccion en Phase 5 |
+| displayName | String opcional |
+| avatarUrl | String opcional; sin flujo de subida ni edicion en esta fase |
+| role | UserRole obligatorio, USER por defecto |
+| createdAt | Fecha de creacion |
+| updatedAt | Fecha de actualizacion |
+
+La API crea o recupera el perfil idempotentemente mediante POST /auth/perfil.
+Las lecturas no crean filas. Repetir la sincronizacion no cambia roles ni
+sobrescribe campos existentes. No guardar passwords, sesiones ni refresh tokens;
+no copiar email sin necesidad ni aceptar roles desde metadata/formularios.
+No modificar auth.users ni crear relaciones de contenido o triggers.
+Revisar RLS y permisos de Data API en la migracion; el navegador no accede a
+esta tabla directamente. La autorizacion de negocio permanece en NestJS.
+
+Secuencia, migracion y pruebas en [el contrato de Phase 5](18-phase-5-auth-foundation.md).
 
 ### Game
 
@@ -332,11 +353,14 @@ Early implementation may store build details as JSON while the system is being e
 
 Later, normalize perks, mutations, weapons and armor into dedicated tables.
 
-## Suggested first Prisma milestone
+## Hitos Prisma por fase
 
-Implement only:
+**Phase 5:** implementar solo UserProfile y UserRole, mediante tareas separadas
+de modelo/SQL, aplicacion autorizada y sincronizacion en API. No implementar
+todo el modelo conceptual de este documento en una sola entrega.
 
-- UserProfile
+**Phase 6:** implementar los modelos de contenido:
+
 - Game
 - Category
 - WikiPage
