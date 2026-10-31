@@ -232,8 +232,11 @@ roles integrada en 9a2c3ef. Tarea 9 login/logout integrada en 2ec4a8c.
 Tarea 10 registro/confirmacion integrada en 577c4b8 con simulaciones.
 Plantilla/prueba real autorizadas pero no ejecutadas: Supabase Free/SMTP incluido
 bloquea personalizar plantillas. El 31 de octubre el propietario autoriza PKCE
-con plantilla predeterminada: adaptacion implementada/probada, pendiente de
-revision y del unico registro real ya autorizado; evidencias en docs/18. Auth/Storage siguen remotos;
+con plantilla predeterminada: integrada en 955eebe y revisada. El propietario
+registra dos cuentas, una confirmada con perfil USER verificado y otra sin
+confirmar/sin perfil. El propietario confirma registro desde /registro y retorno
+PKCE autenticado sin repetir password; evidencias de tarea 10 listas para revision.
+Integracion completa y cierre (tarea 11) siguen pendientes; docs/18. Auth/Storage siguen remotos;
 tarea 10 y flujos con usuarios reales aun sin completar/verificar.
 [Decision y criterios por entorno](19-local-development-database.md).
 Cada implementacion requiere autorizacion y revision independientes.

@@ -32,8 +32,10 @@ L2 aplicada/verificada en local, con cero perfiles reales. Tarea 8 implementada,
 integrada en 9a2c3ef. Tarea 9 (login/logout) integrada en 2ec4a8c.
 Tarea 10 (registro/confirmacion): codigo y pruebas simuladas implementados,
 integrados inicialmente en 577c4b8. Adaptacion PKCE autorizada el 31 de octubre
-e implementada con pruebas, pendiente de revision. Se conserva plantilla
-predeterminada y SMTP incluido; prueba real autorizada aun pendiente.
+e integrada en 955eebe, revisada por el propietario. Se conserva plantilla
+predeterminada y SMTP incluido. Prueba real en curso: usuario confirmado con
+sesion/perfil USER observado y retorno PKCE sin repetir password corroborado por
+el propietario. Evidencias listas para revision; integracion/cierre pendientes.
 Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
@@ -1333,3 +1335,65 @@ Safari. Verificar limite SMTP y recepcion, abrir enlace en ese Safari, Continuar
 con sesion verificada y comprobar perfil USER en DB local. No pedir secretos en
 chat, hacer reenvios automaticos o promover ADMIN. No cerrar tarea 10 ni avanzar
 implicitamente a tarea 11; Phase 5 sigue abierta.
+
+
+## Registro real: observaciones del 31 de octubre de 2026
+
+El propietario revisa/valida la adaptacion integrada en 955eebe y autoriza
+continuar con la prueba previamente aprobada. Despues comunica haber creado dos
+cuentas por su cuenta: A confirmada (Gmail) y B sin confirmar (Outlook). Esto
+registra lo realizado por el propietario, sin ampliar la autorizacion del agente
+para crear otra cuenta o enviar mas correos. No se guardan emails, UUID, passwords,
+links, cookies o tokens personales en este registro.
+
+Evidencia directa de solo lectura:
+
+- Dashboard Authentication > Users en Safari muestra ambas cuentas. A tiene
+  ultimo inicio de sesion; B muestra Waiting for verification. La confirmacion
+  del correo A y no confirmacion de B son tambien evidencia del propietario.
+- /login en ese Safari muestra Tu sesion esta iniciada y tu perfil esta preparado.
+  Solo se navega por GET; no se pulsa login, Continuar ni logout en esta entrega.
+  La vista usa claims verificados y lectura autenticada de perfil desde Nest.
+- API /health responde 200; no se usa health como prueba de conectividad DB.
+- Consulta PostgreSQL local BEGIN READ ONLY: un perfil total, role USER. Otra
+  consulta parametrizada cruza los UUID observados en Dashboard sin publicarlos:
+  exactamente un perfil USER corresponde a A y cero perfiles a B. Frente al
+  preflight previo de cero perfiles, ahora existe uno creado por el flujo del
+  propietario. No se han insertado/modificado perfiles desde las comprobaciones.
+
+Limites de la evidencia: el agente no observo la pulsacion de registro, ausencia
+previa de sesion ni el canje del enlace. Pendiente que el propietario confirme
+si uso /registro y llego autenticado por PKCE sin volver a introducir password,
+o si inicio sesion despues. No afirmar que una sesion posterior demuestra por
+si sola ese canje. La cuenta B sin perfil no acredita todavia rechazo de login
+ni aislamiento entre dos sesiones autenticadas. No login B, reenvios, expiracion,
+replay, renovacion forzada, logout o promocion ADMIN realizados por el agente.
+
+Se conservan cuentas y sesion vigentes. No se ha reenviado/confirmado/eliminado
+la cuenta B ni cambiado configuracion remota, SMTP, DB, entorno o red. No es
+necesario crear otra cuenta para continuar con las comprobaciones restantes.
+Tarea 10 sigue abierta hasta aclarar el recorrido y revisar sus evidencias;
+Phase 5/tarea 11 no se cierran ni se amplian implicitamente.
+Validacion de esta entrega: observaciones UI, consultas solo lectura y diff
+limpio; sin cambios de codigo ni necesidad de repetir tests/build.
+
+
+### Corroboracion del propietario del recorrido PKCE
+
+El propietario responde expresamente que creo A desde /registro y que, al abrir
+el enlace en el mismo Safari, llego a Tu sesion sin volver a introducir password.
+Esta confirmacion resuelve la duda del apartado anterior. El canje no fue
+observado directamente por el agente; se acredita por el propietario y se
+complementa con la vista autenticada y el perfil USER local comprobados por el
+agente. Registro, recepcion/confirmacion, sesion y perfil quedan verificados con
+esas fuentes, sin confundirlos con observacion automatizada de toda la secuencia.
+
+Evidencias de tarea 10 listas para revision del propietario. No se realizan mas
+operaciones ni se declara Phase 5 cerrada. Proxima tarea propuesta, despues de
+revision/commit y autorizacion: 11, integracion (login/logout, renovacion,
+aislamiento y permisos), aprovechando las cuentas existentes; promocion ADMIN
+solo con alcance/identificador confirmado y autorizacion especifica.
+Enlaces invalidos/caducados/reutilizados siguen cubiertos por simulaciones;
+no se declara que se hayan reproducido todos esos casos contra Supabase real.
+Validacion de esta aclaracion: diff documental limpio; sin cambios de codigo,
+cuentas, envios, roles o configuracion y sin repetir tests/build.
