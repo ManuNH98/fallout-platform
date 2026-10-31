@@ -30,12 +30,30 @@ gestion de usuarios y panel admin requieren tareas posteriores.
 La secuencia y criterios detallados se mantienen en
 [18. Phase 5: Auth foundation](18-phase-5-auth-foundation.md).
 
+## Contrato vigente desde el 31 de octubre de 2026
+
+El propietario autoriza PKCE con plantilla predeterminada para evitar el bloqueo
+de personalizacion de Supabase Free con SMTP incluido. Sustituye TokenHash y
+verifyOtp de la entrega inicial de tarea 10; los registros inferiores de esa
+entrega son historicos. Codigo y pruebas adaptados, pendientes de revision;
+ningun registro/envio real aun. La autorizacion del unico registro sigue vigente.
+
+signUp lleva emailRedirectTo fijo http://localhost:3000/auth/confirmar. Su cliente
+SSR solo persiste cookie code-verifier (una hora), sin leer/escribir cookies de
+sesion. Callback valida un code y usa exchangeCodeForSession con SSR escribible;
+rechaza TokenHash/type, errores del proveedor y tokens en query. Necesita el
+mismo navegador/dispositivo y cookies intactas. Sin sesiones prematuras, destinos
+libres, fallback implicit o sincronizacion DB por GET. La plantilla local HTML
+no se aplica; SMTP/plan sin cambios. Para produccion se preparara redirect HTTPS
+en tarea separada. Pruebas y limites en docs/18; tarea 10 sigue abierta.
+
 ## Flujo de usuario y cookies
 
 1. Next usa clientes separados de navegador y servidor con @supabase/ssr y
    @supabase/supabase-js; servidor por peticion, cookies y PKCE del SDK.
 2. /registro envia signUp y muestra revisa tu correo, sin asumir sesion.
-3. /auth/confirmar verifica TokenHash con verifyOtp, guarda cookies y redirige
+3. /auth/confirmar canjea code con exchangeCodeForSession y el verifier PKCE,
+   guarda cookies y redirige
    a /login; alli una accion Continuar con sesion verificada sincroniza el perfil.
 4. /login usa signInWithPassword. Con identidad valida, Next llama al POST
    idempotente /auth/perfil y despues puede consultar GET /auth/me.

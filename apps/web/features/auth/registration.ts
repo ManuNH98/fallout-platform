@@ -5,7 +5,7 @@ import type { AuthActionState } from "./types";
 
 type ClientFactory = () => Promise<Pick<SupabaseClient, "auth">>;
 const pendingMessage =
-  "Si el registro puede completarse, recibirás un correo para confirmar tu cuenta. Revisa tu bandeja de entrada y la carpeta de spam.";
+  "Si el registro puede completarse, recibirás un correo para confirmar tu cuenta. Revisa tu bandeja de entrada y la carpeta de spam. Abre el enlace en este mismo navegador y dispositivo, sin borrar las cookies.";
 
 export async function register(
   form: FormData,
@@ -32,6 +32,8 @@ export async function register(
     const { data, error } = await client.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
+      // Destino local aprobado; nunca derivarlo de Host o del formulario.
+      options: { emailRedirectTo: "http://localhost:3000/auth/confirmar" },
     });
     // No devolver user/identities: Supabase puede ofuscarlos para cuentas existentes.
     if (error) {
@@ -51,27 +53,44 @@ export async function register(
       };
     return { message: pendingMessage, submitted: true };
   } catch {
-    return { message: "El servicio de registro no está disponible. Inténtalo más tarde." };
+    return {
+      message:
+        "El servicio de registro no está disponible. Inténtalo más tarde.",
+    };
   }
 }
 
 export async function confirmEmail(
   params: URLSearchParams,
   clientFactory: ClientFactory,
-): Promise<"/login" | "/registro?confirmacion=invalida" | "/registro?confirmacion=no-disponible"> {
+): Promise<
+  | "/login"
+  | "/registro?confirmacion=invalida"
+  | "/registro?confirmacion=no-disponible"
+> {
   const invalid = "/registro?confirmacion=invalida";
-  if (params.getAll("token_hash").length !== 1 || params.getAll("type").length !== 1)
+  if (
+    params.getAll("code").length !== 1 ||
+    [
+      "error",
+      "error_code",
+      "error_description",
+      "token_hash",
+      "type",
+      "access_token",
+      "refresh_token",
+    ].some((key) => params.has(key))
+  )
     return invalid;
-  const parsed = confirmationSchema.safeParse({
-    token_hash: params.get("token_hash"),
-    type: params.get("type"),
-  });
+  const parsed = confirmationSchema.safeParse({ code: params.get("code") });
   if (!parsed.success) return invalid;
   try {
     const client = await clientFactory();
-    const { data, error } = await client.auth.verifyOtp(parsed.data);
+    const { data, error } = await client.auth.exchangeCodeForSession(
+      parsed.data.code,
+    );
     if (error)
-      return error.status && [400, 401, 403, 422].includes(error.status)
+      return error.status && [400, 401, 403, 404, 422].includes(error.status)
         ? invalid
         : "/registro?confirmacion=no-disponible";
     return data.session?.access_token ? "/login" : invalid;

@@ -11,8 +11,9 @@ Supabase local. Next.js, NestJS, Prisma y los packages existentes se mantienen.
 Estado actual: L1 integrada en 514fdb6; L2 aplicada y verificada en PostgreSQL
 17.11 local, pendiente de revision. UserProfile/UserRole existen, con cero perfiles.
 Tarea 8 integrada en 9a2c3ef y tarea 9 en 2ec4a8c. Tarea 10 registro/confirmacion
-implementada con simulaciones, pendiente de revision, plantilla remota y prueba
-real autorizada; sin nuevas escrituras de DB. Migracion remota aplazada;
+integrada en 577c4b8; adaptacion PKCE autorizada el 31 de octubre e implementada
+con simulaciones, pendiente de revision y prueba real ya autorizada. Plantilla
+predeterminada sin cambios; sin nuevas escrituras de DB. Migracion remota aplazada;
 Auth/Storage siguen remotos. Sin CI ni cambios a WARP, hosts, certificados o
 llavero. Resultados y uso diario al final.
 La decision inicial se documento en 326ee0e antes de implementar esta entrega.

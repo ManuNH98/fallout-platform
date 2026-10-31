@@ -313,3 +313,11 @@ Handler /auth/confirmar con SSR escribible, redirects relativos fijos y
 no-referrer. Next omite logs de esta ruta y argumentos de Server Functions.
 Artefacto de plantilla en features/auth/email-templates; no aplicado a Supabase.
 Checks y limitaciones reales en docs/18; no cambios de diseno/mocks publicos.
+
+
+Revision PKCE del 31 de octubre: /registro conserva solo cookie temporal verifier
+mediante adaptador SSR filtrado por proyecto; callback canjea code con
+exchangeCodeForSession y requiere el mismo navegador/dispositivo. Sustituye la
+implementacion TokenHash/verifyOtp descrita en la entrega inicial. Redirect local
+fijo, plantilla predeterminada de Supabase sin cambios remotos. No se crean
+cookies de sesion antes de confirmar; no logs de code/verifier. Detalle en docs/18.

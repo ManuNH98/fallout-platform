@@ -31,7 +31,9 @@ L1 instalada/validada: PostgreSQL 17.11 local y .env API/DB cambiados a loopback
 L2 aplicada/verificada en local, con cero perfiles reales. Tarea 8 implementada,
 integrada en 9a2c3ef. Tarea 9 (login/logout) integrada en 2ec4a8c.
 Tarea 10 (registro/confirmacion): codigo y pruebas simuladas implementados,
-pendientes de revision; plantilla remota y prueba real aun sin aplicar/autorizar.
+integrados inicialmente en 577c4b8. Adaptacion PKCE autorizada el 31 de octubre
+e implementada con pruebas, pendiente de revision. Se conserva plantilla
+predeterminada y SMTP incluido; prueba real autorizada aun pendiente.
 Migracion remota aplazada. Resultados y comandos en docs/19.
 El registro cronologico inferior conserva propuestas previas, incluidas las
 alternativas descartadas; este apartado y docs/19 expresan la decision vigente.
@@ -71,6 +73,33 @@ expresa. No hay CI contratado/configurado ni instalacion de Supabase local.
 - UserRole/UserProfile y SQL preparados en tarea 6, sin aplicacion remota. La tarea 5 integra NestJS con
   @repo/db sin escrituras; health sigue acreditando solo disponibilidad de API.
 
+## Revision autorizada: confirmacion PKCE (31 de octubre de 2026)
+
+El propietario elige PKCE con la plantilla predeterminada para mantener coste
+cero y autoriza la adaptacion. Sustituye el contrato TokenHash/verifyOtp vigente
+hasta 577c4b8; las entregas inferiores conservan la historia, no el contrato actual.
+Registro envia emailRedirectTo fijo http://localhost:3000/auth/confirmar con
+PKCE del SDK y conserva SOLO la cookie temporal code-verifier (una hora), sin
+leer/escribir cookies de sesion desde el cliente de registro. No se acepta una
+sesion prematura si el proveedor devuelve una inesperadamente.
+
+El callback valida un unico code, rechaza errores del proveedor y parametros
+TokenHash/type heredados, y usa exchangeCodeForSession con SSR escribible. Sin
+fallback implicit, verifyOtp o tokens en fragments. La confirmacion requiere el
+mismo navegador/dispositivo, conservando cookies; no iniciar registros paralelos
+que reemplacen el verifier. Respuestas 303 a destinos relativos fijos, sin codigo
+sensible en destino, cache privada/no-store y no-referrer. Continuar de tarea 9
+sincroniza perfil; callback no escribe DB.
+
+Esta entrega esta acotada al desarrollo local: el redirect usa el origen local
+ya aprobado, nunca Host/Origin/formulario. Antes de desplegar habra que configurar
+y validar el origen HTTPS de produccion en una tarea expresa. No se crean env
+nuevos, SMTP, servicios, dependencias ni planes. La plantilla HTML personalizada
+se conserva solo como referencia futura, sin aplicar; el correo actual de
+Supabase puede estar en ingles. La autorizacion previa de un registro/envio real
+permanece vigente para despues de revisar/probar la adaptacion; no se consume
+con simulaciones. No hay autorizacion implicita para ADMIN o segundo usuario.
+
 ## Contrato web y sesiones
 
 Usar @supabase/supabase-js y @supabase/ssr. Mantener las variables publicas
@@ -101,16 +130,15 @@ No hay conexiones Auth durante build ni clientes creados al importar modulos.
 | Flujo | Ruta y comportamiento previsto |
 | --- | --- |
 | Login | `app/(auth)/login/page.tsx`; Server Action valida email/password y llama signInWithPassword. Errores genericos, sin devolver password. |
-| Registro | `app/(auth)/registro/page.tsx`; signUp, confirmacion obligatoria y estado revisa tu correo sin asumir sesion. No aceptar role ni supabaseUserId del formulario. |
-| Confirmacion | `app/(auth)/auth/confirmar/route.ts`; plantilla con TokenHash, parametro token_hash y tipo email fijo. verifyOtp establece cookies y redirige a /login sin parametros sensibles; si ya existe sesion valida, login ofrece una accion Continuar para sincronizar. |
+| Registro | `app/(auth)/registro/page.tsx`; signUp PKCE, emailRedirectTo local fijo, solo cookie temporal verifier y estado revisa tu correo sin sesion prematura. No aceptar role ni supabaseUserId del formulario. |
+| Confirmacion | `app/(auth)/auth/confirmar/route.ts`; plantilla predeterminada, parametro code y verifier del mismo navegador. exchangeCodeForSession establece cookies y redirige a /login sin parametros sensibles; Continuar sincroniza el perfil. |
 | Logout | Server Action o POST, signOut con scope local explicito, limpiar sesion y redirigir a /login. GET no cierra sesiones. |
 
-La plantilla propuesta enlaza al origen local aprobado con
-`/auth/confirmar?token_hash={{ .TokenHash }}&type=email`. Revisar y aplicar
-manualmente solo en la tarea de confirmacion. No usar un destino next libre,
-Host sin validar, fragments del flujo implicit ni callback generico inventado.
-No implementar exchangeCodeForSession como segundo contrato sin una tarea que
-lo necesite; el SDK conserva PKCE, y esta confirmacion usa verifyOtp.
+La revision del 31 de octubre sustituye TokenHash por PKCE con la plantilla
+predeterminada y emailRedirectTo fijo http://localhost:3000/auth/confirmar.
+No usar Host sin validar, destinos next libres, fragments implicit ni dos
+contratos de confirmacion simultaneos. El HTML personalizado es referencia
+futura y no se aplica en esta entrega. Los enlaces TokenHash antiguos se rechazan.
 
 Tratar enlaces ausentes, invalidos, caducados o usados con mensajes espanoles
 sin filtrar detalles. No registrar la query de confirmacion ni incluirla en
@@ -214,7 +242,7 @@ Las mutaciones remotas de 7, 10 y 11 requieren autorizacion expresa; las lectura
 | 7. Aplicacion migracion remota (aplazada) | 6 revisada y nueva tarea de produccion autorizada | Migracion aprobada y registro; destino remoto confirmado | Prisma Migrate con SQL aprobado, sin resets; verificar estructura, acceso runtime, rechazo Data API y estado. Sin usuarios ni perfiles de prueba. |
 | 8. Sincronizacion y roles | 4, 5, L1 y L2 de docs/19 revisadas | modules/auth y users API; guards/decorators/pipes, modulo endpoint admin de prueba; packages/types; manifests/lockfile si necesario; pruebas | Upsert concurrente, USER por defecto, conservacion de ADMIN, 401/403/404/503 y matriz de roles; tests unitarios/e2e simulados y checks afectados. |
 | 9. Login/logout | 3, 8 | apps/web/app/(auth)/login/** y layout Auth; features/auth/**; helper privado API; packages/validation; manifests/lockfile | Zod en package compartido y dependencias workspace justificadas; formularios espanoles, validacion servidor, errores, sincronizacion y logout local; checks web/packages y pruebas simuladas. Sin registros ni envios. |
-| 10. Registro/confirmacion | 9; plantilla y destinatario autorizados antes de la operacion remota | app/(auth)/registro/** y auth/confirmar/route.ts; features/auth/**, schemas/tests; next.config.js solo para impedir logs de credenciales; plantilla remota solo autorizada | Sin sesion prematura, enlace correcto/invalido/caducado/reutilizado, sin redireccion abierta ni logs sensibles; simulaciones primero, unico registro/envio real autorizado despues. |
+| 10. Registro/confirmacion | 9; PKCE autorizado para plantilla predeterminada y destinatario autorizado antes del envio | app/(auth)/registro/** y auth/confirmar/route.ts; features/auth/**, schemas/tests; next.config.js solo para impedir logs de credenciales; plantilla predeterminada sin cambios remotos | Sin sesion prematura, enlace correcto/invalido/caducado/reutilizado, sin redireccion abierta ni logs sensibles; simulaciones primero, unico registro/envio real autorizado despues. |
 | 11. Integracion/cierre | 2 a 10 revisadas | Pruebas Auth y documentacion de estado; operacion ADMIN solo autorizada | Registro-confirmacion-login-renovacion-perfil-API-logout, aislamiento entre usuarios, USER denegado y ADMIN admitido; mocks sin regresion; evidencias con limites y cierre del propietario. |
 
 No instalar dependencias en la tarea 1. No hacen falta bcrypt, Passport ni un
@@ -228,9 +256,9 @@ cualquier runner nuevo necesita justificarlo antes de ampliar el alcance.
 1. Confirmar que ECC (P-256) es Current en Project Settings > JWT Keys. No
    migrar, rotar, revocar ni compartir secretos. Contrastar despues con JWKS y,
    cuando exista una prueba autorizada, con el header de un token verificado.
-2. Antes de tarea 10, revisar Email/confirmacion y Site URL existentes; guardar
-   la plantilla TokenHash acordada, con origen y ruta exactos. No cambiar las
-   Redirect URLs reservadas ni habilitar recuperacion en esta entrega.
+2. Confirm email y Site URL revisados. Desde el 31 de octubre usar plantilla
+   predeterminada con PKCE y redirect exacto existente /auth/confirmar; no aplicar
+   HTML TokenHash, cambiar Redirect URLs ni habilitar recuperacion.
 3. Elegir una direccion del equipo para el primer registro; autorizar cuenta
    y envio, comprobar limite disponible y recepcion. No introducir reintentos
    automaticos ni pruebas masivas. No registrar direcciones personales en docs.
@@ -1200,3 +1228,108 @@ Sin usuarios, correos, perfiles reales, mutaciones remotas, DB/migraciones,
 .env, WARP/hosts o llavero nuevos. Sin nuevas dependencias. No se cierran tarea
 10 ni Phase 5 por simulaciones; integracion/cierre (tarea 11) requiere autorizacion
 separada despues de revisar estas evidencias. El propietario crea/sube los commits.
+
+
+## Intento de aplicar plantilla y preparar prueba real (30 de octubre de 2026)
+
+Codigo de tarea 10 integrado en 577c4b8. El propietario autoriza expresamente
+aplicar la plantilla preparada y un unico registro/envio a su direccion miembro
+del equipo; las credenciales las introduce el propietario directamente en la web.
+No se repite esta autorizacion para el mismo alcance. No incluye contratar Pro,
+configurar un proveedor SMTP distinto ni cambiar el contrato de confirmacion.
+
+Preflight de solo lectura: web /registro y API /health responden 200; conexiones
+DB y API apuntan al cluster loopback previsto; consulta READ ONLY confirma cero
+UserProfile. El sandbox inicialmente no pudo observar servicios activos; fuera
+de el se confirmaron disponibles. El arranque duplicado de desarrollo termino
+con puerto 3000 ocupado, sin detener servicios existentes ni aplicar migraciones.
+
+Inspeccion directa en Safari del proyecto fallout-platform: Site URL local y
+los dos Redirect URLs conservados. Authentication > Emails > Confirm sign up
+muestra Set up custom SMTP to edit templates, Source/Save deshabilitados y
+plantilla predeterminada inglesa basada en ConfirmationURL. Las opciones extra
+ofrecen Upgrade to Pro o Send Email hook. No se guardo ninguna configuracion,
+no se cambio SMTP/plan ni se creo usuario o envio correo.
+
+Bloqueo real del contrato TokenHash: el proyecto Free con SMTP incluido no
+permite instalar la plantilla prevista. [Anuncio oficial del 3 de junio de 2026](https://github.com/orgs/supabase/discussions/46599)
+confirma esta restriccion para nuevos proyectos Free, con excepcion de SMTP
+propio; planes de pago permiten personalizacion. No usar informacion anterior
+que afirmaba edicion libre como evidencia del estado actual.
+
+Alternativas propuestas, pendientes de decision del propietario:
+
+1. Mantener coste cero y SMTP incluido, adaptar registro/callback a PKCE con
+   plantilla predeterminada. Usar emailRedirectTo fijo, code verifier del SDK
+   y exchangeCodeForSession, sin tokens en fragment ni fallback implicit.
+   Necesita cambio acotado de codigo, pruebas y contrato documental ANTES del
+   registro real. El enlace debe abrirse en el navegador que inicio el registro.
+2. Conservar TokenHash y estudiar SMTP propio sin coste, con limites y requisitos
+   verificados. Nuevo proveedor/configuracion y credenciales requieren tarea
+   propia; no se configura ni contrata implicitamente.
+
+[PKCE oficial](https://supabase.com/docs/guides/auth/sessions/pkce-flow) y
+[registro email/password](https://supabase.com/docs/guides/auth/passwords).
+No implementar ninguna alternativa silenciosamente. No ejecutar el registro con
+la plantilla incompatible ni cerrar tarea 10/Phase 5. Validacion de esta entrega:
+diff documental y fuentes oficiales; sin cambios de codigo ni nuevas pruebas.
+
+
+## Entrega de adaptacion PKCE (31 de octubre de 2026)
+
+Alcance autorizado por el propietario tras recomendar PKCE. Conserva los cuatro
+archivos documentales ya modificados por el bloqueo anterior, sin descartar esa
+historia. No se ha cambiado Dashboard, SMTP o plan ni enviado correos/creado cuentas.
+
+Archivos de codigo:
+
+- features/auth/registration-client.ts: usa createServerClient de @supabase/ssr
+  por peticion, con adaptador Next cookies limitado al storage key PKCE del
+  proyecto y sus chunks numericos. No lee ni escribe cookies de sesion, incluso
+  si el proveedor devuelve una sesion inesperada. Mantiene una sesion previa
+  intacta. Solo verifier con maxAge de una hora; respeta borrados con maxAge 0.
+  El SDK instalado restablece su maxAge predeterminado al persistir: se limita
+  expresamente en el adaptador, comprobado con SDK real y transporte simulado.
+- features/auth/registration.ts: signUp envia email/password y emailRedirectTo
+  local aprobado fijo, sin aceptar URL/role/metadata del formulario. El texto
+  indica abrir el enlace en el mismo navegador y dispositivo sin borrar cookies.
+  Confirmacion exige un code valido no duplicado; rechaza errores del proveedor,
+  TokenHash/type heredados y tokens en query. Llama exchangeCodeForSession;
+  conserva respuestas de error genericas y destinos relativos fijos.
+- packages/validation/src/index.ts: schema del callback code URL-safe acotado,
+  sustituye TokenHash/type sin segundo mecanismo alternativo.
+- app/(auth)/registro/page.tsx: instrucciones del navegador/cookies y error con
+  acceso a login si el correo ya se confirmo. Sin cambios de diseno publico.
+- features/auth/tests/auth.test.mjs: adapta las pruebas anteriores y anade dos
+  de SDK real/chunks. La ruta callback, helpers SSR de sesion, Proxy, API, DB,
+  manifests y lockfile conservan su implementacion.
+
+La plantilla personalizada existente permanece como referencia historica, no
+esta instalada ni forma parte del flujo actual. Correo predeterminado en ingles;
+la interfaz de la aplicacion sigue en espanol. El redirect esta acotado a local:
+antes de produccion se requiere configurar/verificar un origen HTTPS propio en
+una tarea separada; no desplegar este valor local sin esa preparacion.
+
+Validacion:
+
+- Web y @repo/validation lint/check-types correctos; build web correcto fuera
+  del sandbox por el puerto interno de Turbopack.
+- 62 pruebas web correctas: regresiones de login/logout, validacion, cookies,
+  filtrado, destinos, errores y logs; cuenta nueva/existente y sesion prematura.
+- Prueba con SDK instalado real y fetch simulado: signup envia challenge S256
+  y redirect correcto, solo cookie verifier temporal; otro navegador falla sin
+  sesion, callback correcto crea sesion y borra verifier, replay falla. No es
+  evidencia de Supabase remoto ni entrega/consumo real del correo.
+- Smoke HTTP del build en 3197: registro/login y publico 200, noindex/cache
+  privada, callbacks invalidos/error del proveedor 303 sin cookies, CSRF abortado
+  por Next con Origin ajeno (500 nativo). Proceso temporal cerrado; sin detener
+  servicios existentes. No credenciales reales ni nueva inspeccion visual.
+- Sin cambios API/DB: no se repiten sus tests. Sin .env, dependencias nuevas,
+  migraciones, usuarios, perfiles, envios ni cambios de red/llavero.
+
+Pendiente: revision y commit del propietario antes de continuar con el unico
+registro/envio real ya autorizado, introduciendo correo/password directamente en
+Safari. Verificar limite SMTP y recepcion, abrir enlace en ese Safari, Continuar
+con sesion verificada y comprobar perfil USER en DB local. No pedir secretos en
+chat, hacer reenvios automaticos o promover ADMIN. No cerrar tarea 10 ni avanzar
+implicitamente a tarea 11; Phase 5 sigue abierta.

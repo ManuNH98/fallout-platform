@@ -1,16 +1,30 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { getSupabaseEnvironment } from "../../lib/env";
 
-// El registro no debe sustituir cookies existentes ni iniciar una sesion antes
-// de confirmar el correo, incluso si el proveedor se configura incorrectamente.
 export async function createRegistrationClient() {
   const { url, publishableKey } = getSupabaseEnvironment();
-  return createClient(url, publishableKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+  const store = await cookies();
+  const verifier = `sb-${new URL(url).hostname.split(".")[0]}-auth-token-code-verifier`;
+  const isVerifier = (name: string) =>
+    name === verifier ||
+    (name.startsWith(`${verifier}.`) &&
+      /^\d+$/.test(name.slice(verifier.length + 1)));
+
+  return createServerClient(url, publishableKey, {
+    cookieOptions: { maxAge: 60 * 60 },
+    cookies: {
+      // El registro solo conserva el verifier PKCE, nunca una sesion prematura
+      // ni cambios sobre otra cuenta ya iniciada en este navegador.
+      getAll: () => store.getAll().filter(({ name }) => isVerifier(name)),
+      setAll: (updates) => {
+        updates
+          .filter(({ name }) => isVerifier(name))
+          .forEach(({ name, value, options }) => {
+            store.set(name, value, { ...options, maxAge: value ? 60 * 60 : 0 });
+          });
+      },
     },
   });
 }

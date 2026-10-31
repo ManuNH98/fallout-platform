@@ -229,8 +229,11 @@ El 30 de octubre de 2026 se aprueba PostgreSQL nativo local para desarrollo;
 documentacion integrada en 326ee0e, L1 integrada en 514fdb6 y L2 migracion
 local aplicada/verificada e integrada en ffee55a. Tarea 8 de sincronizacion y
 roles integrada en 9a2c3ef. Tarea 9 login/logout integrada en 2ec4a8c.
-Tarea 10 registro/confirmacion implementada con simulaciones, pendiente de revision,
-aplicacion de plantilla y prueba real autorizada. Auth/Storage siguen remotos;
+Tarea 10 registro/confirmacion integrada en 577c4b8 con simulaciones.
+Plantilla/prueba real autorizadas pero no ejecutadas: Supabase Free/SMTP incluido
+bloquea personalizar plantillas. El 31 de octubre el propietario autoriza PKCE
+con plantilla predeterminada: adaptacion implementada/probada, pendiente de
+revision y del unico registro real ya autorizado; evidencias en docs/18. Auth/Storage siguen remotos;
 tarea 10 y flujos con usuarios reales aun sin completar/verificar.
 [Decision y criterios por entorno](19-local-development-database.md).
 Cada implementacion requiere autorizacion y revision independientes.

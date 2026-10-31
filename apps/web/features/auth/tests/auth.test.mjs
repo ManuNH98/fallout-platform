@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { test } from "node:test";
@@ -6,6 +7,7 @@ import vm from "node:vm";
 
 const require = createRequire(import.meta.url);
 const ts = require("typescript");
+const { createServerClient: realServerClient } = require("@supabase/ssr");
 const validationRequire = createRequire(
   new URL("../../../../../packages/validation/package.json", import.meta.url),
 );
@@ -35,14 +37,13 @@ async function load(options = {}) {
     clients: 0,
     signIn: [],
     signUp: [],
-    verifyOtp: [],
-    registrationClients: [],
+    exchange: [],
     claims: [],
     signOut: [],
     fetch: [],
     cookies: [],
   };
-  const jar = new Map();
+  const jar = new Map(options.initialCookies ?? []);
   let session = options.session ? { access_token: token } : null;
   if (session) jar.set("sb-test-auth-token", "sesion");
   const store = {
@@ -89,30 +90,35 @@ async function load(options = {}) {
         throw Object.assign(new Error("NEXT_REDIRECT"), { destination });
       },
     }),
-    "@supabase/supabase-js": synthetic({
-      createClient(url, key, config) {
-        calls.registrationClients.push({ url, key, config });
-        return { auth: {
-          async signUp(input) {
-            calls.signUp.push(input);
-            if (options.signUpThrow) throw new Error("password-secreto");
-            return { data: { user: options.signUpUser ?? { id: subject }, session: options.signUpSession ?? null }, error: options.signUpError ?? null };
-          },
-        } };
-      },
-    }),
     "@supabase/ssr": synthetic({
-      createServerClient(_url, _key, { cookies }) {
+      createServerClient(_url, _key, { cookies, cookieOptions }) {
+        calls.clientCookies = cookies;
+        calls.cookieOptions = cookieOptions;
         calls.clients++;
+        if (options.realSdk)
+          return realServerClient(_url, _key, {
+            cookies,
+            cookieOptions,
+            global: { fetch: options.authFetch },
+          });
         if (options.clientUnavailable)
           throw new Error("configuracion-sensible");
         return {
           auth: {
-            async verifyOtp(input) {
-              calls.verifyOtp.push(input);
-              if (options.otpThrow) throw new Error("token-hash-secreto");
-              if (options.otpError) return { data: { session: null }, error: options.otpError };
-              if (options.otpMissingSession) return { data: { session: null }, error: null };
+            async signUp(input) {
+              calls.signUp.push(input);
+              if (options.signUpThrow) throw new Error("password-secreto");
+              cookies.setAll([
+                { name: "sb-project-auth-token-code-verifier", value: "verifier", options: { path: "/", maxAge: cookieOptions.maxAge, sameSite: "lax" } },
+                ...(options.signUpSession ? [{ name: "sb-test-auth-token", value: "prematura", options: { path: "/" } }] : []),
+              ]);
+              return { data: { user: options.signUpUser ?? { id: subject }, session: options.signUpSession ?? null }, error: options.signUpError ?? null };
+            },
+            async exchangeCodeForSession(input) {
+              calls.exchange.push(input);
+              if (options.exchangeThrow) throw new Error("code-secreto");
+              if (options.exchangeError) return { data: { session: null }, error: options.exchangeError };
+              if (options.exchangeMissingSession) return { data: { session: null }, error: null };
               cookies.setAll([{ name: "sb-test-auth-token", value: "confirmada", options: { path: "/", sameSite: "lax" } }]);
               session = { access_token: token };
               return { data: { session }, error: null };
@@ -508,8 +514,8 @@ function registrationForm(email = " habitante@example.com ", password = " clave 
   data.set("passwordConfirmation", confirmation);
   return data;
 }
-const tokenHash = "a".repeat(64);
-const confirmationUrl = `https://host-no-fiable.example/auth/confirmar?token_hash=${tokenHash}&type=email`;
+const authCode = "a".repeat(64);
+const confirmationUrl = `https://host-no-fiable.example/auth/confirmar?code=${authCode}`;
 
 test("registro valida email, minimo y confirmacion en servidor sin usar SDK", async () => {
   const x = await load();
@@ -523,10 +529,10 @@ test("registro valida email, minimo y confirmacion en servidor sin usar SDK", as
   file.set("password", new Blob(["secreto"]), "password.txt");
   assert.ok((await x.actions.registerAction({}, file)).fieldErrors.password);
   assert.equal(x.calls.signUp.length, 0);
-  assert.equal(x.calls.registrationClients.length, 0);
+  assert.equal(x.calls.clients, 0);
 });
 
-test("registro solo envia email normalizado/password intacto, sin metadata ni API/cookies", async () => {
+test("registro envia redirect fijo y solo persiste verifier, sin metadata ni cookies de sesion", async () => {
   const x = await load({ session: true });
   const data = registrationForm();
   data.set("role", "ADMIN");
@@ -535,10 +541,12 @@ test("registro solo envia email normalizado/password intacto, sin metadata ni AP
   const state = await x.actions.registerAction({ submitted: true }, data);
   assert.equal(state.submitted, true);
   assert.match(state.message, /recibirás un correo/);
-  assert.deepEqual(plain(x.calls.signUp), [{ email: "habitante@example.com", password: " clave privada " }]);
-  assert.deepEqual(plain(x.calls.registrationClients[0].config.auth), { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false });
-  assert.equal(x.calls.clients, 0);
-  assert.equal(x.calls.cookies.length, 0);
+  assert.deepEqual(plain(x.calls.signUp), [{ email: "habitante@example.com", password: " clave privada ", options: { emailRedirectTo: "http://localhost:3000/auth/confirmar" } }]);
+  assert.equal(x.calls.cookieOptions.maxAge, 3600);
+  assert.equal(x.calls.clients, 1);
+  assert.equal(x.calls.cookies.length, 1);
+  assert.equal(x.calls.cookies[0].name, "sb-project-auth-token-code-verifier");
+  assert.deepEqual(plain(x.calls.clientCookies.getAll()).map(({ name }) => name), ["sb-project-auth-token-code-verifier"]);
   assert.equal(x.jar.get("sb-test-auth-token"), "sesion");
   assert.equal(x.calls.fetch.length, 0);
 });
@@ -559,7 +567,7 @@ test("registro rechaza sesion prematura sin persistirla ni anunciar confirmacion
   const state = await x.actions.registerAction({}, registrationForm());
   assert.equal(state.submitted, undefined);
   assert.match(state.message, /no está disponible/);
-  assert.equal(x.calls.cookies.length, 0);
+  assert.ok(x.calls.cookies.every(({ name }) => name.endsWith("-code-verifier")));
   assert.equal(x.calls.fetch.length, 0);
 });
 
@@ -570,7 +578,7 @@ test("limite de correo, error de proveedor y excepcion no exponen secretos ni re
     assert.equal(state.submitted, undefined);
     assert.ok(!JSON.stringify(state).includes("secreto"));
     assert.equal(x.calls.signUp.length, 1);
-    assert.equal(x.calls.cookies.length, 0);
+    assert.ok(x.calls.cookies.every(({ name }) => name.endsWith("-code-verifier")));
   }
 });
 
@@ -583,51 +591,51 @@ test("confirmacion valida escribe cookies SSR y redirige sin token ni Host/next"
   assert.equal(response.headers.get("referrer-policy"), "no-referrer");
   assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
   assert.equal(await response.text(), "");
-  assert.deepEqual(plain(x.calls.verifyOtp), [{ token_hash: tokenHash, type: "email" }]);
+  assert.deepEqual(plain(x.calls.exchange), [authCode]);
   assert.equal(x.jar.get("sb-test-auth-token"), "confirmada");
   assert.equal(x.calls.fetch.length, 0);
 });
 
-test("parametros ausentes, repetidos, enormes o tipo recovery no usan verifyOtp", async () => {
+test("parametros ausentes, duplicados, enormes, TokenHash o errores del proveedor no canjean", async () => {
   const x = await load();
-  for (const query of ["", "type=email", `token_hash=${tokenHash}`, `token_hash=${tokenHash}&type=recovery`, `token_hash=${tokenHash}&type=email&type=email`, `token_hash=${tokenHash}&token_hash=${tokenHash}&type=email`, "token_hash=corto&type=email", `token_hash=${"a".repeat(1025)}&type=email`, `token_hash=${encodeURIComponent("<script>".repeat(8))}&type=email`]) {
+  for (const query of ["", "type=email", `code=${authCode}&type=recovery`, `code=${authCode}&code=${authCode}`, "code=corto", `code=${"a".repeat(1025)}`, `code=${encodeURIComponent("<script>".repeat(8))}`, `code=${authCode}&error=access_denied`, `code=${authCode}&error_code=otp_expired`, `code=${authCode}&token_hash=${authCode}`]) {
     const response = await x.confirmRoute.GET(new Request(`http://localhost/auth/confirmar?${query}`));
     assert.equal(response.headers.get("location"), "/registro?confirmacion=invalida");
     assert.equal(response.status, 303);
   }
   assert.equal(x.calls.clients, 0);
-  assert.equal(x.calls.verifyOtp.length, 0);
+  assert.equal(x.calls.exchange.length, 0);
   assert.equal(x.calls.cookies.length, 0);
 });
 
-for (const [name, otpError] of [
+for (const [name, exchangeError] of [
   ["incorrecto", { status: 400, code: "otp_expired" }],
   ["caducado", { status: 403, code: "otp_expired" }],
   ["reutilizado", { status: 403, code: "otp_expired" }],
 ]) {
   test(`enlace ${name} no inicia sesion ni llama a Nest`, async () => {
-    const x = await load({ otpError });
+    const x = await load({ exchangeError });
     const response = await x.confirmRoute.GET(new Request(confirmationUrl));
     assert.equal(response.headers.get("location"), "/registro?confirmacion=invalida");
     assert.equal(x.calls.cookies.length, 0);
     assert.equal(x.calls.fetch.length, 0);
-    assert.ok(!(await response.text()).includes(tokenHash));
+    assert.ok(!(await response.text()).includes(authCode));
   });
 }
 
 test("fallos de confirmacion y respuesta sin sesion se sanitizan", async () => {
-  for (const options of [{ otpError: { status: 500, message: tokenHash } }, { otpThrow: true }, { otpMissingSession: true }]) {
+  for (const options of [{ exchangeError: { status: 500, message: authCode } }, { exchangeThrow: true }, { exchangeMissingSession: true }]) {
     const x = await load(options);
     const response = await x.confirmRoute.GET(new Request(confirmationUrl));
-    assert.equal(response.headers.get("location"), options.otpMissingSession ? "/registro?confirmacion=invalida" : "/registro?confirmacion=no-disponible");
+    assert.equal(response.headers.get("location"), options.exchangeMissingSession ? "/registro?confirmacion=invalida" : "/registro?confirmacion=no-disponible");
     assert.equal(x.calls.cookies.length, 0);
     assert.equal(x.calls.fetch.length, 0);
-    assert.equal(x.calls.verifyOtp.length, 1);
+    assert.equal(x.calls.exchange.length, 1);
   }
 });
 
 test("confirmaciones concurrentes mantienen cookies independientes", async () => {
-  const [a, b] = await Promise.all([load(), load({ otpError: { status: 403 } })]);
+  const [a, b] = await Promise.all([load(), load({ exchangeError: { status: 403 } })]);
   await Promise.all([a.confirmRoute.GET(new Request(confirmationUrl)), b.confirmRoute.GET(new Request(confirmationUrl))]);
   assert.equal(a.jar.get("sb-test-auth-token"), "confirmada");
   assert.equal(b.jar.size, 0);
@@ -637,8 +645,75 @@ test("Next excluye queries de confirmacion del logger de peticiones y desactiva 
   const { default: config } = await import("../../../next.config.js");
   const { ignoreLoggingIncomingRequests } = require("next/dist/server/dev/log-requests.js");
   assert.equal(config.logging.serverFunctions, false);
-  for (const path of ["/auth/confirmar", `/auth/confirmar?token_hash=${tokenHash}&type=email`, "/auth/confirmar/?type=email"])
+  for (const path of ["/auth/confirmar", `/auth/confirmar?code=${authCode}`, "/auth/confirmar/?type=email"])
     assert.equal(ignoreLoggingIncomingRequests({ url: path }, config.logging), true);
   for (const path of ["/", "/wiki", "/login", "/registro", "/auth/confirmar-otra"])
     assert.equal(ignoreLoggingIncomingRequests({ url: path }, config.logging), false);
+});
+
+test("SDK real conserva challenge/verifier entre registro y callback, sin sesion hasta confirmar", async () => {
+  const { createHash } = await import("node:crypto");
+  const user = { id: subject, aud: "authenticated", role: "authenticated", email: "habitante@example.com", app_metadata: { provider: "email", providers: ["email"] }, user_metadata: {}, created_at: "2026-10-31T10:00:00Z", identities: [] };
+  const jwt = [
+    Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"),
+    Buffer.from(JSON.stringify({ sub: subject, exp: Math.floor(Date.now() / 1000) + 3600, role: "authenticated" })).toString("base64url"),
+    Buffer.alloc(32).toString("base64url"),
+  ].join(".");
+  let challenge;
+  let used = false;
+  const requests = [];
+  const authFetch = async (input, init) => {
+    const url = new URL(input);
+    const body = JSON.parse(init.body);
+    requests.push({ url, body });
+    if (url.pathname.endsWith("/signup")) {
+      challenge = body.code_challenge;
+      assert.equal(body.code_challenge_method, "s256");
+      assert.equal(url.searchParams.get("redirect_to"), "http://localhost:3000/auth/confirmar");
+      return Response.json({ ...user });
+    }
+    assert.equal(url.pathname, "/auth/v1/token");
+    assert.equal(url.searchParams.get("grant_type"), "pkce");
+    assert.equal(body.auth_code, authCode);
+    if (used || !body.code_verifier || createHash("sha256").update(body.code_verifier).digest("base64url") !== challenge)
+      return Response.json({ code: "bad_code_verifier", msg: "Invalid verifier" }, { status: 400 });
+    used = true;
+    return Response.json({ access_token: jwt, refresh_token: "synthetic-refresh", expires_in: 3600, token_type: "bearer", user });
+  };
+  const x = await load({ realSdk: true, authFetch });
+  assert.equal((await x.actions.registerAction({}, registrationForm())).submitted, true);
+  assert.deepEqual([...x.jar.keys()], ["sb-project-auth-token-code-verifier"]);
+  assert.equal(x.calls.cookies[0].settings.maxAge, 3600);
+  assert.equal(x.calls.fetch.length, 0);
+  const otherBrowser = await load({ realSdk: true, authFetch });
+  const rejected = await otherBrowser.confirmRoute.GET(new Request(confirmationUrl));
+  assert.equal(rejected.headers.get("location"), "/registro?confirmacion=invalida");
+  assert.equal(otherBrowser.jar.has("sb-project-auth-token"), false);
+  const response = await x.confirmRoute.GET(new Request(confirmationUrl));
+  assert.equal(response.headers.get("location"), "/login");
+  assert.equal(x.jar.has("sb-project-auth-token-code-verifier"), false);
+  assert.equal(x.jar.has("sb-project-auth-token"), true);
+  const replay = await x.confirmRoute.GET(new Request(confirmationUrl));
+  assert.equal(replay.headers.get("location"), "/registro?confirmacion=invalida");
+  assert.equal(x.calls.fetch.length, 0);
+  assert.ok(requests.length >= 2);
+});
+
+test("registro filtra cookies de sesion y otros proyectos, preservando chunks del verifier", async () => {
+  const x = await load({ initialCookies: [["sb-project-auth-token", "existente"], ["ajena", "privada"], ["sb-project-auth-token-code-verifier.0", "previo"]] });
+  await x.actions.registerAction({}, registrationForm());
+  assert.ok(x.calls.clientCookies.getAll().every(({ name }) => name.startsWith("sb-project-auth-token-code-verifier")));
+  x.calls.clientCookies.setAll([
+    { name: "sb-project-auth-token-code-verifier.0", value: "", options: { maxAge: 0 } },
+    { name: "sb-project-auth-token-code-verifier.1", value: "nuevo", options: { path: "/", sameSite: "lax" } },
+    { name: "sb-project-auth-token-code-verifier.hostil", value: "incorrecto", options: {} },
+    { name: "sb-otro-auth-token-code-verifier", value: "incorrecto", options: {} },
+    { name: "sb-project-auth-token", value: "sustituida", options: {} },
+  ]);
+  assert.equal(x.jar.get("sb-project-auth-token"), "existente");
+  assert.equal(x.jar.get("ajena"), "privada");
+  assert.equal(x.jar.has("sb-project-auth-token-code-verifier.0"), false);
+  assert.equal(x.jar.get("sb-project-auth-token-code-verifier.1"), "nuevo");
+  assert.equal(x.jar.has("sb-project-auth-token-code-verifier.hostil"), false);
+  assert.equal(x.jar.has("sb-otro-auth-token-code-verifier"), false);
 });

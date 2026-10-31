@@ -45,6 +45,9 @@ export const registrationSchema = z
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
 export const confirmationSchema = z.object({
-  token_hash: z.string().min(20).max(1024).regex(/^[A-Za-z0-9_-]+$/),
-  type: z.literal("email"),
+  code: z
+    .string()
+    .min(20)
+    .max(1024)
+    .regex(/^[A-Za-z0-9_-]+$/),
 });
